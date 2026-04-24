@@ -32,7 +32,7 @@ $inventory = mysqli_fetch_assoc(mysqli_stmt_get_result($inv_stmt));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name         = sanitize($_POST['name']);
-    $description  = sanitize($_POST['description']);
+    $description  = trim($_POST['description'] ?? '');
     $price        = (float)$_POST['price'];
     $category     = sanitize($_POST['category']);
     $is_available = isset($_POST['is_available']) ? 1 : 0;
@@ -77,14 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($inv_update, 'ii', $stock, $id);
             mysqli_stmt_execute($inv_update);
 
-            $success = "Product updated successfully!";
-
-            // Refresh product data
-            $stmt2 = mysqli_prepare($conn,
-                "SELECT * FROM products WHERE product_id = ?");
-            mysqli_stmt_bind_param($stmt2, 'i', $id);
-            mysqli_stmt_execute($stmt2);
-            $product = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt2));
+            header('Location: products.php');
+            exit();
         } else {
             $error = "Failed to update product.";
         }
@@ -152,18 +146,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label>Dish Name</label>
             <input type="text" name="name"
-                   value="<?= $product['name'] ?>" required>
+                   value="<?= htmlspecialchars($name ?? $product['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
         </div>
 
         <div class="form-group">
             <label>Description</label>
-            <textarea name="description"><?= $product['description'] ?></textarea>
+            <textarea name="description"><?= htmlspecialchars($description ?? $product['description'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
         </div>
 
         <div class="form-group">
             <label>Price (₱)</label>
             <input type="number" name="price" step="0.01"
-                   value="<?= $product['price'] ?>" required>
+                   value="<?= htmlspecialchars($price ?? $product['price'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
         </div>
 
         <div class="form-group">
@@ -174,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($categories as $cat):
                 ?>
                 <option value="<?= $cat ?>"
-                    <?= $product['category'] === $cat ? 'selected' : '' ?>>
+                    <?= (isset($category) ? $category : $product['category']) === $cat ? 'selected' : '' ?>>
                     <?= $cat ?>
                 </option>
                 <?php endforeach; ?>
@@ -184,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label>Stock Quantity</label>
             <input type="number" name="stock_quantity"
-                   value="<?= $inventory['stock_quantity'] ?? 0 ?>" required>
+                   value="<?= htmlspecialchars(isset($stock) ? $stock : ($inventory['stock_quantity'] ?? 0), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
         </div>
 
         <div class="form-group">
@@ -203,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label>
                 <input type="checkbox" name="is_available"
-                    <?= $product['is_available'] ? 'checked' : '' ?>>
+                    <?= (isset($is_available) ? $is_available : $product['is_available']) ? 'checked' : '' ?>>
                 Available for ordering
             </label>
         </div>

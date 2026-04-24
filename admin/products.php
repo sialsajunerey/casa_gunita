@@ -15,11 +15,29 @@ if (isset($_GET['delete'])) {
     exit();
 }
 
-$products = mysqli_query($conn,
-    "SELECT p.*, i.stock_quantity 
-     FROM products p 
-     LEFT JOIN inventory i ON p.product_id = i.product_id
-     ORDER BY p.category, p.name");
+$category_filter = $_GET['category'] ?? '';
+$categories = ['Silog Meals','Ulam','Pulutan','Soup','Dessert','Drinks'];
+if ($category_filter && !in_array($category_filter, $categories)) {
+    $category_filter = '';
+}
+
+if ($category_filter) {
+    $stmt = mysqli_prepare($conn,
+        "SELECT p.*, i.stock_quantity 
+         FROM products p 
+         LEFT JOIN inventory i ON p.product_id = i.product_id
+         WHERE p.category = ?
+         ORDER BY p.category, p.name");
+    mysqli_stmt_bind_param($stmt, 's', $category_filter);
+    mysqli_stmt_execute($stmt);
+    $products = mysqli_stmt_get_result($stmt);
+} else {
+    $products = mysqli_query($conn,
+        "SELECT p.*, i.stock_quantity 
+         FROM products p 
+         LEFT JOIN inventory i ON p.product_id = i.product_id
+         ORDER BY p.category, p.name");
+}
 ?>
 
 <!DOCTYPE html>
@@ -47,6 +65,7 @@ $products = mysqli_query($conn,
         .btn-green { background: #27ae60; color: white; }
         .btn-blue  { background: #3498db; color: white; }
         .btn-red   { background: #e74c3c; color: white; }
+        .btn-secondary { background: #f6c70c; color: #111; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
         table { width: 100%; border-collapse: collapse; background: white; }
         th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
         th { background: #8B0000; color: white; }
@@ -74,10 +93,24 @@ $products = mysqli_query($conn,
 
 <div class="container">
     <div class="top-bar">
-        <h3>All Products</h3>
-        <a href="products_add.php" class="btn btn-green">+ Add New Product</a>
-    </div>
-
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <form method="GET" style="display:flex; gap:10px; align-items:center; margin:0;">
+                    <label style="margin:0; color:#333; font-weight:bold;">Category:</label>
+                    <select name="category" onchange="this.form.submit()" style="padding:8px; border-radius:5px; border:1px solid #ddd;">
+                        <option value="">All Categories</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') ?>" <?= $category_filter === $cat ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if ($category_filter): ?>
+                        <a href="products.php" class="btn btn-secondary">Show All</a>
+                    <?php endif; ?>
+                </form>
+            </div>
+            <a href="products_add.php" class="btn btn-green">+ Add New Product</a>
+        </div>
     <?php if (mysqli_num_rows($products) === 0): ?>
         <p style="text-align:center; color:#999; padding:30px;">
             No products yet. Click "Add New Product" to start.

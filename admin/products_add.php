@@ -10,14 +10,22 @@ requireAdmin();
 $error   = '';
 $success = '';
 
+$name         = '';
+$description  = '';
+$price        = '';
+$category     = 'Silog Meals';
+$is_available = 1;
+$stock        = 50;
+$image_name   = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name        = sanitize($_POST['name']);
-    $description = sanitize($_POST['description']);
-    $price       = (float)$_POST['price'];
-    $category    = sanitize($_POST['category']);
+    $name         = sanitize($_POST['name']);
+    $description  = trim($_POST['description'] ?? '');
+    $price        = (float)$_POST['price'];
+    $category     = sanitize($_POST['category']);
     $is_available = isset($_POST['is_available']) ? 1 : 0;
-    $stock       = (int)$_POST['stock_quantity'];
-    $image_name  = '';
+    $stock        = (int)$_POST['stock_quantity'];
+    $image_name   = '';
 
     // Handle image upload
     if (!empty($_FILES['image']['name'])) {
@@ -59,7 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($inv, 'ii', $product_id, $stock);
             mysqli_stmt_execute($inv);
 
-            $success = "Product added successfully!";
+            header('Location: products.php');
+            exit();
         } else {
             $error = "Failed to add product.";
         }
@@ -121,37 +130,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group">
             <label>Dish Name</label>
-            <input type="text" name="name" placeholder="e.g. Adobong Manok" required>
+            <input type="text" name="name" placeholder="e.g. Adobong Manok"
+                   value="<?= htmlspecialchars($name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
         </div>
 
         <div class="form-group">
             <label>Description</label>
-            <textarea name="description"
-                      placeholder="Short description of the dish"></textarea>
+            <textarea name="description" placeholder="Short description of the dish"><?= htmlspecialchars($description, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
         </div>
 
         <div class="form-group">
             <label>Price (₱)</label>
             <input type="number" name="price" step="0.01"
-                   placeholder="e.g. 150.00" required>
+                   value="<?= htmlspecialchars($price, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
         </div>
 
         <div class="form-group">
             <label>Category</label>
             <select name="category">
-                <option value="Silog Meals">Silog Meals</option>
-                <option value="Ulam">Ulam</option>
-                <option value="Pulutan">Pulutan</option>
-                <option value="Soup">Soup</option>
-                <option value="Dessert">Dessert</option>
-                <option value="Drinks">Drinks</option>
+                <option value="Silog Meals" <?= $category === 'Silog Meals' ? 'selected' : '' ?>>Silog Meals</option>
+                <option value="Ulam" <?= $category === 'Ulam' ? 'selected' : '' ?>>Ulam</option>
+                <option value="Pulutan" <?= $category === 'Pulutan' ? 'selected' : '' ?>>Pulutan</option>
+                <option value="Soup" <?= $category === 'Soup' ? 'selected' : '' ?>>Soup</option>
+                <option value="Dessert" <?= $category === 'Dessert' ? 'selected' : '' ?>>Dessert</option>
+                <option value="Drinks" <?= $category === 'Drinks' ? 'selected' : '' ?>>Drinks</option>
             </select>
         </div>
 
         <div class="form-group">
             <label>Stock Quantity</label>
             <input type="number" name="stock_quantity"
-                   placeholder="e.g. 50" value="50" required>
+                   value="<?= htmlspecialchars($stock, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
         </div>
 
         <div class="form-group">
@@ -161,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group">
             <label>
-                <input type="checkbox" name="is_available" checked>
+                <input type="checkbox" name="is_available" <?= $is_available ? 'checked' : '' ?>>
                 Available for ordering
             </label>
         </div>

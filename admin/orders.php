@@ -136,7 +136,7 @@ $orders = mysqli_query($conn,
                     <form method="POST">
                         <input type="hidden" name="order_id" 
                                value="<?= $order['order_id'] ?>">
-                        <select name="status">
+                        <select name="status" onchange="this.form.submit()">
                             <option value="pending"
                                 <?= $order['status']==='pending'   ? 'selected':'' ?>>
                                 Pending</option>
@@ -157,7 +157,6 @@ $orders = mysqli_query($conn,
                             <option value="cash">Cash</option>
                             <option value="gcash">GCash</option>
                         </select>
-                        <button type="submit">Update</button>
                     </form>
                     <?php else: ?>
                         <i>Finalized</i>
