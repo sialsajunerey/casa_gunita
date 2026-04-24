@@ -48,14 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Only JPG, PNG, WEBP images allowed.";
         } else {
             $image_name  = time() . '_' . basename($_FILES['image']['name']);
-            $upload_dir  = $_SERVER['DOCUMENT_ROOT'] . '/casa_gunita/assets/images/';
+            $upload_dir  = __DIR__ . '/../assets/images/';
             $upload_path = $upload_dir . $image_name;
 
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0755, true);
+            if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+                $error = "Unable to create upload folder.";
+            } elseif (!is_uploaded_file($_FILES['image']['tmp_name'])) {
+                $error = "Uploaded file is invalid.";
+            } elseif (!move_uploaded_file($_FILES['image']['tmp_name'], $upload_path)) {
+                $error = "Failed to save uploaded image.";
             }
-
-            move_uploaded_file($_FILES['image']['tmp_name'], $upload_path);
         }
     }
 
@@ -65,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "UPDATE products 
              SET name=?, description=?, price=?, category=?, image=?, is_available=?
              WHERE product_id=?");
-        mysqli_stmt_bind_param($stmt, 'ssdssi i',
+        mysqli_stmt_bind_param($stmt, 'ssdssii',
             $name, $description, $price, $category, $image_name, $is_available, $id);
 
         if (mysqli_stmt_execute($stmt)) {

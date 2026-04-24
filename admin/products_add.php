@@ -28,15 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Only JPG, PNG, WEBP images allowed.";
         } else {
             $image_name  = time() . '_' . basename($_FILES['image']['name']);
-$upload_dir  = $_SERVER['DOCUMENT_ROOT'] . '/casa_gunita/assets/images/';
-$upload_path = $upload_dir . $image_name;
+            $upload_dir  = __DIR__ . '/../assets/images/';
+            $upload_path = $upload_dir . $image_name;
 
-// Create the folder if it doesn't exist
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0755, true);
-}
-
-move_uploaded_file($_FILES['image']['tmp_name'], $upload_path);
+            if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+                $error = "Unable to create upload folder.";
+            } elseif (!is_uploaded_file($_FILES['image']['tmp_name'])) {
+                $error = "Uploaded file is invalid.";
+            } elseif (!move_uploaded_file($_FILES['image']['tmp_name'], $upload_path)) {
+                $error = "Failed to save uploaded image.";
+            }
         }
     }
 
