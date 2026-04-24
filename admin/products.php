@@ -1,0 +1,132 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+require_once '../includes/db.php';
+require_once '../includes/session.php';
+require_once '../includes/auth_check.php';
+require_once '../includes/functions.php';
+requireAdmin();
+
+// Handle delete
+if (isset($_GET['delete'])) {
+    $id = (int)$_GET['delete'];
+    mysqli_query($conn, "DELETE FROM products WHERE product_id = $id");
+    header("Location: products.php");
+    exit();
+}
+
+$products = mysqli_query($conn,
+    "SELECT p.*, i.stock_quantity 
+     FROM products p 
+     LEFT JOIN inventory i ON p.product_id = i.product_id
+     ORDER BY p.category, p.name");
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Products — Casa Gunita Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
+        .navbar {
+            background: #8B0000; color: white;
+            padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar a { color: white; text-decoration: none; margin-left: 20px; }
+        .container { padding: 30px; }
+        .top-bar {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px; border-radius: 5px;
+            text-decoration: none; font-weight: bold;
+            display: inline-block;
+        }
+        .btn-green { background: #27ae60; color: white; }
+        .btn-blue  { background: #3498db; color: white; }
+        .btn-red   { background: #e74c3c; color: white; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #8B0000; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        img.thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; }
+        .no-img {
+            width: 60px; height: 60px; background: #f0e0e0;
+            display: flex; align-items: center;
+            justify-content: center; border-radius: 5px; font-size: 24px;
+        }
+        .available   { color: #27ae60; font-weight: bold; }
+        .unavailable { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2 style="margin:0">🍽️ Casa Gunita — Products</h2>
+    <div>
+        <a href="index.php">Dashboard</a>
+        <a href="orders.php">Orders</a>
+        <a href="logout.php">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="top-bar">
+        <h3>All Products</h3>
+        <a href="products_add.php" class="btn btn-green">+ Add New Product</a>
+    </div>
+
+    <?php if (mysqli_num_rows($products) === 0): ?>
+        <p style="text-align:center; color:#999; padding:30px;">
+            No products yet. Click "Add New Product" to start.
+        </p>
+    <?php else: ?>
+    <table>
+        <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Available</th>
+            <th>Actions</th>
+        </tr>
+        <?php while ($p = mysqli_fetch_assoc($products)): ?>
+        <tr>
+            <td>
+                <?php if ($p['image']): ?>
+                    <img class="thumb"
+                         src="/casa_gunita/assets/images/<?= $p['image'] ?>"
+                         alt="<?= $p['name'] ?>">
+                <?php else: ?>
+                    <div class="no-img">🍽️</div>
+                <?php endif; ?>
+            </td>
+            <td><?= $p['name'] ?></td>
+            <td><?= $p['category'] ?></td>
+            <td><?= formatPrice($p['price']) ?></td>
+            <td><?= $p['stock_quantity'] ?? 0 ?></td>
+            <td>
+                <?php if ($p['is_available']): ?>
+                    <span class="available">Yes</span>
+                <?php else: ?>
+                    <span class="unavailable">No</span>
+                <?php endif; ?>
+            </td>
+            <td>
+                <a href="products_edit.php?id=<?= $p['product_id'] ?>"
+                   class="btn btn-blue">Edit</a>
+                <a href="products.php?delete=<?= $p['product_id'] ?>"
+                   class="btn btn-red"
+                   onclick="return confirm('Delete this product?')">Delete</a>
+            </td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
+    <?php endif; ?>
+</div>
+
+</body>
+</html>
