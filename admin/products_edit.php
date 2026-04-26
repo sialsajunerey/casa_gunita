@@ -23,6 +23,12 @@ if (!$product) {
     exit();
 }
 
+$categories = [];
+$cat_result = mysqli_query($conn, "SELECT category_id, name FROM categories ORDER BY name");
+while ($cat = mysqli_fetch_assoc($cat_result)) {
+    $categories[] = $cat;
+}
+
 // Fetch current stock
 $inv_stmt = mysqli_prepare($conn,
     "SELECT * FROM inventory WHERE product_id = ?");
@@ -34,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name         = sanitize($_POST['name']);
     $description  = trim($_POST['description'] ?? '');
     $price        = (float)$_POST['price'];
-    $category     = sanitize($_POST['category']);
+    $category_id  = isset($_POST['category_id']) ? (int)$_POST['category_id'] : 0;
     $is_available = isset($_POST['is_available']) ? 1 : 0;
     $stock        = (int)$_POST['stock_quantity'];
     $image_name   = $product['image']; // keep old image by default
@@ -65,10 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update product
         $stmt = mysqli_prepare($conn,
             "UPDATE products 
-             SET name=?, description=?, price=?, category=?, image=?, is_available=?
+             SET name=?, description=?, price=?, category_id=?, image=?, is_available=?
              WHERE product_id=?");
-        mysqli_stmt_bind_param($stmt, 'ssdssii',
-            $name, $description, $price, $category, $image_name, $is_available, $id);
+        mysqli_stmt_bind_param($stmt, 'ssdisii',
+            $name, $description, $price, $category_id, $image_name, $is_available, $id);
 
         if (mysqli_stmt_execute($stmt)) {
             // Update inventory stock
@@ -162,15 +168,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group">
             <label>Category</label>
-            <select name="category">
-                <?php
-                $categories = ['Silog Meals','Ulam','Pulutan','Soup','Dessert','Drinks'];
-                foreach ($categories as $cat):
-                ?>
-                <option value="<?= $cat ?>"
-                    <?= (isset($category) ? $category : $product['category']) === $cat ? 'selected' : '' ?>>
-                    <?= $cat ?>
-                </option>
+            <select name="category_id">
+                <?php foreach ($categories as $cat): ?>
+                    <option value="<?= (int)$cat['category_id'] ?>"
+                        <?= (isset($category_id) ? $category_id : (int)$product['category_id']) === (int)$cat['category_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
         </div>

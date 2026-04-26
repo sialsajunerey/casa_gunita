@@ -161,7 +161,7 @@ $featured = mysqli_query($conn,
                 <?php endif; ?>
                 <div class="card-body">
                     <h3><?= $item['name'] ?></h3>
-                    <p><?= $item['description'] ?></p>
+                    <p><?= truncateText($item['description'], 60) ?></p>
                     <span><?= formatPrice($item['price']) ?></span>
                 </div>
             </div>

@@ -30,3 +30,10 @@ function getCartItemCount($cart) {
     }
     return $count;
 }
+
+function truncateText($text, $length = 50) {
+    if (strlen($text) > $length) {
+        return substr($text, 0, $length) . '...';
+    }
+    return $text;
+}

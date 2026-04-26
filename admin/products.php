@@ -15,28 +15,35 @@ if (isset($_GET['delete'])) {
     exit();
 }
 
-$category_filter = $_GET['category'] ?? '';
-$categories = ['Silog Meals','Ulam','Pulutan','Soup','Dessert','Drinks'];
-if ($category_filter && !in_array($category_filter, $categories)) {
-    $category_filter = '';
+$category_filter = isset($_GET['category']) ? (int)$_GET['category'] : 0;
+$categories = [];
+$cat_result = mysqli_query($conn, "SELECT category_id, name FROM categories ORDER BY name");
+while ($cat = mysqli_fetch_assoc($cat_result)) {
+    $categories[] = $cat;
+}
+$valid_category_ids = array_column($categories, 'category_id');
+if ($category_filter && !in_array($category_filter, $valid_category_ids, true)) {
+    $category_filter = 0;
 }
 
 if ($category_filter) {
     $stmt = mysqli_prepare($conn,
-        "SELECT p.*, i.stock_quantity 
-         FROM products p 
+        "SELECT p.*, c.name AS category_name, i.stock_quantity
+         FROM products p
+         LEFT JOIN categories c ON p.category_id = c.category_id
          LEFT JOIN inventory i ON p.product_id = i.product_id
-         WHERE p.category = ?
-         ORDER BY p.category, p.name");
-    mysqli_stmt_bind_param($stmt, 's', $category_filter);
+         WHERE p.category_id = ?
+         ORDER BY c.name, p.name");
+    mysqli_stmt_bind_param($stmt, 'i', $category_filter);
     mysqli_stmt_execute($stmt);
     $products = mysqli_stmt_get_result($stmt);
 } else {
     $products = mysqli_query($conn,
-        "SELECT p.*, i.stock_quantity 
-         FROM products p 
+        "SELECT p.*, c.name AS category_name, i.stock_quantity
+         FROM products p
+         LEFT JOIN categories c ON p.category_id = c.category_id
          LEFT JOIN inventory i ON p.product_id = i.product_id
-         ORDER BY p.category, p.name");
+         ORDER BY c.name, p.name");
 }
 ?>
 
@@ -97,10 +104,10 @@ if ($category_filter) {
                 <form method="GET" style="display:flex; gap:10px; align-items:center; margin:0;">
                     <label style="margin:0; color:#333; font-weight:bold;">Category:</label>
                     <select name="category" onchange="this.form.submit()" style="padding:8px; border-radius:5px; border:1px solid #ddd;">
-                        <option value="">All Categories</option>
+                        <option value="0">All Categories</option>
                         <?php foreach ($categories as $cat): ?>
-                            <option value="<?= htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') ?>" <?= $category_filter === $cat ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') ?>
+                            <option value="<?= (int)$cat['category_id'] ?>" <?= $category_filter === (int)$cat['category_id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -138,7 +145,7 @@ if ($category_filter) {
                 <?php endif; ?>
             </td>
             <td><?= $p['name'] ?></td>
-            <td><?= $p['category'] ?></td>
+            <td><?= htmlspecialchars($p['category_name'] ?? 'Uncategorized', ENT_QUOTES, 'UTF-8') ?></td>
             <td><?= formatPrice($p['price']) ?></td>
             <td><?= $p['stock_quantity'] ?? 0 ?></td>
             <td>
