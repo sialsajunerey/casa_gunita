@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quantity = max(1, (int)$_POST['quantity']);
         $isAjax   = isset($_POST['ajax']) && $_POST['ajax'] == '1';
 
-        $stmt = mysqli_prepare($conn, "SELECT name, price FROM products WHERE product_id = ? AND is_available = 1");
+        $stmt = mysqli_prepare($conn, "SELECT product_id, name, price FROM products WHERE product_id = ? AND is_available = 1");
         mysqli_stmt_bind_param($stmt, 'i', $id);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
@@ -34,16 +34,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        $name  = $product['name'];
-        $price = (float)$product['price'];
+        $basePrice = (float)$product['price'];
+        $selectedOptionIds = [];
+        if (!empty($_POST['option_ids']) && is_array($_POST['option_ids'])) {
+            foreach ($_POST['option_ids'] as $groupOptions) {
+                if (is_array($groupOptions)) {
+                    foreach ($groupOptions as $optId) {
+                        $selectedOptionIds[] = (int)$optId;
+                    }
+                } else {
+                    $selectedOptionIds[] = (int)$groupOptions;
+                }
+            }
+        }
+        $selectedOptionIds = array_values(array_filter(array_unique($selectedOptionIds)));
 
-        if (isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id]['quantity'] += $quantity;
+        $options = [];
+        $optionsTotal = 0.0;
+        if (!empty($selectedOptionIds)) {
+            $placeholders = implode(',', array_fill(0, count($selectedOptionIds), '?'));
+            $types = str_repeat('i', count($selectedOptionIds));
+            $sql = "SELECT o.option_id, o.name, o.additional_price, g.name AS group_name
+                    FROM product_customization_options o
+                    JOIN product_customization_groups g ON o.group_id = g.group_id
+                    WHERE o.option_id IN ($placeholders)";
+            $stmt = mysqli_prepare($conn, $sql);
+            $bindParams = [];
+            foreach ($selectedOptionIds as $index => $value) {
+                $bindParams[$index] = &$selectedOptionIds[$index];
+            }
+            array_unshift($bindParams, $types);
+            call_user_func_array('mysqli_stmt_bind_param', array_merge([$stmt], $bindParams));
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            while ($option = mysqli_fetch_assoc($result)) {
+                $options[] = [
+                    'option_id' => (int)$option['option_id'],
+                    'group_name' => $option['group_name'],
+                    'name' => $option['name'],
+                    'additional_price' => (float)$option['additional_price']
+                ];
+                $optionsTotal += (float)$option['additional_price'];
+            }
+        }
+
+        $finalPrice = $basePrice + $optionsTotal;
+        $itemKey = $id . '_' . (empty($selectedOptionIds) ? 'default' : md5(json_encode($selectedOptionIds)));
+
+        if (isset($_SESSION['cart'][$itemKey])) {
+            $_SESSION['cart'][$itemKey]['quantity'] += $quantity;
         } else {
-            $_SESSION['cart'][$id] = [
-                'name'     => $name,
-                'price'    => $price,
-                'quantity' => $quantity
+            $_SESSION['cart'][$itemKey] = [
+                'product_id' => $id,
+                'name' => $product['name'],
+                'base_price' => $basePrice,
+                'price' => $finalPrice,
+                'quantity' => $quantity,
+                'options' => $options
             ];
         }
 
@@ -61,13 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'update') {
-        $id  = (int)$_POST['product_id'];
+        $key = $_POST['cart_key'] ?? $_POST['product_id'];
         $qty = max(0, (int)$_POST['quantity']);
 
         if ($qty <= 0) {
-            unset($_SESSION['cart'][$id]);
-        } elseif (isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id]['quantity'] = $qty;
+            unset($_SESSION['cart'][$key]);
+        } elseif (isset($_SESSION['cart'][$key])) {
+            $_SESSION['cart'][$key]['quantity'] = $qty;
         }
 
         header('Location: cart.php');
@@ -115,6 +162,8 @@ function getCartTotalAmount($cart) {
         .cart-table th, .cart-table td { padding: 16px 14px; border-bottom: 1px solid #eee; text-align: left; }
         .cart-table th { background: #fafafa; color: #555; }
         .cart-table tr:last-child td { border-bottom: none; }
+        .item-options { margin-top: 8px; font-size: 13px; color: #666; line-height: 1.4; }
+        .item-options div { margin-top: 4px; }
         .cart-table button { background: #8B0000; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
         .cart-table button:hover { background: #a10000; }
         .secondary-button { background: #555; }
@@ -166,22 +215,38 @@ function getCartTotalAmount($cart) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($_SESSION['cart'] as $id => $item): ?>
+                    <?php foreach ($_SESSION['cart'] as $key => $item): ?>
                         <tr>
-                            <td><?= htmlspecialchars($item['name']) ?></td>
+                            <td>
+                                <?= htmlspecialchars($item['name']) ?>
+                                <?php if (!empty($item['options']) && is_array($item['options'])): ?>
+                                    <div class="item-options">
+                                        <?php foreach ($item['options'] as $option): ?>
+                                            <div>
+                                                <?= htmlspecialchars($option['group_name'] . ': ' . $option['name']) ?>
+                                                <?php if (!empty($option['additional_price'])): ?>
+                                                    (+<?= formatPrice($option['additional_price']) ?>)
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td><?= formatPrice($item['price']) ?></td>
                             <td>
                                 <form method="POST" style="display:flex; gap:8px; align-items:center; margin:0;">
                                     <input type="hidden" name="action" value="update">
-                                    <input type="hidden" name="product_id" value="<?= htmlspecialchars($id) ?>">
-                                    <input class="quantity-input" type="number" name="quantity" value="<?= htmlspecialchars($item['quantity']) ?>" min="0" max="99" data-price="<?= htmlspecialchars($item['price']) ?>" data-row="<?= htmlspecialchars($id) ?>">
+                                    <input type="hidden" name="cart_key" value="<?= htmlspecialchars($key) ?>">
+                                    <input type="hidden" name="product_id" value="<?= htmlspecialchars($item['product_id'] ?? $key) ?>">
+                                    <input class="quantity-input" type="number" name="quantity" value="<?= htmlspecialchars($item['quantity']) ?>" min="0" max="99" data-price="<?= htmlspecialchars($item['price']) ?>" data-row="<?= htmlspecialchars($key) ?>">
                                 </form>
                             </td>
-                            <td class="subtotal-cell" data-row="<?= htmlspecialchars($id) ?>"><?= formatPrice($item['price'] * $item['quantity']) ?></td>
+                            <td class="subtotal-cell" data-row="<?= htmlspecialchars($key) ?>"><?= formatPrice($item['price'] * $item['quantity']) ?></td>
                             <td>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="action" value="remove">
-                                    <input type="hidden" name="product_id" value="<?= htmlspecialchars($id) ?>">
+                                    <input type="hidden" name="cart_key" value="<?= htmlspecialchars($key) ?>">
+                                    <input type="hidden" name="product_id" value="<?= htmlspecialchars($item['product_id'] ?? $key) ?>">
                                     <button type="submit" class="secondary-button">Remove</button>
                                 </form>
                             </td>
