@@ -23,6 +23,12 @@ if (!$order) {
     exit();
 }
 
+$txn_stmt = mysqli_prepare($conn,
+    "SELECT payment_method, amount_paid FROM transactions WHERE order_id = ? LIMIT 1");
+mysqli_stmt_bind_param($txn_stmt, 'i', $order_id);
+mysqli_stmt_execute($txn_stmt);
+$transaction = mysqli_fetch_assoc(mysqli_stmt_get_result($txn_stmt));
+
 // Fetch order items
 $items_stmt = mysqli_prepare($conn,
     "SELECT oi.*, p.name 
@@ -38,20 +44,56 @@ $items = mysqli_stmt_get_result($items_stmt);
 <html>
 <head>
     <title>Receipt — Casa Gunita</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
-        .page-wrapper { max-width: 700px; margin: 20px auto; padding: 20px; }
-        .receipt-card { background: #fff; border: 1px solid #8B0000; border-radius: 12px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .receipt-header { text-align: center; margin-bottom: 22px; }
-        .receipt-header h2 { margin: 0; color: #8B0000; }
-        .receipt-header p { margin: 6px 0 0; color: #555; }
-        .divider { border-top: 1px dashed #ccc; margin: 18px 0; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 8px; color: #333; }
-        .row strong { color: #111; }
-        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; justify-content: center; }
-        .button { background: #8B0000; color: #fff; border: none; border-radius: 8px; padding: 12px 20px; text-decoration: none; cursor: pointer; font-weight: bold; }
-        .button-outline { background: #fff; color: #8B0000; border: 1px solid #8B0000; }
-        .button:hover { opacity: 0.95; }
+        :root {
+            --crimson: #210303;
+            --crimson-d: #130301;
+            --gold: #e8d191;
+            --ink: #130301;
+            --muted: #674328;
+            --surface: #fff8eb;
+            --bg: #f4f2ea;
+            --radius: 16px;
+            --shadow: 0 18px 50px rgba(33,3,3,.08);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+        }
+        .page-wrapper {
+            max-width: 760px;
+            margin: 24px auto;
+            padding: 20px;
+        }
+        .receipt-card {
+            background: var(--surface);
+            border: 1px solid var(--crimson);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow);
+        }
+        .receipt-header { text-align: center; margin-bottom: 24px; }
+        .receipt-header h2 {
+            margin: 0;
+            color: var(--crimson);
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+        }
+        .receipt-header p { margin: 8px 0 0; color: var(--muted); }
+        .divider { border-top: 1px dashed #d3c6b1; margin: 22px 0; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--ink); }
+        .row strong { color: var(--ink); }
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; justify-content: center; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 14px; border: none; cursor: pointer; font-weight: 700; text-decoration: none; }
+        .btn-primary { background: var(--crimson); color: #fff; }
+        .btn-primary:hover { opacity: .95; }
+        .btn-outline { background: #fff; color: var(--crimson); border: 1px solid var(--crimson); }
     </style>
 </head>
 <body>
@@ -69,6 +111,9 @@ $items = mysqli_stmt_get_result($items_stmt);
 <p><b>Customer:</b> <?= $order['full_name'] ?></p>
 <p><b>Date:</b> <?= date('M d, Y h:i A', strtotime($order['created_at'])) ?></p>
 <p><b>Type:</b> <?= ucfirst($order['order_type']) ?></p>
+<?php if ($transaction): ?>
+<p><b>Payment:</b> <?= strtoupper(htmlspecialchars($transaction['payment_method'], ENT_QUOTES, 'UTF-8')) ?></p>
+<?php endif; ?>
 <?php if ($order['notes']): ?>
 <p><b>Notes:</b> <?= $order['notes'] ?></p>
 <?php endif; ?>

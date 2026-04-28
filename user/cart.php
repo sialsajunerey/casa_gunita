@@ -51,10 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $options = [];
         $optionsTotal = 0.0;
+        $replacementPrice = null;
         if (!empty($selectedOptionIds)) {
             $placeholders = implode(',', array_fill(0, count($selectedOptionIds), '?'));
             $types = str_repeat('i', count($selectedOptionIds));
-            $sql = "SELECT o.option_id, o.name, o.additional_price, g.name AS group_name
+            $sql = "SELECT o.option_id, o.name, o.additional_price, g.name AS group_name, g.group_type
                     FROM product_customization_options o
                     JOIN product_customization_groups g ON o.group_id = g.group_id
                     WHERE o.option_id IN ($placeholders)";
@@ -68,17 +69,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
             while ($option = mysqli_fetch_assoc($result)) {
+                $optionPrice = (float)$option['additional_price'];
                 $options[] = [
                     'option_id' => (int)$option['option_id'],
                     'group_name' => $option['group_name'],
+                    'group_type' => $option['group_type'],
                     'name' => $option['name'],
-                    'additional_price' => (float)$option['additional_price']
+                    'additional_price' => $optionPrice
                 ];
-                $optionsTotal += (float)$option['additional_price'];
+
+                if ($option['group_type'] === 'addon') {
+                    $optionsTotal += $optionPrice;
+                } elseif ($optionPrice > 0) {
+                    $replacementPrice = $replacementPrice === null ? $optionPrice : max($replacementPrice, $optionPrice);
+                }
             }
         }
 
-        $finalPrice = $basePrice + $optionsTotal;
+        $finalPrice = ($replacementPrice !== null ? $replacementPrice : $basePrice) + $optionsTotal;
         $itemKey = $id . '_' . (empty($selectedOptionIds) ? 'default' : md5(json_encode($selectedOptionIds)));
 
         if (isset($_SESSION['cart'][$itemKey])) {
@@ -149,29 +157,133 @@ function getCartTotalAmount($cart) {
 <html>
 <head>
     <title>Cart — Casa Gunita</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
-        .navbar { background: #8B0000; color: #fff; padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar a { color: #fff; text-decoration: none; margin-left: 18px; }
-        .navbar a:hover { text-decoration: underline; }
-        .container { padding: 30px; max-width: 1100px; margin: 0 auto; }
-        .page-title { margin: 0 0 16px; color: #333; }
-        .cart-summary { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
-        .cart-summary .panel { background: #fff; padding: 18px 22px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); flex: 1; min-width: 220px; }
-        .cart-table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 10px; overflow: hidden; }
-        .cart-table th, .cart-table td { padding: 16px 14px; border-bottom: 1px solid #eee; text-align: left; }
-        .cart-table th { background: #fafafa; color: #555; }
+        :root {
+            --crimson: #210303;
+            --crimson-d: #130301;
+            --gold: #e8d191;
+            --ink: #130301;
+            --muted: #674328;
+            --line: rgba(33,3,3,.1);
+            --surface: #fff8eb;
+            --bg: #f4f2ea;
+            --radius: 16px;
+            --shadow: 0 18px 50px rgba(33,3,3,.08);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+        }
+        a { color: inherit; text-decoration: none; }
+        .navbar {
+            background: var(--crimson);
+            color: #fff;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a { color: rgba(255,255,255,.92); margin-left: 18px; font-weight: 600; }
+        .navbar a:hover { opacity: .88; }
+        .container {
+            padding: 32px 24px;
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+        .page-title {
+            margin: 0 0 20px;
+            color: var(--crimson);
+            font-family: 'Playfair Display', serif;
+            font-size: 2.4rem;
+        }
+        .cart-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+        .cart-summary .panel {
+            background: var(--surface);
+            padding: 22px 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-width: 220px;
+        }
+        .cart-summary .panel h3 { margin: 0 0 8px; font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+        .cart-summary .panel p { margin: 0; font-size: 1.6rem; font-weight: 700; color: var(--ink); }
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: var(--surface);
+        }
+        .cart-table th, .cart-table td {
+            padding: 18px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+        .cart-table th {
+            background: var(--crimson-d);
+            color: var(--gold);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: .08em;
+        }
         .cart-table tr:last-child td { border-bottom: none; }
-        .item-options { margin-top: 8px; font-size: 13px; color: #666; line-height: 1.4; }
-        .item-options div { margin-top: 4px; }
-        .cart-table button { background: #8B0000; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
-        .cart-table button:hover { background: #a10000; }
-        .secondary-button { background: #555; }
-        .action-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-        .action-row a button { background: #8B0000; }
-        .empty-cart { background: #fff; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .empty-cart a { color: #8B0000; text-decoration: none; font-weight: bold; }
-        .quantity-input { width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+        .cart-table tr:nth-child(even) { background: #fbf5e8; }
+        .item-options { margin-top: 10px; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
+        .item-options div { margin-top: 6px; }
+        .quantity-input {
+            width: 90px;
+            padding: 10px 12px;
+            border: 1px solid #d6d2d9;
+            border-radius: 12px;
+            font-family: inherit;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform .15s ease, opacity .15s ease;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--crimson); color: #fff; }
+        .btn-primary:hover { opacity: .95; transform: translateY(-1px); }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-secondary:hover { opacity: .92; }
+        .action-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
+        .empty-cart {
+            background: var(--surface);
+            padding: 36px;
+            border-radius: var(--radius);
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        .empty-cart a { color: var(--crimson); font-weight: 700; }
+        .form-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0; }
+        @media (max-width: 820px) {
+            .cart-table th, .cart-table td { padding: 14px 12px; }
+            .page-title { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
@@ -225,7 +337,7 @@ function getCartTotalAmount($cart) {
                                             <div>
                                                 <?= htmlspecialchars($option['group_name'] . ': ' . $option['name']) ?>
                                                 <?php if (!empty($option['additional_price'])): ?>
-                                                    (+<?= formatPrice($option['additional_price']) ?>)
+                                                    (<?= isset($option['group_type']) && $option['group_type'] === 'addon' ? '+ ' : '' ?><?= formatPrice($option['additional_price']) ?>)
                                                 <?php endif; ?>
                                             </div>
                                         <?php endforeach; ?>
@@ -234,7 +346,7 @@ function getCartTotalAmount($cart) {
                             </td>
                             <td><?= formatPrice($item['price']) ?></td>
                             <td>
-                                <form method="POST" style="display:flex; gap:8px; align-items:center; margin:0;">
+                                <form method="POST" class="form-inline">
                                     <input type="hidden" name="action" value="update">
                                     <input type="hidden" name="cart_key" value="<?= htmlspecialchars($key) ?>">
                                     <input type="hidden" name="product_id" value="<?= htmlspecialchars($item['product_id'] ?? $key) ?>">
@@ -258,9 +370,9 @@ function getCartTotalAmount($cart) {
             <div class="action-row">
                 <form method="POST" style="margin:0;">
                     <input type="hidden" name="action" value="clear">
-                    <button type="submit" class="secondary-button">Clear Cart</button>
+                    <button type="submit" class="btn btn-secondary">Clear Cart</button>
                 </form>
-                <a href="checkout.php"><button type="button">Proceed to Checkout →</button></a>
+                <a href="checkout.php" class="btn btn-primary">Proceed to Checkout →</a>
             </div>
         <?php endif; ?>
     </div>

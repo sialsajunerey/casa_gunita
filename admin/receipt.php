@@ -33,10 +33,19 @@ $items = mysqli_stmt_get_result($items_stmt);
 
 // Fetch transaction if completed
 $trans_stmt = mysqli_prepare($conn,
-    "SELECT * FROM transactions WHERE order_id = ?");
+    "SELECT payment_method, amount_paid FROM transactions WHERE order_id = ?");
 mysqli_stmt_bind_param($trans_stmt, 'i', $order_id);
 mysqli_stmt_execute($trans_stmt);
-$transaction = mysqli_fetch_assoc(mysqli_stmt_get_result($trans_stmt));
+mysqli_stmt_store_result($trans_stmt);
+$transaction = null;
+if (mysqli_stmt_num_rows($trans_stmt) > 0) {
+    mysqli_stmt_bind_result($trans_stmt, $payment_method, $amount_paid);
+    mysqli_stmt_fetch($trans_stmt);
+    $transaction = [
+        'payment_method' => $payment_method,
+        'amount_paid'    => $amount_paid,
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -84,10 +93,29 @@ $transaction = mysqli_fetch_assoc(mysqli_stmt_get_result($trans_stmt));
 
 <b>Items Ordered:</b><br><br>
 <?php while ($item = mysqli_fetch_assoc($items)): ?>
+<?php $options = !empty($item['options']) ? json_decode($item['options'], true) : []; ?>
 <div class="row">
-    <span><?= $item['name'] ?> x<?= $item['quantity'] ?></span>
+    <span><?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?> x<?= (int)$item['quantity'] ?></span>
     <span><?= formatPrice($item['subtotal']) ?></span>
 </div>
+<?php if (!empty($options) && is_array($options)): ?>
+    <div class="row" style="padding-left:14px;font-size:13px;color:#555;">
+        <div style="width:100%;">
+            <?php
+            $grouped = [];
+            foreach ($options as $opt) {
+                $group = htmlspecialchars($opt['group_name'] ?? ($opt['group_type'] === 'addon' ? 'Add-ons' : ($opt['group_type'] === 'size' ? 'Size' : 'Flavor')), ENT_QUOTES, 'UTF-8');
+                $label = htmlspecialchars($opt['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                $price = isset($opt['additional_price']) && $opt['additional_price'] > 0 ? ' (+' . formatPrice($opt['additional_price']) . ')' : '';
+                $grouped[$group][] = $label . $price;
+            }
+            foreach ($grouped as $group => $items):
+            ?>
+                <div><strong><?= $group ?>:</strong> <?= htmlspecialchars(implode(', ', $items), ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
 <?php endwhile; ?>
 
 <div class="divider"></div>

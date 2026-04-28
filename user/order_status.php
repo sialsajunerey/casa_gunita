@@ -23,28 +23,104 @@ $result = mysqli_stmt_get_result($orders);
 <html>
 <head>
     <title>My Orders — Casa Gunita</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f9f4ef; }
+        :root {
+            --crimson: #210303;
+            --crimson-d: #130301;
+            --gold: #e8d191;
+            --ink: #130301;
+            --muted: #674328;
+            --line: rgba(33,3,3,.1);
+            --surface: #fff8eb;
+            --bg: #f4f2ea;
+            --radius: 16px;
+            --shadow: 0 18px 50px rgba(33,3,3,.08);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+        }
+        a { color: inherit; text-decoration: none; }
         .navbar {
-            background: #8B0000; color: white;
-            padding: 15px 30px;
-            display: flex; justify-content: space-between; align-items: center;
+            background: var(--crimson);
+            color: #fff;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .navbar a { color: white; text-decoration: none; margin-left: 20px; }
-        .container { padding: 30px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background: #8B0000; color: white; }
-        tr:nth-child(even) { background: #f9f9f9; }
+        .navbar h2 {
+            margin: 0;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            letter-spacing: .08em;
+        }
+        .navbar a { color: rgba(255,255,255,.92); margin-left: 18px; font-weight: 600; }
+        .navbar a:hover { opacity: .9; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+        h3 { margin: 0 0 22px; font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--crimson); }
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .order-table th,
+        .order-table td {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: middle;
+        }
+        .order-table th {
+            background: var(--crimson-d);
+            color: var(--gold);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: .08em;
+        }
+        .order-table tr:last-child td { border-bottom: none; }
+        .order-table tr:nth-child(even) { background: #fcf5e8; }
         .badge {
-            padding: 4px 10px; border-radius: 20px;
-            font-size: 12px; font-weight: bold; color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: .04em;
         }
-        .pending   { background: #f39c12; }
-        .preparing { background: #3498db; }
-        .ready     { background: #2ecc71; }
-        .completed { background: #27ae60; }
-        .cancelled { background: #e74c3c; }
+        .pending   { background: #f59e0b; }
+        .preparing { background: #0d6efd; }
+        .ready     { background: #16a34a; }
+        .completed { background: #15803d; }
+        .cancelled { background: #dc2626; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            text-decoration: none;
+            transition: opacity .15s ease, transform .15s ease;
+        }
+        .btn-primary { background: var(--crimson); color: #fff; }
+        .btn-primary:hover { opacity: .95; transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -68,7 +144,7 @@ $result = mysqli_stmt_get_result($orders);
             <a href="menu.php">Order now!</a>
         </p>
     <?php else: ?>
-    <table>
+    <table class="order-table">
         <tr>
             <th>Order #</th>
             <th>Total</th>

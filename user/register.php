@@ -43,20 +43,31 @@ function sanitize($data) {
 ?>
 
 <!DOCTYPE html>
-<html>
-<head><title>Register — Casa Gunita</title></head>
-<body>
-    <h2>Create Account</h2>
-    <?php if ($error): ?><p style="color:red"><?= $error ?></p><?php endif; ?>
-    <?php if ($success): ?><p style="color:green"><?= $success ?></p><?php endif; ?>
-    
-    <form method="POST">
-        <input type="text" name="full_name" placeholder="Full Name" required><br>
-        <input type="email" name="email" placeholder="Email" required><br>
-        <input type="password" name="password" placeholder="Password" required><br>
-        <input type="password" name="confirm_password" placeholder="Confirm Password" required><br>
-        <button type="submit">Register</button>
-    </form>
-    <a href="login.php">Already have an account? Login</a>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — Casa Gunita</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">Casa Gunita</div>
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join us for authentic Filipino favorites and easy ordering.</p>
+            <?php if ($error): ?><div class="auth-message auth-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
+            <?php if ($success): ?><div class="auth-message auth-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
+        </div>
+        <form method="POST" class="auth-form">
+            <input type="text" name="full_name" class="auth-input" placeholder="Full Name" required>
+            <input type="email" name="email" class="auth-input" placeholder="Email" required>
+            <input type="password" name="password" class="auth-input" placeholder="Password" required>
+            <input type="password" name="confirm_password" class="auth-input" placeholder="Confirm Password" required>
+            <button type="submit" class="auth-button">Register</button>
+        </form>
+        <p class="auth-footer">Already have an account? <a href="login.php">Login</a></p>
+    </div>
 </body>
 </html>

@@ -64,40 +64,67 @@ function buildOptionLabel($option) {
 <html>
 <head>
     <title>Customize — Casa Gunita</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
-        .navbar { background: #8B0000; color: #fff; padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar a { color: #fff; text-decoration: none; margin-left: 18px; }
-        .navbar a:hover { text-decoration: underline; }
-        .container { max-width: 980px; margin: 0 auto; padding: 30px 20px; }
-        .card { background: #fff; border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.08); overflow: hidden; }
-        .card-header { padding: 28px 30px 14px; }
-        .product-top { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
-        .product-image { width: 100%; min-height: 260px; border-radius: 20px; overflow: hidden; background: #fafafa; display: flex; align-items: center; justify-content: center; }
-        .product-image img { width: 100%; height: 100%; object-fit: cover; }
-        .product-meta { display: flex; flex-direction: column; gap: 12px; }
-        .product-meta h1 { margin: 0; font-size: 28px; color: #222; }
-        .product-meta p { margin: 0; color: #555; line-height: 1.6; }
-        .product-price { font-size: 24px; font-weight: 700; color: #8B0000; }
-        .customization-section { background: #fff; padding: 24px 30px 30px; }
-        .customization-group { margin-bottom: 24px; }
-        .customization-group h3 { margin: 0 0 14px; font-size: 18px; color: #333; }
-        .option-list { display: grid; gap: 14px; }
-        .option-card { border: 1px solid #e6e6e6; border-radius: 16px; padding: 16px; display: flex; gap: 14px; align-items: center; background: #fafafa; cursor: pointer; }
-        .option-card input { margin-right: 14px; }
-        .option-content { flex: 1; }
-        .option-name { font-weight: 600; color: #222; margin: 0 0 6px; }
-        .option-price { color: #8B0000; font-weight: 700; }
-        .option-image { width: 72px; height: 72px; border-radius: 14px; overflow: hidden; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .option-image img { width: 100%; height: 100%; object-fit: cover; }
-        .submit-panel { padding: 20px 30px 32px; display: flex; justify-content: space-between; gap: 16px; align-items: center; background: #fafafa; border-top: 1px solid #eee; }
-        .submit-panel button { background: #8B0000; color: #fff; border: none; padding: 14px 24px; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; }
-        .submit-panel button:hover { background: #a10000; }
-        .helper-text { color: #555; font-size: 14px; margin-top: 10px; }
-        @media (max-width: 820px) {
-            .product-top { grid-template-columns: 1fr; }
-            .product-image { min-height: 220px; }
+        :root {
+            --crimson: #210303;
+            --crimson-d: #130301;
+            --gold: #e8d191;
+            --ink: #130301;
+            --muted: #674328;
+            --line: rgba(33,3,3,.1);
+            --surface: #fff8eb;
+            --bg: #f4f2ea;
+            --radius: 18px;
+            --shadow: 0 18px 50px rgba(33,3,3,.08);
         }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+        }
+        a { color: inherit; text-decoration: none; }
+        .navbar {
+            background: var(--crimson);
+            color: #fff;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a { color: rgba(255,255,255,.92); margin-left: 18px; font-weight: 600; }
+        .navbar a:hover { opacity: .9; }
+        .container { max-width: 980px; margin: 0 auto; padding: 32px 24px; }
+        .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+        .card-header { padding: 28px 30px 14px; }
+        .product-top { display: grid; grid-template-columns: minmax(260px, 1fr) 1.2fr; gap: 24px; align-items: start; }
+        .product-image { width: 100%; min-height: 280px; border-radius: 20px; overflow: hidden; background: #fff5ed; display: flex; align-items: center; justify-content: center; }
+        .product-image img { width: 100%; height: 100%; object-fit: cover; }
+        .product-meta { display: flex; flex-direction: column; gap: 14px; }
+        .product-meta h1 { margin: 0; font-size: 2.2rem; color: var(--crimson); font-family: 'Playfair Display', serif; }
+        .product-meta p { margin: 0; color: var(--muted); line-height: 1.7; }
+        .product-price { font-size: 1.4rem; font-weight: 700; color: var(--crimson); }
+        .customization-section { background: #fff; padding: 28px 30px 30px; }
+        .customization-group { margin-bottom: 26px; }
+        .customization-group h3 { margin: 0 0 14px; font-size: 1.1rem; color: var(--ink); }
+        .option-list { display: grid; gap: 14px; }
+        .option-card { border: 1px solid #e7dfd2; border-radius: 18px; padding: 16px; display: flex; gap: 14px; align-items: center; background: #faf7f2; cursor: pointer; transition: transform .15s ease, border-color .15s ease; }
+        .option-card:hover { transform: translateY(-1px); border-color: var(--crimson); }
+        .option-card input { margin-right: 14px; accent-color: var(--crimson); }
+        .option-content { flex: 1; }
+        .option-name { font-weight: 700; color: var(--ink); margin: 0 0 6px; }
+        .option-price { color: var(--crimson); font-weight: 700; }
+        .option-image { width: 74px; height: 74px; border-radius: 16px; overflow: hidden; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .option-image img { width: 100%; height: 100%; object-fit: cover; }
+        .submit-panel { padding: 22px 30px 32px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: center; background: #fdf8f2; border-top: 1px solid #e7dfd2; }
+        .submit-panel button { background: var(--crimson); color: #fff; border: none; padding: 14px 24px; border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .submit-panel button:hover { background: #4b0101; }
+        .helper-text { color: var(--muted); font-size: 0.95rem; margin-top: 10px; }
+        @media (max-width: 900px) { .product-top { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -152,7 +179,11 @@ function buildOptionLabel($option) {
                                     >
                                     <div class="option-content">
                                         <p class="option-name"><?= htmlspecialchars($option['name']) ?></p>
-                                        <p class="option-price"><?= $option['additional_price'] > 0 ? '+ ' . formatPrice($option['additional_price']) : 'No extra charge' ?></p>
+                                        <p class="option-price"><?php if ($group['group_type'] === 'addon'): ?>
+                                                <?= $option['additional_price'] > 0 ? '+ ' . formatPrice($option['additional_price']) : 'No extra charge' ?>
+                                            <?php else: ?>
+                                                <?= $option['additional_price'] > 0 ? formatPrice($option['additional_price']) : 'Included' ?>
+                                            <?php endif; ?></p>
                                     </div>
                                     <?php if (!empty($option['image'])): ?>
                                         <div class="option-image">
