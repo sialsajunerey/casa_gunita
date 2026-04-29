@@ -1,0 +1,194 @@
+/* ── MENU PAGE OVERRIDES ── */
+body {
+    margin: 0;
+    padding-top: 56px;
+    font-family: 'EB Garamond', serif;
+    background: #120000;
+    background-image: url('menubambg.png'); 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;  
+    color: #dce4cf;
+    overflow-x: hidden;
+}
+
+.content {
+    padding: 40px 60px;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-family: 'Hello Paris', serif;
+    font-size: 65px;
+    font-weight: 400;
+    color: #dce4cf;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+    text-align: center;    /* ← idagdag ito */
+    text-shadow:
+        0 0 20px rgba(232, 209, 145, 0.4),
+        0 0 40px rgba(232, 209, 145, 0.25);
+}
+
+/* ── Category Bar ── */
+.top-category-bar {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 auto 32px;
+    padding: 16px;
+    position: sticky;
+    top: 56px;
+    z-index: 15;
+    background: transparent;  
+    border-bottom: 1px solid rgba(232, 209, 145, 0.12);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.top-category-bar.hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.category-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    border-radius: 999px;
+    background: transparent;
+    color: #dce4cf;
+    border: 1px solid rgba(232, 209, 145, 0.3);
+    font-family: 'Public Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.category-button:hover {
+    background: rgba(232, 209, 145, 0.1);
+    border-color: rgba(232, 209, 145, 0.6);
+    color: #e8d191;
+}
+
+.category-button.active {
+    background: #e8d191;
+    color: #120000;
+    border-color: #e8d191;
+    font-weight: 700;
+}
+
+/* ── Menu Grid ── */
+.menu-grid {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    align-items: stretch;
+}
+
+.empty-msg {
+    grid-column: 1 / -1;
+    padding: 40px;
+    text-align: center;
+    font-family: 'Public Sans', sans-serif;
+    color: rgba(220, 228, 207, 0.5);
+    font-size: 1rem;
+}
+
+/* ── Item Card ── */
+.item-card {
+    border: 1px solid rgba(232, 209, 145, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e0404;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.item-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    border-color: rgba(232, 209, 145, 0.4);
+}
+
+.item-img-wrap {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.item-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.item-img-wrap.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2a0808;
+    color: rgba(220, 228, 207, 0.4);
+    font-size: 0.9rem;
+    font-family: 'Public Sans', sans-serif;
+    height: 200px;
+}
+
+.item-info {
+    padding: 16px 18px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.item-name {
+    font-family: 'The Seasons', serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: #dce4cf;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.item-price {
+    font-family: 'Public Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #dce4cf;
+}
+
+/* ── Order Button ── */
+.order-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: #e8d191;
+    border-top: 1px solid rgba(232, 209, 145, 0.2);
+    padding: 13px 0;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: background 0.25s ease, color 0.25s ease;
+    text-decoration: none;
+}
+
+.order-link:hover {
+    background: #e8d191;
+    color: #120000;
+}

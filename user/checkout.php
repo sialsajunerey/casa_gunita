@@ -72,201 +72,143 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Checkout — Casa Gunita</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --crimson: #210303;
-            --crimson-d: #130301;
-            --gold: #e8d191;
-            --ink: #130301;
-            --muted: #674328;
-            --line: rgba(33,3,3,.1);
-            --surface: #fff8eb;
-            --bg: #f4f2ea;
-            --radius: 16px;
-            --shadow: 0 18px 50px rgba(33,3,3,.08);
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-        }
-        a { color: inherit; text-decoration: none; }
-        .navbar {
-            background: var(--crimson);
-            color: #fff;
-            padding: 18px 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar a { color: rgba(255,255,255,.92); margin-left: 18px; font-weight: 600; }
-        .container {
-            padding: 32px 24px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .page-title {
-            margin: 0 0 20px;
-            color: var(--crimson);
-            font-family: 'Playfair Display', serif;
-            font-size: 2.4rem;
-        }
-        .checkout-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 26px;
-        }
-        .panel {
-            background: var(--surface);
-            padding: 26px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-        }
-        .panel h2 {
-            margin-top: 0;
-            color: var(--crimson);
-            font-family: 'Playfair Display', serif;
-        }
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .summary-table th, .summary-table td {
-            padding: 16px 14px;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
-        }
-        .summary-table th {
-            background: var(--crimson-d);
-            color: var(--gold);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-        }
-        .summary-table tr:last-child td { border-bottom: none; }
-        .summary-table .total-row td { font-size: 18px; font-weight: 700; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-        .form-field { margin-bottom: 18px; }
-        .form-field label { display: block; margin-bottom: 8px; font-weight: 700; color: var(--ink); }
-        .form-field select,
-        .form-field textarea {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid #d6d2d9;
-            border-radius: 12px;
-            background: #fff;
-            font-size: 0.95rem;
-            font-family: inherit;
-            color: var(--ink);
-        }
-        .form-field textarea { resize: vertical; min-height: 140px; }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 14px 22px;
-            border-radius: 14px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-            transition: transform .15s ease, opacity .15s ease;
-            text-decoration: none;
-        }
-        .btn-primary { background: var(--crimson); color: #fff; }
-        .btn-primary:hover { opacity: .95; transform: translateY(-1px); }
-        .btn-secondary { display: inline-flex; background: transparent; color: var(--crimson); border: 2px solid var(--crimson); }
-        .btn-secondary:hover { opacity: .92; }
-        .error-box { background: #fee2e2; color: #b91c1c; padding: 18px 20px; border-radius: 14px; margin-bottom: 20px; }
-        @media (max-width: 860px) {
-            .checkout-grid { grid-template-columns: 1fr; }
-            .form-row { grid-template-columns: 1fr; }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="landingpage.css">
+    <link rel="stylesheet" href="checkout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="navbar">
-        <div><strong>Casa Gunita</strong> — Checkout</div>
-        <div>
-            <span>Welcome, <?= htmlspecialchars($_SESSION['full_name']) ?></span>
-            <a href="menu.php">Menu</a>
-            <a href="logout.php">Logout</a>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+    <div class="nav-logo">
+        <img src="casalogo.png" alt="Casa Gunita Logo">
+    </div>
+    <div class="nav-search-wrap">
+        <input type="text" class="nav-search" placeholder="Search">
+    </div>
+    <div class="nav-links">
+        <a href="index.php">Home</a>
+        <a href="menu.php">Menu</a>
+        <a href="about.php">About</a>
+    </div>
+    <div class="nav-icons">
+        <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <?php if (isset($_SESSION['cart']) && count($_SESSION['cart']) > 0): ?>
+                <span class="cart-badge"><?= count($_SESSION['cart']) ?></span>
+            <?php endif; ?>
+        </a>
+        <div class="account-wrap">
+            <button class="nav-icon-btn" id="accountBtn" aria-label="Account">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </button>
+            <div class="account-dropdown" id="accountDropdown">
+                <a href="account.php">Account Information</a>
+                <a href="order_status.php">My Orders</a>
+                <hr>
+                <a href="logout.php">Log Out</a>
+            </div>
         </div>
     </div>
+</nav>
 
-    <div class="container">
-        <h1 class="page-title">Checkout</h1>
+<!-- ===== CONTENT ===== -->
+<div class="container">
+    <h1 class="page-title">Review Your Order</h1>
 
-        <?php if ($error): ?>
-            <div class="error-box"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
+    <?php if ($error): ?>
+        <div class="error-box"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
 
-        <div class="checkout-grid">
-            <div class="panel">
-                <h2>Order Summary</h2>
-                <table class="summary-table">
-                    <thead>
+    <div class="checkout-grid">
+
+        <!-- Order Summary -->
+        <div class="panel">
+            <h2>Order Summary</h2>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($_SESSION['cart'] as $id => $item): ?>
                         <tr>
-                            <th>Item</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Subtotal</th>
+                            <td><?= htmlspecialchars($item['name']) ?></td>
+                            <td><?= htmlspecialchars($item['quantity']) ?></td>
+                            <td><?= formatPrice($item['price']) ?></td>
+                            <td><?= formatPrice($item['price'] * $item['quantity']) ?></td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($_SESSION['cart'] as $id => $item): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($item['name']) ?></td>
-                                <td><?= htmlspecialchars($item['quantity']) ?></td>
-                                <td><?= formatPrice($item['price']) ?></td>
-                                <td><?= formatPrice($item['price'] * $item['quantity']) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        <tr class="total-row">
-                            <td colspan="3">Total</td>
-                            <td><?= formatPrice(getCartTotal($_SESSION['cart'])) ?></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <a class="btn btn-secondary" href="cart.php">← Back to Cart</a>
-            </div>
-
-            <div class="panel">
-                <h2>Order Details</h2>
-                <form method="POST">
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label for="order_type">Order Type</label>
-                            <select name="order_type" id="order_type" required>
-                                <option value="takeout">Takeout</option>
-                                <option value="delivery">Delivery</option>
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label for="payment_method">Payment Method</label>
-                            <select name="payment_method" id="payment_method" required>
-                                <option value="cash">COD</option>
-                                <option value="gcash">Epayment</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-field">
-                        <label for="notes">Special Notes (optional)</label>
-                        <textarea name="notes" id="notes" placeholder="Allergies, special requests..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Place Order</button>
-                </form>
-            </div>
+                    <?php endforeach; ?>
+                    <tr class="total-row">
+                        <td colspan="3">Total</td>
+                        <td><?= formatPrice(getCartTotal($_SESSION['cart'])) ?></td>
+                    </tr>
+                </tbody>
+            </table>
+            <a class="btn btn-secondary" href="cart.php">← Back to Cart</a>
         </div>
+
+        <!-- Order Details -->
+        <div class="panel">
+            <h2>Order Details</h2>
+            <form method="POST">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="order_type">Order Type</label>
+                        <select name="order_type" id="order_type" required>
+                            <option value="" disabled selected>Select</option>
+                            <option value="takeout">Takeout</option>
+                            <option value="delivery">Delivery</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="payment_method">Payment Method</label>
+                        <select name="payment_method" id="payment_method" required>
+                            <option value="" disabled selected>Select</option>
+                            <option value="cash">COD</option>
+                            <option value="gcash">Epayment</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="notes">Special Notes (optional)</label>
+                    <textarea name="notes" id="notes" placeholder="Allergies, special requests..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Place Order</button>
+            </form>
+        </div>
+
     </div>
+</div>
+
+<script>
+    const accountBtn = document.getElementById('accountBtn');
+    const accountDropdown = document.getElementById('accountDropdown');
+    accountBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        accountDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+        accountDropdown.classList.remove('open');
+    });
+</script>
+
 </body>
 </html>

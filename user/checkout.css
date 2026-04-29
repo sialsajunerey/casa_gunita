@@ -1,0 +1,306 @@
+/* ── CHECKOUT PAGE ── */
+body {
+    margin: 0;
+    padding-top: 56px;
+    font-family: 'The Seasons', serif;
+    background: #120000;
+    background-image: url('menubambg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #dce4cf;
+    overflow-x: hidden;
+}
+
+/* ── NAVBAR ── */
+.navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2.5rem;
+    height: 56px;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid rgba(232, 209, 145, 0.18);
+    gap: 0;
+}
+
+.navbar > div {
+    display: flex;
+    align-items: center;
+    gap: 1.8rem;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 13px;
+    color: #dce4cf;
+    letter-spacing: 0.08em;
+}
+
+.navbar strong {
+    font-family: 'Hello Paris', serif;
+    font-weight: 400;
+    font-size: 1.1rem;
+    color: #e8d191;
+    letter-spacing: 0.1em;
+}
+
+.navbar a {
+    color: #dce4cf;
+    text-decoration: none;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.navbar a:hover { opacity: 1; color: #e8d191; }
+
+/* ── Container ── */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 32px 80px;
+}
+
+/* ── Page Title ── */
+.page-title {
+    font-family: 'Hello Paris', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 400;
+    color: #e8d191;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 0 40px;
+    text-shadow:
+        0 0 20px rgba(232, 209, 145, 0.3),
+        0 0 40px rgba(232, 209, 145, 0.15);
+}
+
+/* ── Error Box ── */
+.error-box {
+    background: rgba(180, 30, 30, 0.25);
+    border: 1px solid rgba(220, 80, 80, 0.4);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 0.88rem;
+    color: #f4a0a0;
+}
+
+/* ── Grid ── */
+.checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ── Panel ── */
+.panel {
+    background: rgba(33, 3, 3, 0.85);
+    border-radius: 14px;
+    padding: 36px 40px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+}
+
+.panel h2 {
+    font-family: 'The Seasons', serif;
+    font-weight: 400;
+    font-size: 1.6rem;
+    color: #e8d191;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 24px;
+}
+
+/* ── Summary Table ── */
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Public Sans', serif;
+    font-size: 1rem;
+    margin-bottom: 28px;
+}
+
+.summary-table thead tr {
+    border-bottom: 1px solid rgba(232, 209, 145, 0.25);
+}
+
+.summary-table th {
+    font-family: 'Public Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #e8d191;
+    padding: 0 0 12px;
+    text-align: left;
+}
+
+.summary-table th:not(:first-child),
+.summary-table td:not(:first-child) {
+    text-align: right;
+}
+
+.summary-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.summary-table td {
+    padding: 14px 0;
+    color: #dce4cf;
+}
+
+.summary-table .total-row td {
+    padding-top: 16px;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e8d191;
+    border-top: 1px solid rgba(232, 209, 145, 0.25);
+    border-bottom: none;
+}
+
+/* ── Form ── */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.form-field:last-of-type {
+    margin-bottom: 28px;
+}
+
+.form-field label {
+    font-family: 'Public Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #e8d191;
+}
+
+.form-field select,
+.form-field textarea {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(232, 209, 145, 0.2);
+    border-radius: 8px;
+    color: #dce4cf;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 1rem;
+    padding: 11px 40px 11px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Dropdown Arrow ── */
+.form-field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23e8d191' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+}
+
+.form-field select:focus,
+.form-field textarea:focus {
+    border-color: rgba(232, 209, 145, 0.55);
+}
+
+.form-field select option {
+    background: #210303;
+    color: #dce4cf;
+}
+
+.form-field textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.6;
+    padding: 11px 14px;
+}
+
+.form-field textarea::placeholder {
+    color: rgba(220, 228, 207, 0.3);
+    font-style: italic;
+}
+
+/* ── Buttons ── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 14px 40px;
+    background: transparent;
+    border: 1px solid rgba(232, 209, 145, 0.6);
+    color: #e8d191;
+}
+
+.btn-primary:hover {
+    background: #e8d191;
+    color: #120000;
+}
+
+.btn-secondary {
+    padding: 11px 28px;
+    background: transparent;
+    border: 1px solid rgba(232, 209, 145, 0.6);
+    color: #e8d191;
+    font-size: 11px;
+}
+
+.btn-secondary:hover {
+    background: #e8d191;
+    color: #120000;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .checkout-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 40px 16px 60px;
+    }
+
+    .panel {
+        padding: 24px 20px;
+    }
+}

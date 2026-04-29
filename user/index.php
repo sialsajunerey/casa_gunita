@@ -7,7 +7,6 @@ require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
 requireCustomer();
 
-// Fetch featured products (latest 3)
 $featured = mysqli_query($conn,
     "SELECT * FROM products WHERE is_available = 1 ORDER BY created_at DESC LIMIT 3");
 ?>
@@ -18,28 +17,27 @@ $featured = mysqli_query($conn,
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casa Gunita — Authentic Filipino Cuisine</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel+Decorative:wght@400;700&family=Playfair+Display:ital,wght@0,400;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landingpage.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- ===== NAVBAR ===== -->
 <nav class="navbar">
+    <div class="nav-logo">
+        <img src="casalogo.png" alt="Casa Gunita Logo">
+    </div>
     <div class="nav-search-wrap">
         <input type="text" class="nav-search" placeholder="Search">
     </div>
-
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
         <a href="about.php">About</a>
     </div>
-
     <div class="nav-icons">
-        <!-- Cart -->
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="1.8">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <path d="M16 10a4 4 0 0 1-8 0"/>
@@ -48,12 +46,9 @@ $featured = mysqli_query($conn,
                 <span class="cart-badge"><?= count($_SESSION['cart']) ?></span>
             <?php endif; ?>
         </a>
-
-        <!-- Account -->
         <div class="account-wrap">
             <button class="nav-icon-btn" id="accountBtn" aria-label="Account">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="1.8">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
@@ -72,56 +67,47 @@ $featured = mysqli_query($conn,
 <section class="hero" id="home">
     <div class="hero-overlay"></div>
     <div class="hero-content">
-        <div class="hero-ornament">✦ ✦ ✦ ✦ ✦</div>
+        <div class="hero-ornament">ᜃᜐ ᜄᜓᜈᜒᜆ</div>
         <h1 class="hero-title">Casa Gunita</h1>
     </div>
 </section>
 
 <!-- ===== SECTION 2: WE OFFER ===== -->
 <section class="we-offer" id="menu">
-    <div class="bling-overlay"></div>
+    <div class="we-offer-spotlight"></div>
     <div class="we-offer-inner">
         <h2 class="we-offer-title">We Offer</h2>
-        <p class="we-offer-sub">
-            A curated<br>selection of<br>Filipino<br>favorites,<br>crafted with<br>heart.
-        </p>
+        <p class="we-offer-sub">A curated selection of Filipino favorites, crafted with heart.</p>
 
-        <div class="offer-grid">
-            <!-- Left: Breakfast -->
-            <div class="offer-card offer-left">
-                <div class="offer-img-wrap">
-                    <img src="../assets/images/bfastbg.jpg" alt="Breakfast">
+        <div class="we-offer-grid">
+
+            <div class="offer-card">
+                <div class="offer-card-img-wrap">
+                    <div class="shine"></div>
+                    <img src="bfastbg.jpg" alt="Breakfast">
                 </div>
-                <div class="offer-ornament-bar">
-                    <span>❖</span><span class="ornament-line"></span><span>❖</span>
-                </div>
-                <p class="offer-name">Breakfast</p>
-                <a href="menu.php?category=breakfast" class="offer-link">View Menu</a>
+                <h3>Breakfast</h3>
+                <a href="menu.php?category=breakfast" class="view-menu">View Menu</a>
             </div>
 
-            <!-- Center: Main Course -->
-            <div class="offer-card offer-center">
-                <div class="offer-ornament-bar offer-ornament-top">
-                    <span>❖</span><span class="ornament-line"></span><span>❖</span>
+            <div class="offer-card center">
+                <div class="offer-card-img-wrap">
+                    <div class="shine"></div>
+                    <img src="lunchbg.jpg" alt="Main Course">
                 </div>
-                <div class="offer-img-wrap">
-                    <img src="../assets/images/lunchbg.jpg" alt="Main Course">
-                </div>
-                <p class="offer-name">Main Course</p>
-                <a href="menu.php?category=main" class="offer-link">View Menu</a>
+                <h3>Main Course</h3>
+                <a href="menu.php?category=main" class="view-menu">View Menu</a>
             </div>
 
-            <!-- Right: Drinks & Desserts -->
-            <div class="offer-card offer-right">
-                <div class="offer-img-wrap">
-                    <img src="../assets/images/drinksdessbg.jpg" alt="Drinks & Desserts">
+            <div class="offer-card">
+                <div class="offer-card-img-wrap">
+                    <div class="shine"></div>
+                    <img src="drinksdessbg.jpg" alt="Drinks &amp; Desserts">
                 </div>
-                <div class="offer-ornament-bar">
-                    <span>❖</span><span class="ornament-line"></span><span>❖</span>
-                </div>
-                <p class="offer-name">Drinks &amp;<br>Desserts</p>
-                <a href="menu.php?category=drinks" class="offer-link">View Menu</a>
+                <h3>Drinks &amp;<br>Desserts</h3>
+                <a href="menu.php?category=drinks" class="view-menu">View Menu</a>
             </div>
+
         </div>
     </div>
 </section>
@@ -131,23 +117,24 @@ $featured = mysqli_query($conn,
 
 <!-- ===== SECTION 3: ABOUT US ===== -->
 <section class="about-section" id="about">
+    <div class="about-spotlight"></div>
     <div class="about-inner">
         <div class="about-text">
             <p>
                 Each dish we serve is inspired by the rich traditions of Filipino cuisine,
-                bringing together familiar flavors and heartfelt moments. From our kitchen
-                to your table, we create an experience that feels like home, where every
-                bite tells a story worth remembering.
+                bringing together familiar flavors and heartfelt moments. <br>
+                From our kitchen to your table, we create an experience that feels like home,
+                where every bite tells a story worth remembering.
             </p>
         </div>
         <div class="about-right">
             <h2 class="about-title">About Us</h2>
             <div class="about-photos">
                 <div class="about-photo about-photo-circle">
-                    <img src="../assets/images/aboutfood.jpg" alt="Filipino food">
+                    <img src="foodbg.png" alt="Filipino food">
                 </div>
                 <div class="about-photo about-photo-rect">
-                    <img src="../assets/images/aboutrest.jpg" alt="Restaurant interior">
+                    <img src="diningbg.png" alt="Restaurant interior">
                 </div>
             </div>
             <p class="about-since">Crafting Filipino flavors<br>since 2023</p>
@@ -159,17 +146,24 @@ $featured = mysqli_query($conn,
 <!-- ===== SECTION 4: FEATURED DISHES ===== -->
 <section class="featured-section" id="featured">
     <div class="featured-inner">
-        <div class="section-ornament">✦</div>
         <h2 class="featured-title">Featured Dishes</h2>
 
         <?php if (mysqli_num_rows($featured) === 0): ?>
             <p class="empty-msg">Menu coming soon. Check back later!</p>
         <?php else: ?>
             <div class="featured-grid">
-                <?php while ($item = mysqli_fetch_assoc($featured)): ?>
+                <?php
+                $imgMap = [
+                    'Sinigang na Salmon' => 'sinigangsalmon.png',
+                    'Pochero'            => 'pochero.png',
+                    'Kare Kare'          => 'karekare.png',
+                ];
+                while ($item = mysqli_fetch_assoc($featured)):
+                    $imgFile = $imgMap[$item['name']] ?? $item['image'];
+                ?>
                 <div class="dish-card">
-                    <?php if ($item['image']): ?>
-                        <img src="/casa_gunita/assets/images/<?= htmlspecialchars($item['image']) ?>"
+                    <?php if ($imgFile): ?>
+                        <img src="<?= htmlspecialchars($imgFile) ?>"
                              alt="<?= htmlspecialchars($item['name']) ?>">
                     <?php else: ?>
                         <div class="dish-no-img">🍽️</div>
@@ -191,7 +185,6 @@ $featured = mysqli_query($conn,
     <div class="contact-overlay"></div>
     <div class="contact-inner">
         <h2 class="contact-title">Contact Us</h2>
-
         <div class="contact-group">
             <p class="contact-label">Landline &amp; Mobile</p>
             <p class="contact-value">8-535-889 | 0968 849 3459</p>
@@ -214,7 +207,7 @@ $featured = mysqli_query($conn,
 <!-- ===== FOOTER ===== -->
 <footer class="site-footer">
     <div class="footer-top">
-        <div class="footer-ornament">✦ ✦ ✦ ✦ ✦</div>
+        <div class="footer-ornament">ᜃᜐ ᜄᜓᜈᜒᜆ</div>
         <p class="footer-logo">Casa Gunita</p>
     </div>
     <nav class="footer-nav" aria-label="Footer navigation">
@@ -225,21 +218,29 @@ $featured = mysqli_query($conn,
         <a href="promos.php">Promos</a>
         <a href="#featured">Featured Dishes</a>
     </nav>
-    <p class="footer-copy">© <?= date('Y') ?> Casa Gunita — Authentic Filipino Cuisine</p>
 </footer>
+<div class="footer-copy">© <?= date('Y') ?> Casa Gunita — Authentic Filipino Cuisine</div>
 
 <script>
+    // Account dropdown
     const accountBtn = document.getElementById('accountBtn');
     const accountDropdown = document.getElementById('accountDropdown');
-
     accountBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         accountDropdown.classList.toggle('open');
     });
-
     document.addEventListener('click', function() {
         accountDropdown.classList.remove('open');
     });
+
+    // Fade in We Offer title on scroll
+    const weOfferTitle = document.querySelector('.we-offer-title');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+    }, { threshold: 0.10 });
+    observer.observe(weOfferTitle);
 </script>
 
 </body>

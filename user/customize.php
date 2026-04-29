@@ -61,149 +61,147 @@ function buildOptionLabel($option) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customize — Casa Gunita</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --crimson: #210303;
-            --crimson-d: #130301;
-            --gold: #e8d191;
-            --ink: #130301;
-            --muted: #674328;
-            --line: rgba(33,3,3,.1);
-            --surface: #fff8eb;
-            --bg: #f4f2ea;
-            --radius: 18px;
-            --shadow: 0 18px 50px rgba(33,3,3,.08);
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-        }
-        a { color: inherit; text-decoration: none; }
-        .navbar {
-            background: var(--crimson);
-            color: #fff;
-            padding: 18px 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar a { color: rgba(255,255,255,.92); margin-left: 18px; font-weight: 600; }
-        .navbar a:hover { opacity: .9; }
-        .container { max-width: 980px; margin: 0 auto; padding: 32px 24px; }
-        .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-        .card-header { padding: 28px 30px 14px; }
-        .product-top { display: grid; grid-template-columns: minmax(260px, 1fr) 1.2fr; gap: 24px; align-items: start; }
-        .product-image { width: 100%; min-height: 280px; border-radius: 20px; overflow: hidden; background: #fff5ed; display: flex; align-items: center; justify-content: center; }
-        .product-image img { width: 100%; height: 100%; object-fit: cover; }
-        .product-meta { display: flex; flex-direction: column; gap: 14px; }
-        .product-meta h1 { margin: 0; font-size: 2.2rem; color: var(--crimson); font-family: 'Playfair Display', serif; }
-        .product-meta p { margin: 0; color: var(--muted); line-height: 1.7; }
-        .product-price { font-size: 1.4rem; font-weight: 700; color: var(--crimson); }
-        .customization-section { background: #fff; padding: 28px 30px 30px; }
-        .customization-group { margin-bottom: 26px; }
-        .customization-group h3 { margin: 0 0 14px; font-size: 1.1rem; color: var(--ink); }
-        .option-list { display: grid; gap: 14px; }
-        .option-card { border: 1px solid #e7dfd2; border-radius: 18px; padding: 16px; display: flex; gap: 14px; align-items: center; background: #faf7f2; cursor: pointer; transition: transform .15s ease, border-color .15s ease; }
-        .option-card:hover { transform: translateY(-1px); border-color: var(--crimson); }
-        .option-card input { margin-right: 14px; accent-color: var(--crimson); }
-        .option-content { flex: 1; }
-        .option-name { font-weight: 700; color: var(--ink); margin: 0 0 6px; }
-        .option-price { color: var(--crimson); font-weight: 700; }
-        .option-image { width: 74px; height: 74px; border-radius: 16px; overflow: hidden; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .option-image img { width: 100%; height: 100%; object-fit: cover; }
-        .submit-panel { padding: 22px 30px 32px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: center; background: #fdf8f2; border-top: 1px solid #e7dfd2; }
-        .submit-panel button { background: var(--crimson); color: #fff; border: none; padding: 14px 24px; border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; }
-        .submit-panel button:hover { background: #4b0101; }
-        .helper-text { color: var(--muted); font-size: 0.95rem; margin-top: 10px; }
-        @media (max-width: 900px) { .product-top { grid-template-columns: 1fr; } }
-    </style>
+    <link rel="stylesheet" href="landingpage.css">
+    <link rel="stylesheet" href="customize.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="navbar">
-        <div><strong>Casa Gunita</strong> — Customize</div>
-        <div>
-            <a href="menu.php">Menu</a>
-            <a href="cart.php">Cart</a>
-            <a href="logout.php">Logout</a>
-        </div>
-    </div>
 
-    <div class="container">
-        <div class="card">
-            <div class="card-header">
-                <div class="product-top">
-                    <div class="product-image">
-                        <?php if (!empty($product['image'])): ?>
-                            <img src="../assets/images/<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
-                        <?php else: ?>
-                            <span>No product image</span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="product-meta">
-                        <h1><?= htmlspecialchars($product['name']) ?></h1>
-                        <p><?= nl2br(htmlspecialchars($product['description'] ?? 'Choose your options before adding to cart.')) ?></p>
-                        <div class="product-price">Base: <?= formatPrice($product['price']) ?></div>
-                        <?php if (empty($groups)): ?>
-                            <p class="helper-text">This item has no extra customization options. Click Add to Cart to continue.</p>
-                        <?php endif; ?>
-                    </div>
-                </div>
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+    <div class="nav-logo">
+        <img src="casalogo.png" alt="Casa Gunita Logo">
+    </div>
+    <div class="nav-search-wrap">
+        <input type="text" class="nav-search" placeholder="Search">
+    </div>
+    <div class="nav-links">
+        <a href="index.php">Home</a>
+        <a href="menu.php">Menu</a>
+        <a href="about.php">About</a>
+    </div>
+    <div class="nav-icons">
+        <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <?php if (isset($_SESSION['cart']) && count($_SESSION['cart']) > 0): ?>
+                <span class="cart-badge"><?= count($_SESSION['cart']) ?></span>
+            <?php endif; ?>
+        </a>
+        <div class="account-wrap">
+            <button class="nav-icon-btn" id="accountBtn" aria-label="Account">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </button>
+            <div class="account-dropdown" id="accountDropdown">
+                <a href="account.php">Account Information</a>
+                <a href="order_status.php">My Orders</a>
+                <hr>
+                <a href="logout.php">Log Out</a>
             </div>
-
-            <form method="POST" action="cart.php" class="customization-section">
-                <input type="hidden" name="action" value="add">
-                <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['product_id']) ?>">
-                <input type="hidden" name="quantity" value="1">
-
-                <?php foreach ($groups as $group): ?>
-                    <div class="customization-group">
-                        <h3><?= htmlspecialchars($group['name']) ?><?= $group['is_required'] ? ' *' : '' ?></h3>
-                        <div class="option-list">
-                            <?php foreach ($group['options'] as $option): ?>
-                                <?php $inputName = 'option_ids[' . $group['group_id'] . ']' . ($group['group_type'] === 'addon' ? '[]' : ''); ?>
-                                <label class="option-card">
-                                    <input
-                                        type="<?= $group['group_type'] === 'addon' ? 'checkbox' : 'radio' ?>"
-                                        name="<?= $inputName ?>"
-                                        value="<?= htmlspecialchars($option['option_id']) ?>"
-                                        <?= $group['group_type'] !== 'addon' ? 'required' : '' ?>
-                                    >
-                                    <div class="option-content">
-                                        <p class="option-name"><?= htmlspecialchars($option['name']) ?></p>
-                                        <p class="option-price"><?php if ($group['group_type'] === 'addon'): ?>
-                                                <?= $option['additional_price'] > 0 ? '+ ' . formatPrice($option['additional_price']) : 'No extra charge' ?>
-                                            <?php else: ?>
-                                                <?= $option['additional_price'] > 0 ? formatPrice($option['additional_price']) : 'Included' ?>
-                                            <?php endif; ?></p>
-                                    </div>
-                                    <?php if (!empty($option['image'])): ?>
-                                        <div class="option-image">
-                                            <img src="../assets/images/<?= htmlspecialchars($option['image']) ?>" alt="<?= htmlspecialchars($option['name']) ?>">
-                                        </div>
-                                    <?php endif; ?>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-
-                <div class="submit-panel">
-                    <div>
-                        <strong>Note:</strong> Required groups are marked with an asterisk.
-                    </div>
-                    <button type="submit">Add to Cart</button>
-                </div>
-            </form>
         </div>
     </div>
+</nav>
+
+<!-- ===== CONTENT ===== -->
+<div class="customize-content">
+    <div class="customize-card">
+
+        <!-- Product Top -->
+        <div class="product-top">
+            <div class="product-image">
+                <?php if (!empty($product['image'])): ?>
+                    <img src="../assets/images/<?= htmlspecialchars($product['image']) ?>"
+                         alt="<?= htmlspecialchars($product['name']) ?>">
+                <?php else: ?>
+                    <div class="product-image-placeholder">No image available</div>
+                <?php endif; ?>
+            </div>
+            <div class="product-meta">
+                <h1 class="product-name"><?= htmlspecialchars($product['name']) ?></h1>
+                <p class="product-desc"><?= nl2br(htmlspecialchars($product['description'] ?? 'Choose your options before adding to cart.')) ?></p>
+                <div class="product-price">Price: <?= formatPrice($product['price']) ?></div>
+                <?php if (empty($groups)): ?>
+                    <p class="helper-text">This item has no extra customization options. Click Add to Cart to continue.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Customization Form -->
+        <form method="POST" action="cart.php" class="customization-section">
+            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['product_id']) ?>">
+            <input type="hidden" name="quantity" value="1">
+
+            <?php foreach ($groups as $group): ?>
+                <div class="customization-group">
+                    <h3 class="group-title">
+                        <?= htmlspecialchars($group['name']) ?>
+                        <?= $group['is_required'] ? '<span class="required-star">*</span>' : '' ?>
+                    </h3>
+                    <div class="option-list">
+                        <?php foreach ($group['options'] as $option): ?>
+                            <?php $inputName = 'option_ids[' . $group['group_id'] . ']' . ($group['group_type'] === 'addon' ? '[]' : ''); ?>
+                            <label class="option-card">
+                                <input
+                                    type="<?= $group['group_type'] === 'addon' ? 'checkbox' : 'radio' ?>"
+                                    name="<?= $inputName ?>"
+                                    value="<?= htmlspecialchars($option['option_id']) ?>"
+                                    <?= $group['group_type'] !== 'addon' ? 'required' : '' ?>
+                                >
+                                <div class="option-content">
+                                    <p class="option-name"><?= htmlspecialchars($option['name']) ?></p>
+                                    <p class="option-price">
+                                        <?php if ($group['group_type'] === 'addon'): ?>
+                                            <?= $option['additional_price'] > 0 ? '+ ' . formatPrice($option['additional_price']) : 'No extra charge' ?>
+                                        <?php else: ?>
+                                            <?= $option['additional_price'] > 0 ? formatPrice($option['additional_price']) : 'Included' ?>
+                                        <?php endif; ?>
+                                    </p>
+                                </div>
+                                <?php if (!empty($option['image'])): ?>
+                                    <div class="option-image">
+                                        <img src="../assets/images/<?= htmlspecialchars($option['image']) ?>"
+                                             alt="<?= htmlspecialchars($option['name']) ?>">
+                                    </div>
+                                <?php endif; ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+
+            <div class="submit-panel">
+                <p class="submit-note"><strong>Note:</strong> Required groups are marked with an asterisk.</p>
+                <button type="submit" class="btn-add-cart">Add to Cart</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    // Account dropdown
+    const accountBtn = document.getElementById('accountBtn');
+    const accountDropdown = document.getElementById('accountDropdown');
+    accountBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        accountDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+        accountDropdown.classList.remove('open');
+    });
+</script>
+
 </body>
 </html>
