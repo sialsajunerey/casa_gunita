@@ -1,65 +1,36 @@
-/* ── CHECKOUT PAGE ── */
 body {
     margin: 0;
     padding-top: 56px;
-    font-family: 'The Seasons', serif;
+    font-family: 'EB Garamond', serif;
     background: #120000;
-    background-image: url('menubambg.png');
+    background-image: url('menubambg.png'); 
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-attachment: fixed;
+    background-attachment: fixed;  
     color: #dce4cf;
     overflow-x: hidden;
 }
 
-/* ── NAVBAR ── */
-.navbar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2.5rem;
-    height: 56px;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border-bottom: 1px solid rgba(232, 209, 145, 0.18);
-    gap: 0;
+.content {
+    padding: 40px 60px;
+    max-width: 1300px;
+    margin: 0 auto;
 }
 
-.navbar > div {
-    display: flex;
-    align-items: center;
-    gap: 1.8rem;
-    font-family: 'Public Sans', sans-serif;
-    font-size: 13px;
-    color: #dce4cf;
-    letter-spacing: 0.08em;
-}
-
-.navbar strong {
+.page-title {
     font-family: 'Hello Paris', serif;
+    font-size: 65px;
     font-weight: 400;
-    font-size: 1.1rem;
-    color: #e8d191;
-    letter-spacing: 0.1em;
-}
-
-.navbar a {
     color: #dce4cf;
-    text-decoration: none;
-    font-family: 'Public Sans', sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    opacity: 0.8;
-    transition: opacity 0.2s;
+    margin: 0 0 8px;
+    text-align: center;    /* ← idagdag ito */
+    text-shadow:
+        0 0 20px rgba(232, 209, 145, 0.4),
+        0 0 40px rgba(232, 209, 145, 0.25);
 }
-
-.navbar a:hover { opacity: 1; color: #e8d191; }
 
 /* ── Container ── */
 .container {
