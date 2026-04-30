@@ -20,131 +20,67 @@ $result = mysqli_stmt_get_result($orders);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders — Casa Gunita</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --crimson: #210303;
-            --crimson-d: #130301;
-            --gold: #e8d191;
-            --ink: #130301;
-            --muted: #674328;
-            --line: rgba(33,3,3,.1);
-            --surface: #fff8eb;
-            --bg: #f4f2ea;
-            --radius: 16px;
-            --shadow: 0 18px 50px rgba(33,3,3,.08);
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-        }
-        a { color: inherit; text-decoration: none; }
-        .navbar {
-            background: var(--crimson);
-            color: #fff;
-            padding: 18px 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar h2 {
-            margin: 0;
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            letter-spacing: .08em;
-        }
-        .navbar a { color: rgba(255,255,255,.92); margin-left: 18px; font-weight: 600; }
-        .navbar a:hover { opacity: .9; }
-        .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
-        h3 { margin: 0 0 22px; font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--crimson); }
-        .order-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--surface);
-            box-shadow: var(--shadow);
-            border-radius: var(--radius);
-            overflow: hidden;
-        }
-        .order-table th,
-        .order-table td {
-            padding: 16px 18px;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
-            vertical-align: middle;
-        }
-        .order-table th {
-            background: var(--crimson-d);
-            color: var(--gold);
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: .08em;
-        }
-        .order-table tr:last-child td { border-bottom: none; }
-        .order-table tr:nth-child(even) { background: #fcf5e8; }
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 14px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-        .pending   { background: #f59e0b; }
-        .preparing { background: #0d6efd; }
-        .ready     { background: #16a34a; }
-        .completed { background: #15803d; }
-        .cancelled { background: #dc2626; }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 18px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-            text-decoration: none;
-            transition: opacity .15s ease, transform .15s ease;
-        }
-        .btn-primary { background: var(--crimson); color: #fff; }
-        .btn-primary:hover { opacity: .95; transform: translateY(-1px); }
-    </style>
+    <link rel="stylesheet" href="landingpage.css">
+    <link rel="stylesheet" href="orderstatus.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<div class="navbar">
-    <h2 style="margin:0">🍽️ Casa Gunita</h2>
-    <div>
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+    <div class="nav-logo">
+        <img src="casalogo.png" alt="Casa Gunita Logo">
+    </div>
+    <div class="nav-search-wrap">
+        <input type="text" class="nav-search" placeholder="Search">
+    </div>
+    <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
-        <a href="cart.php">🛒 Cart</a>
-        <a href="logout.php">Logout</a>
+        <a href="about.php">About</a>
     </div>
-</div>
+    <div class="nav-icons">
+        <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <?php if (isset($_SESSION['cart']) && count($_SESSION['cart']) > 0): ?>
+                <span class="cart-badge"><?= count($_SESSION['cart']) ?></span>
+            <?php endif; ?>
+        </a>
+        <div class="account-wrap">
+            <button class="nav-icon-btn" id="accountBtn" aria-label="Account">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </button>
+            <div class="account-dropdown" id="accountDropdown">
+                <a href="account.php">Account Information</a>
+                <a href="order_status.php">My Orders</a>
+                <hr>
+                <a href="logout.php">Log Out</a>
+            </div>
+        </div>
+    </div>
+</nav>
 
 <div class="container">
-    <h3>My Orders</h3>
+    <h1 class="page-title">My Orders</h1>
 
     <?php if (mysqli_num_rows($result) === 0): ?>
-        <p style="text-align:center; color:#999; padding:30px;">
-            You have no orders yet. 
-            <a href="menu.php">Order now!</a>
-        </p>
+        <p class="empty-msg">You have no orders yet. <a href="menu.php">Order now!</a></p>
     <?php else: ?>
+    <div class="table-wrap">
     <table class="order-table">
+        <thead>
         <tr>
             <th>Order #</th>
             <th>Total</th>
@@ -153,6 +89,8 @@ $result = mysqli_stmt_get_result($orders);
             <th>Date</th>
             <th>Receipt</th>
         </tr>
+        </thead>
+        <tbody>
         <?php while ($order = mysqli_fetch_assoc($result)): ?>
         <tr>
             <td>#<?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?></td>
@@ -165,15 +103,29 @@ $result = mysqli_stmt_get_result($orders);
             </td>
             <td><?= date('M d, Y h:i A', strtotime($order['created_at'])) ?></td>
             <td>
-                <a href="receipt.php?order_id=<?= $order['order_id'] ?>">
+                <a class="view-receipt" href="receipt.php?order_id=<?= $order['order_id'] ?>">
                     View Receipt
                 </a>
             </td>
         </tr>
         <?php endwhile; ?>
+        </tbody>
     </table>
+    </div>
     <?php endif; ?>
 </div>
+
+<script>
+    const accountBtn = document.getElementById('accountBtn');
+    const accountDropdown = document.getElementById('accountDropdown');
+    accountBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        accountDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+        accountDropdown.classList.remove('open');
+    });
+</script>
 
 </body>
 </html>

@@ -1,0 +1,171 @@
+/* ========================================
+   Casa Gunita — login.css
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Jost:wght@300;400;500&display=swap');
+
+:root {
+  --brown-dark:  #2a1a0e;
+  --brown-mid:   #1e1008;
+  --gold:        #c8893c;
+  --gold-light:  #dba55a;
+  --cream:       #f5eedd;
+  --text-light:  #f0e6d2;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body.auth-page {
+  font-family: 'Public Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('menubambg.png'); 
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+body.auth-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 8, 2, 0.65);
+  z-index: 0;
+}
+
+/* ── Overlay wrapper ── */
+.auth-overlay {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+
+/* ── Card ── */
+.auth-card {
+  background: rgba(30, 14, 6, 0.93);
+  border: 1px solid rgba(200, 137, 60, 0.18);
+  border-radius: 4px;
+  width: 100%;
+  max-width: 400px;
+  padding: 52px 48px 44px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Logo ── */
+.auth-logo {
+  margin-bottom: 24px;
+}
+.auth-logo img {
+  height: 68px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ── Title & Subtitle ── */
+.auth-title {
+  font-family: 'The Seasons', serif;
+  font-weight: 300;
+  font-size: 2.4rem;
+  color: var(--cream);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.auth-subtitle {
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: rgba(240, 230, 210, 0.48);
+  letter-spacing: 0.04em;
+  margin-bottom: 30px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ── Error ── */
+.auth-error {
+  width: 100%;
+  background: rgba(180, 50, 30, 0.18);
+  border: 1px solid rgba(200, 80, 50, 0.35);
+  border-radius: 2px;
+  color: #e8a090;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  padding: 9px 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ── Form ── */
+.auth-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-field input {
+  width: 100%;
+  background: var(--cream);
+  border: none;
+  border-radius: 2px;
+  padding: 11px 16px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.83rem;
+  color: var(--brown-dark);
+  outline: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.auth-field input::placeholder { color: #8a6440; }
+.auth-field input:focus {
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(200, 137, 60, 0.35);
+}
+
+/* ── Button ── */
+.auth-btn {
+  margin-top: 8px;
+  width: 60%;
+  align-self: center;
+  padding: 11px 0;
+  background: var(--gold);
+  color: #fff;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.auth-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+.auth-btn:active { transform: translateY(0); }
+
+/* ── Footer ── */
+.auth-footer {
+  margin-top: 22px;
+  font-size: 0.78rem;
+  color: rgba(240, 230, 210, 0.45);
+  letter-spacing: 0.02em;
+}
+.auth-footer a {
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 500;
+}
+.auth-footer a:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 40px 28px 34px; }
+  .auth-title { font-size: 2rem; }
+}

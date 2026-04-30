@@ -1,0 +1,114 @@
+:root {
+    --crimson: #210303;
+    --crimson-d: #130301;
+    --gold: #e8d191;
+    --ink: #120000;
+    --muted: #120000;
+    --surface: #dce4cf;
+    --radius: 14px;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: 'The Seasons', sans-serif;
+    background: #120000;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: var(--ink);
+    overflow-x: hidden;
+}
+
+.page-wrapper {
+    max-width: 650px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.receipt-card {
+    background: var(--surface);
+    border: 1px solid rgba(232, 209, 145, 0.25);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    box-shadow: var(--shadow);
+    color: var(--ink);
+}
+
+.receipt-header { text-align: center; margin-bottom: 24px; }
+
+.receipt-header h2 {
+    margin: 0;
+    color: #120000;
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    text-shadow: none;
+}
+
+.receipt-header p {
+    margin: 8px 0 0;
+    color: rgba(18, 0, 0, 0.6);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+}
+
+.divider {
+    border-top: 1px dashed rgba(18, 0, 0, 0.25);
+    margin: 22px 0;
+}
+
+p { color: #120000; margin: 6px 0; }
+p b { color: #120000; }
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 9px;
+    color: #120000;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 26px;
+    justify-content: center;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 0;
+    border: 1px solid rgba(18, 0, 0, 0.6);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    background: transparent;
+    color: #120000;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.button:hover {
+    background: #120000;
+    color: #dce4cf;
+}
+
+@media print {
+    body { background: #fff; }
+    .actions { display: none; }
+    .receipt-card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}

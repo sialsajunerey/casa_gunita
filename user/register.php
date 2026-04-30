@@ -50,11 +50,11 @@ function sanitize($data) {
     <title>Register — Casa Gunita</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="register.css">
 </head>
 <body class="auth-page">
     <div class="auth-card">
         <div class="auth-header">
-            <div class="auth-logo">Casa Gunita</div>
             <h1 class="auth-title">Create Account</h1>
             <p class="auth-subtitle">Join us for authentic Filipino favorites and easy ordering.</p>
             <?php if ($error): ?><div class="auth-message auth-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>

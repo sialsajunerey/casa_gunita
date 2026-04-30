@@ -47,54 +47,7 @@ $items = mysqli_stmt_get_result($items_stmt);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --crimson: #210303;
-            --crimson-d: #130301;
-            --gold: #e8d191;
-            --ink: #130301;
-            --muted: #674328;
-            --surface: #fff8eb;
-            --bg: #f4f2ea;
-            --radius: 16px;
-            --shadow: 0 18px 50px rgba(33,3,3,.08);
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-        }
-        .page-wrapper {
-            max-width: 760px;
-            margin: 24px auto;
-            padding: 20px;
-        }
-        .receipt-card {
-            background: var(--surface);
-            border: 1px solid var(--crimson);
-            border-radius: var(--radius);
-            padding: 28px;
-            box-shadow: var(--shadow);
-        }
-        .receipt-header { text-align: center; margin-bottom: 24px; }
-        .receipt-header h2 {
-            margin: 0;
-            color: var(--crimson);
-            font-family: 'Playfair Display', serif;
-            font-size: 2.2rem;
-        }
-        .receipt-header p { margin: 8px 0 0; color: var(--muted); }
-        .divider { border-top: 1px dashed #d3c6b1; margin: 22px 0; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--ink); }
-        .row strong { color: var(--ink); }
-        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; justify-content: center; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 14px; border: none; cursor: pointer; font-weight: 700; text-decoration: none; }
-        .btn-primary { background: var(--crimson); color: #fff; }
-        .btn-primary:hover { opacity: .95; }
-        .btn-outline { background: #fff; color: var(--crimson); border: 1px solid var(--crimson); }
-    </style>
+    <link rel="stylesheet" href="receipt.css">
 </head>
 <body>
 
@@ -144,7 +97,7 @@ $items = mysqli_stmt_get_result($items_stmt);
 </div>
 
 <div class="actions">
-    <button class="button" onclick="window.print()">🖨️ Print Receipt</button>
+    <button class="button" onclick="window.print()">Print Receipt</button>
         <a class="button button-outline" href="index.php">Home</a>
 
     </div>

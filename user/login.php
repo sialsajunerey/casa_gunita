@@ -37,23 +37,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — Casa Gunita</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body class="auth-page">
-    <div class="auth-card">
-        <div class="auth-header">
-            <div class="auth-logo">Casa Gunita</div>
+
+    <div class="auth-overlay">
+        <div class="auth-card">
+
+            <div class="auth-logo">
+            </div>
+
             <h1 class="auth-title">Log In</h1>
             <p class="auth-subtitle">Welcome back. Enter your details to continue.</p>
-            <?php if ($error): ?><div class="auth-message auth-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="auth-error"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+
+            <form method="POST" class="auth-form">
+                <div class="auth-field">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="auth-field">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="auth-btn">Login</button>
+            </form>
+
+            <p class="auth-footer">No account yet? <a href="register.php">Register</a></p>
+
         </div>
-        <form method="POST" class="auth-form">
-            <input type="email" name="email" class="auth-input" placeholder="Email" required>
-            <input type="password" name="password" class="auth-input" placeholder="Password" required>
-            <button type="submit" class="auth-button">Login</button>
-        </form>
-        <p class="auth-footer">No account yet? <a href="register.php">Register</a></p>
     </div>
+
 </body>
 </html>
