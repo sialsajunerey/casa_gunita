@@ -18,7 +18,7 @@ if (isset($_GET['delete_product']) && ctype_digit((string)$_GET['delete_product'
     $delete = mysqli_prepare($conn, "DELETE FROM products WHERE product_id = ?");
     mysqli_stmt_bind_param($delete, 'i', $delete_product_id);
     mysqli_stmt_execute($delete);
-    header('Location: products.php' . ($category_id ? '?category_id=' . $category_id : ''));
+    header('Location: menu.php' . ($category_id ? '?category_id=' . $category_id : ''));
     exit();
 }
 
@@ -27,7 +27,7 @@ if (isset($_GET['delete_category']) && ctype_digit((string)$_GET['delete_categor
     $delete = mysqli_prepare($conn, "DELETE FROM categories WHERE category_id = ?");
     mysqli_stmt_bind_param($delete, 'i', $delete_category_id);
     mysqli_stmt_execute($delete);
-    header('Location: products.php');
+    header('Location: menu.php');
     exit();
 }
 
@@ -206,7 +206,8 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php" class="active"><span class="icon">🍽️</span> Menu</a></li>
+        <li><a href="menu.php" class="active"><span class="icon">🍽️</span> Menu</a></li>
+        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>
         <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
         <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
         <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
@@ -222,40 +223,29 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--
     <div class="content">
         <?php if ($error): ?><div class="alert alert-error"><?= $error ?></div><?php endif; ?>
         <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
-        <div class="card top-bar">
+        <div class="card top-bar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
             <?php if ($selected_category): ?>
                 <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                    <a href="products.php" class="btn btn-gray">← Back to Categories</a>
+                    <a href="menu.php" class="btn btn-gray">← Back to Categories</a>
                     <div style="font-weight:700;font-size:1.05rem;">Category: <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
                 <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                    <a href="products_add.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-green">+ Add Product</a>
-                    <a href="modifiers.php" class="btn btn-blue">Modifiers</a>
+                    <input id="menuSearch" type="search" name="search_product" placeholder="Search menu items in <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>" class="input-group" style="min-width:240px;">
+                    <a href="menu_add.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-green">+ Add Menu Item</a>
                 </div>
             <?php else: ?>
                 <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><div style="font-weight:700;font-size:1.05rem;">Categories</div></div>
-                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn btn-green" onclick="openCategoryModal('add')">+ Add Category</button><a href="modifiers.php" class="btn btn-blue">Modifiers</a></div>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <input id="categorySearch" type="search" name="search_category" placeholder="Search categories" value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>" class="input-group" style="min-width:240px;">
+                    <button type="button" class="btn btn-green" onclick="openCategoryModal('add')">+ Add Category</button>
+                </div>
             <?php endif; ?>
-        </div>
-        <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-            <form method="GET" class="input-group" style="margin:0;">
-                <?php if ($selected_category): ?>
-                    <input type="hidden" name="category_id" value="<?= $selected_category['category_id'] ?>">
-                    <input type="search" name="search_product" placeholder="Search products in <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" class="btn btn-blue">Search</button>
-                    <?php if ($search_product): ?><a href="products.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-gray">Clear</a><?php endif; ?>
-                <?php else: ?>
-                    <input type="search" name="search_category" placeholder="Search categories" value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" class="btn btn-blue">Search</button>
-                    <?php if ($search_category): ?><a href="products.php" class="btn btn-gray">Clear</a><?php endif; ?>
-                <?php endif; ?>
-            </form>
         </div>
         <?php if ($selected_category): ?>
             <?php if (!$products || mysqli_num_rows($products) === 0): ?>
-                <div class="card" style="text-align:center;color:#777;padding:60px 0;">No products found in this category.</div>
+                <div class="card" style="text-align:center;color:#777;padding:60px 0;">No menu items found in this category.</div>
             <?php else: ?>
-                <div class="folder-grid">
+                <div class="folder-grid" id="productList">
                     <?php while ($p = mysqli_fetch_assoc($products)): ?>
                         <div class="folder-card">
                             <div class="folder-heading">
@@ -270,8 +260,8 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--
                                 <?php endif; ?>
                             </div>
                             <div class="folder-actions">
-                                <a href="products_edit.php?id=<?= $p['product_id'] ?>" class="small-btn small-btn-blue">Edit</a>
-                                <a href="products.php?delete_product=<?= $p['product_id'] ?>&category_id=<?= $selected_category['category_id'] ?>" class="small-btn small-btn-red" onclick="return confirm('Delete this product?')">Delete</a>
+                                <a href="menu_edit.php?id=<?= $p['product_id'] ?>" class="small-btn small-btn-blue">Edit</a>
+                                <a href="menu.php?delete_product=<?= $p['product_id'] ?>&category_id=<?= $selected_category['category_id'] ?>" class="small-btn small-btn-red" onclick="return confirm('Delete this menu item?')">Delete</a>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -281,13 +271,13 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--
             <?php if (mysqli_num_rows($categories_result) === 0): ?>
                 <div class="card" style="text-align:center;color:#777;padding:60px 0;">No categories found. Add one to start organizing the menu.</div>
             <?php else: ?>
-                <div class="folder-grid">
+                <div class="folder-grid" id="categoryList">
                     <?php while ($cat = mysqli_fetch_assoc($categories_result)): ?>
                         <div class="folder-card">
                             <div class="folder-heading">
                                 <div>
                                     <div class="folder-name"><?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?></div>
-                                    <div class="folder-meta"><?= ($product_counts[$cat['category_id']] ?? 0) ?> products</div>
+                                    <div class="folder-meta"><?= ($product_counts[$cat['category_id']] ?? 0) ?> menu items</div>
                                 </div>
                                 <?php if (!empty($cat['image'])): ?>
                                     <img src="/casa_gunita/assets/images/<?= htmlspecialchars($cat['image'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>" style="width:72px;height:72px;object-fit:cover;border-radius:18px;">
@@ -297,9 +287,9 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--
                             </div>
                             <div class="folder-actions">
                                 <button type="button" class="small-btn small-btn-blue" onclick='openCategoryModal("edit", <?= $cat['category_id'] ?>, <?= json_encode($cat['name']) ?>)'>Edit</button>
-                                <a href="products.php?delete_category=<?= $cat['category_id'] ?>" class="small-btn small-btn-red" onclick="return confirm('Delete this category?')">Delete</a>
+                                <a href="menu.php?delete_category=<?= $cat['category_id'] ?>" class="small-btn small-btn-red" onclick="return confirm('Delete this category?')">Delete</a>
                             </div>
-                            <a class="full-link" href="products.php?category_id=<?= $cat['category_id'] ?>" aria-label="Open category"></a>
+                            <a class="full-link" href="menu.php?category_id=<?= $cat['category_id'] ?>" aria-label="Open category"></a>
                         </div>
                     <?php endwhile; ?>
                 </div>
@@ -341,6 +331,26 @@ function openCategoryModal(action, id = 0, name = '') {
 function closeCategoryModal() {
     document.getElementById('categoryModal').classList.remove('active');
 }
+
+function initLiveSearch(inputId, listId) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+    if (!input || !list) return;
+    const update = () => {
+        const query = input.value.trim().toLowerCase();
+        const cards = list.querySelectorAll('.folder-card');
+        cards.forEach(card => {
+            const title = card.querySelector('.folder-name')?.textContent.toLowerCase() || '';
+            card.style.display = title.includes(query) ? '' : 'none';
+        });
+    };
+    input.addEventListener('input', update);
+    update();
+}
+
+initLiveSearch('categorySearch', 'categoryList');
+initLiveSearch('menuSearch', 'productList');
+
 window.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') closeCategoryModal();
 });

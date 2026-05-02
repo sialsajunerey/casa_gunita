@@ -241,7 +241,8 @@ tr:nth-child(even) { background: #fbfbfd; }
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="menu.php"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>
         <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
         <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
         <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
@@ -285,7 +286,7 @@ tr:nth-child(even) { background: #fbfbfd; }
                         <?= (int)$item['low_stock_alert'] ?>
                     </td>
                     <td><?= htmlspecialchars($item['updated_at'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
-                    <td><a href="products_edit.php?id=<?= (int)$item['product_id'] ?>" class="btn btn-blue">Edit</a></td>
+                    <td><a href="menu_edit.php?id=<?= (int)$item['product_id'] ?>" class="btn btn-blue">Edit</a></td>
                 </tr>
                 <?php endwhile; ?>
             </table>

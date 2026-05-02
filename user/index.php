@@ -7,8 +7,19 @@ require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
 requireCustomer();
 
+$categoryColumn = mysqli_query($conn, "SHOW COLUMNS FROM categories LIKE 'is_featured'");
+if ($categoryColumn && mysqli_num_rows($categoryColumn) === 0) {
+    mysqli_query($conn, "ALTER TABLE categories ADD COLUMN is_featured TINYINT(1) NOT NULL DEFAULT 0");
+}
+$productColumn = mysqli_query($conn, "SHOW COLUMNS FROM products LIKE 'is_featured'");
+if ($productColumn && mysqli_num_rows($productColumn) === 0) {
+    mysqli_query($conn, "ALTER TABLE products ADD COLUMN is_featured TINYINT(1) NOT NULL DEFAULT 0");
+}
+
+$featuredCategories = mysqli_query($conn,
+    "SELECT * FROM categories WHERE is_featured = 1 ORDER BY created_at DESC LIMIT 3");
 $featured = mysqli_query($conn,
-    "SELECT * FROM products WHERE is_available = 1 ORDER BY created_at DESC LIMIT 3");
+    "SELECT * FROM products WHERE is_available = 1 AND is_featured = 1 ORDER BY created_at DESC LIMIT 3");
 ?>
 
 <!DOCTYPE html>
@@ -80,34 +91,33 @@ $featured = mysqli_query($conn,
         <p class="we-offer-sub">A curated selection of Filipino favorites, crafted with heart.</p>
 
         <div class="we-offer-grid">
-
-            <div class="offer-card">
-                <div class="offer-card-img-wrap">
-                    <div class="shine"></div>
-                    <img src="bfastbg.jpg" alt="Breakfast">
+            <?php if (mysqli_num_rows($featuredCategories) === 0): ?>
+                <div class="offer-card" style="grid-column:1/-1;text-align:center;color:#777;padding:60px 0;">
+                    No categories are currently featured. Please check back later.
                 </div>
-                <h3>Breakfast</h3>
-                <a href="menu.php?category=breakfast" class="view-menu">View Menu</a>
-            </div>
-
-            <div class="offer-card center">
-                <div class="offer-card-img-wrap">
-                    <div class="shine"></div>
-                    <img src="lunchbg.jpg" alt="Main Course">
-                </div>
-                <h3>Main Course</h3>
-                <a href="menu.php?category=main" class="view-menu">View Menu</a>
-            </div>
-
-            <div class="offer-card">
-                <div class="offer-card-img-wrap">
-                    <div class="shine"></div>
-                    <img src="drinksdessbg.jpg" alt="Drinks &amp; Desserts">
-                </div>
-                <h3>Drinks &amp;<br>Desserts</h3>
-                <a href="menu.php?category=drinks" class="view-menu">View Menu</a>
-            </div>
-
+            <?php else: ?>
+                <?php while ($category = mysqli_fetch_assoc($featuredCategories)): ?>
+                    <?php
+                        if (!empty($category['image'])) {
+                            $catImg = strpos($category['image'], '/') === false ? '/casa_gunita/assets/images/' . $category['image'] : $category['image'];
+                        } elseif (stripos($category['name'], 'breakfast') !== false) {
+                            $catImg = 'bfastbg.jpg';
+                        } elseif (stripos($category['name'], 'drink') !== false) {
+                            $catImg = 'drinksdessbg.jpg';
+                        } else {
+                            $catImg = 'lunchbg.jpg';
+                        }
+                    ?>
+                    <div class="offer-card">
+                        <div class="offer-card-img-wrap">
+                            <div class="shine"></div>
+                            <img src="<?= htmlspecialchars($catImg, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($category['name'], ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <h3><?= htmlspecialchars($category['name'], ENT_QUOTES, 'UTF-8') ?></h3>
+                        <a href="menu.php?category_id=<?= (int)$category['category_id'] ?>" class="view-menu">View Menu</a>
+                    </div>
+                <?php endwhile; ?>
+            <?php endif; ?>
         </div>
     </div>
 </section>
@@ -160,6 +170,9 @@ $featured = mysqli_query($conn,
                 ];
                 while ($item = mysqli_fetch_assoc($featured)):
                     $imgFile = $imgMap[$item['name']] ?? $item['image'];
+                    if (!empty($imgFile) && strpos($imgFile, '/') === false) {
+                        $imgFile = '/casa_gunita/assets/images/' . $imgFile;
+                    }
                 ?>
                 <div class="dish-card">
                     <?php if ($imgFile): ?>

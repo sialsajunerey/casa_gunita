@@ -17,11 +17,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $order_type     = $_POST['order_type'];
     $payment_method = isset($_POST['payment_method']) && $_POST['payment_method'] === 'gcash' ? 'gcash' : 'cash';
     $notes          = sanitize($_POST['notes']);
+    $house_number   = sanitize($_POST['house_number'] ?? '');
+    $street         = sanitize($_POST['street'] ?? '');
+    $barangay       = sanitize($_POST['barangay'] ?? '');
+    $city           = sanitize($_POST['city'] ?? '');
     $user_id        = (int)$_SESSION['user_id'];
     $cart           = $_SESSION['cart'];
     $total          = getCartTotal($cart);
 
-    $columnInfo = mysqli_query($conn, "SHOW COLUMNS FROM orders LIKE 'order_type'");
+    if ($order_type === 'delivery' && ($house_number === '' || $street === '' || $barangay === '' || $city === '')) {
+        $error = 'Please enter your delivery address.';
+    }
+
+    if ($error === '') {
+        $columnInfo = mysqli_query($conn, "SHOW COLUMNS FROM orders LIKE 'order_type'");
     if ($columnInfo && $row = mysqli_fetch_assoc($columnInfo)) {
         if (strpos($row['Type'], "'delivery'") === false) {
             mysqli_query($conn, "ALTER TABLE orders MODIFY order_type ENUM('dine-in','takeout','delivery') NOT NULL");
@@ -29,9 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $stmt = mysqli_prepare($conn,
-        "INSERT INTO orders (user_id, total_amount, status, order_type, notes) 
-         VALUES (?, ?, 'pending', ?, ?)");
-    mysqli_stmt_bind_param($stmt, 'idss', $user_id, $total, $order_type, $notes);
+        "INSERT INTO orders (user_id, total_amount, status, order_type, notes, house_number, street, barangay, city) 
+         VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmt, 'idssssss', $user_id, $total, $order_type, $notes, $house_number, $street, $barangay, $city);
 
     if (mysqli_stmt_execute($stmt)) {
         $order_id = mysqli_insert_id($conn);
@@ -67,6 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     } else {
         $error = 'Order failed. Please try again.';
+    }
+    
     }
 }
 ?>
@@ -171,18 +182,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-field">
                         <label for="order_type">Order Type</label>
                         <select name="order_type" id="order_type" required>
-                            <option value="" disabled selected>Select</option>
-                            <option value="takeout">Takeout</option>
-                            <option value="delivery">Delivery</option>
+                            <option value="" disabled <?= empty($order_type) ? 'selected' : '' ?>>Select</option>
+                            <option value="takeout" <?= isset($order_type) && $order_type === 'takeout' ? 'selected' : '' ?>>Takeout</option>
+                            <option value="delivery" <?= isset($order_type) && $order_type === 'delivery' ? 'selected' : '' ?>>Delivery</option>
                         </select>
                     </div>
                     <div class="form-field">
                         <label for="payment_method">Payment Method</label>
                         <select name="payment_method" id="payment_method" required>
-                            <option value="" disabled selected>Select</option>
-                            <option value="cash">COD</option>
-                            <option value="gcash">Epayment</option>
+                            <option value="" disabled <?= empty($payment_method) ? 'selected' : '' ?>>Select</option>
+                            <option value="cash" <?= isset($payment_method) && $payment_method === 'cash' ? 'selected' : '' ?>>COD</option>
+                            <option value="gcash" <?= isset($payment_method) && $payment_method === 'gcash' ? 'selected' : '' ?>>Epayment</option>
                         </select>
+                    </div>
+                </div>
+
+                <div id="deliveryAddressFields" class="delivery-address-fields" style="display: <?= isset($order_type) && $order_type === 'delivery' ? 'block' : 'none' ?>;">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="house_number">House / Unit No.</label>
+                            <input type="text" name="house_number" id="house_number" value="<?= htmlspecialchars($house_number ?? '') ?>">
+                        </div>
+                        <div class="form-field">
+                            <label for="street">Street</label>
+                            <input type="text" name="street" id="street" value="<?= htmlspecialchars($street ?? '') ?>">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="barangay">Barangay</label>
+                            <input type="text" name="barangay" id="barangay" value="<?= htmlspecialchars($barangay ?? '') ?>">
+                        </div>
+                        <div class="form-field">
+                            <label for="city">City</label>
+                            <input type="text" name="city" id="city" value="<?= htmlspecialchars($city ?? '') ?>">
+                        </div>
                     </div>
                 </div>
 
@@ -208,6 +242,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     document.addEventListener('click', function() {
         accountDropdown.classList.remove('open');
     });
+
+    const orderTypeSelect = document.getElementById('order_type');
+    const deliveryAddressFields = document.getElementById('deliveryAddressFields');
+    const addressInputs = ['house_number', 'street', 'barangay', 'city'].map(id => document.getElementById(id));
+
+    function updateAddressFields() {
+        const isDelivery = orderTypeSelect.value === 'delivery';
+        deliveryAddressFields.style.display = isDelivery ? 'block' : 'none';
+        addressInputs.forEach(input => {
+            input.required = isDelivery;
+        });
+    }
+
+    orderTypeSelect.addEventListener('change', updateAddressFields);
+    updateAddressFields();
 </script>
 
 </body>

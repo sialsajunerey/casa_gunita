@@ -85,6 +85,13 @@ foreach ($orders as $o) {
     $summary_parts = array_map(fn($i) => $i['quantity'] . 'x ' . $i['name'], $items);
     $summary       = implode(', ', $summary_parts) ?: '—';
 
+    $address = trim(($o['house_number'] ?? '') . ' ' . ($o['street'] ?? ''));
+    $addressParts = array_filter([
+        $address,
+        $o['barangay'] ?? '',
+        $o['city'] ?? ''
+    ]);
+
     $orders_js[] = [
         'order_id'       => $oid,
         'full_name'      => $o['full_name'],
@@ -96,6 +103,7 @@ foreach ($orders as $o) {
         'created_at'     => $o['created_at'],
         'summary'        => $summary,
         'items'          => $items,
+        'address'        => $addressParts ? implode(', ', $addressParts) : null,
         'payment_method' => $trans['payment_method'] ?? null,
         'amount_paid'    => $trans['amount_paid']    ?? null,
     ];
@@ -673,8 +681,13 @@ body {
             </a>
         </li>
         <li>
-            <a href="products.php">
+            <a href="menu.php">
                 <span class="icon">�️</span> Menu
+            </a>
+        </li>
+        <li>
+            <a href="feature.php">
+                <span class="icon">⭐</span> Feature
             </a>
         </li>
         <li>
@@ -974,6 +987,7 @@ function selectOrder(idx) {
     const bill = document.getElementById('d-bill');
     bill.innerHTML = `
         <div class="bill-row"><span>Order Type</span><span>${o.order_type ? o.order_type.charAt(0).toUpperCase() + o.order_type.slice(1) : '—'}</span></div>
+        ${o.address ? `<div class="bill-row"><span>Address</span><span style="max-width:200px;text-align:right;font-size:12.5px;">${escHtml(o.address)}</span></div>` : ''}
         ${o.notes ? `<div class="bill-row"><span>Notes</span><span style="max-width:200px;text-align:right;font-size:12.5px;">${escHtml(o.notes)}</span></div>` : ''}
         <div class="bill-row total"><span>Total Bill</span><span>${formatPrice(o.total_amount)}</span></div>
     `;

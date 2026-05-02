@@ -169,10 +169,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            header('Location: products.php');
+            header('Location: menu.php');
             exit();
         } else {
-            $error = "Failed to add product. Please ensure the selected category still exists.";
+            $error = "Failed to add menu item. Please ensure the selected category still exists.";
         }
     }
 }
@@ -183,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Product — Casa Gunita Admin</title>
+    <title>Add Menu Item — Casa Gunita Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -255,7 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php" class="active"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="menu.php" class="active"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>
         <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
         <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
         <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
@@ -278,9 +279,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="content">
         <div class="card">
             <div class="page-header">
-                <h2>Add New Product</h2>
+                <h2>Add New Menu Item</h2>
                 <div>
-<a href="products.php" class="btn btn-primary">← Back to Menu</a>
+<a href="menu.php" class="btn btn-primary">← Back to Menu</a>
                 </div>
             </div>
 
@@ -314,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
                     </select>
                     <?php if (empty($categories)): ?>
-                        <p class="customization-footer">Add categories first under the categories admin page before adding products.</p>
+                        <p class="customization-footer">Add categories first under the categories admin page before adding menu items.</p>
                     <?php endif; ?>
                 </div>
                 <div class="form-group">
@@ -322,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="number" name="stock_quantity" value="<?= htmlspecialchars($stock, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
                 </div>
                 <div class="form-group">
-                    <label>Product Image (optional)</label>
+                    <label>Dish Image (optional)</label>
                     <input type="file" name="image" accept="image/*">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
@@ -336,7 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
                     <div id="customization-groups"></div>
-                    <p class="customization-footer">Optional: groups appear when customers choose this product.</p>
+                    <p class="customization-footer">Optional: groups appear when customers choose this menu item.</p>
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
                     <label>
@@ -344,8 +345,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </label>
                 </div>
                 <div style="grid-column: span 2; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-                    <button type="submit" class="btn btn-primary" <?= empty($categories) ? 'disabled' : '' ?>>Add Product</button>
-                    <?php if (empty($categories)): ?><span class="customization-footer">Cannot add products until categories exist.</span><?php endif; ?>
+                    <button type="submit" class="btn btn-primary" <?= empty($categories) ? 'disabled' : '' ?>>Add Menu Item</button>
+                    <?php if (empty($categories)): ?><span class="customization-footer">Cannot add menu items until categories exist.</span><?php endif; ?>
                 </div>
             </form>
         </div>

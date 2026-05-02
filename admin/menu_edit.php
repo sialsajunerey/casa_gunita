@@ -19,7 +19,7 @@ mysqli_stmt_execute($stmt);
 $product = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$product) {
-    echo "Product not found.";
+    echo "Menu item not found.";
     exit();
 }
 
@@ -215,10 +215,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            header('Location: products.php');
+            header('Location: menu.php');
             exit();
         } else {
-            $error = "Failed to update product.";
+            $error = "Failed to update menu item.";
         }
     }
 }
@@ -229,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Product — Casa Gunita Admin</title>
+    <title>Edit Menu Item — Casa Gunita Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -301,7 +301,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php" class="active"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="menu.php" class="active"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>
         <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
         <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
         <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
@@ -324,8 +325,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="content">
         <div class="card">
             <div class="page-header">
-                <h2>Edit Product</h2>
-            <a href="products.php" class="btn btn-primary">← Back to Menu</a>
+                <h2>Edit Menu Item</h2>
+            <a href="menu.php" class="btn btn-primary">← Back to Menu</a>
 
             <?php if ($error): ?><div class="alert alert-error"><?= $error ?></div><?php endif; ?>
             <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
@@ -368,7 +369,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="form-group">
-            <label>Product Image</label>
+            <label>Dish Image</label>
             <?php if ($product['image']): ?>
             <div class="current-img">
                 <p style="font-size:12px; color:#666;">Current image:</p>
@@ -462,7 +463,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
-            <p style="margin-top:6px; color:#666; font-size:14px;">Optional: groups appear when customers choose this product.</p>
+            <p style="margin-top:6px; color:#666; font-size:14px;">Optional: groups appear when customers choose this menu item.</p>
         </div>
 
         <div class="form-group">

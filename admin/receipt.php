@@ -83,6 +83,16 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
 <p><b>Order #:</b> <?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?></p>
 <p><b>Customer:</b> <?= $order['full_name'] ?></p>
 <p><b>Email:</b> <?= $order['email'] ?></p>
+<?php
+    $adminAddressParts = array_filter([
+        trim(($order['house_number'] ?? '') . ' ' . ($order['street'] ?? '')),
+        $order['barangay'] ?? '',
+        $order['city'] ?? ''
+    ]);
+?>
+<?php if (!empty($adminAddressParts)): ?>
+<p><b>Address:</b> <?= htmlspecialchars(implode(', ', $adminAddressParts), ENT_QUOTES, 'UTF-8') ?></p>
+<?php endif; ?>
 <p><b>Date:</b> <?= date('M d, Y h:i A', strtotime($order['created_at'])) ?></p>
 <p><b>Type:</b> <?= ucfirst($order['order_type']) ?></p>
 <?php if ($order['notes']): ?>

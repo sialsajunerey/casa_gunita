@@ -168,7 +168,8 @@ body { margin: 0; font-family: 'DM Sans', sans-serif; background: var(--bg); col
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php"><span class="icon">🍽️</span> Menu</a></li>
+        <li><a href="menu.php"><span class="icon">🍽️</span> Menu</a></li>
+        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>
         <li><a href="modifiers.php" class="active"><span class="icon">🧂</span> Modifiers</a></li>
         <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
         <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>

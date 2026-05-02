@@ -261,7 +261,8 @@ button:hover { background: var(--crimson-d); }
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php" class="active"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="menu.php"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>
         <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
         <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
         <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
@@ -298,6 +299,7 @@ button:hover { background: var(--crimson-d); }
             <th>Order #</th>
             <th>Customer</th>
             <th>Type</th>
+            <th>Address</th>
             <th>Total</th>
             <th>Status</th>
             <th>Date</th>
@@ -307,7 +309,7 @@ button:hover { background: var(--crimson-d); }
 
         <?php if (mysqli_num_rows($orders) === 0): ?>
         <tr>
-            <td colspan="8" style="text-align:center; color:#999; padding:30px;">
+            <td colspan="9" style="text-align:center; color:#999; padding:30px;">
                 No orders yet. Waiting for customers...
             </td>
         </tr>
@@ -317,6 +319,17 @@ button:hover { background: var(--crimson-d); }
                 <td>#<?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?></td>
                 <td><?= $order['full_name'] ?></td>
                 <td><?= ucfirst($order['order_type']) ?></td>
+                <td>
+                    <?php
+                        $address = trim(($order['house_number'] ?? '') . ' ' . ($order['street'] ?? ''));
+                        $addressParts = array_filter([
+                            $address,
+                            $order['barangay'] ?? '',
+                            $order['city'] ?? ''
+                        ]);
+                    ?>
+                    <?= $addressParts ? htmlspecialchars(implode(', ', $addressParts), ENT_QUOTES, 'UTF-8') : '<span style="color:#999;">N/A</span>' ?>
+                </td>
                 <td><?= formatPrice($order['total_amount']) ?></td>
                 <td>
                     <span class="badge <?= $order['status'] ?>">
