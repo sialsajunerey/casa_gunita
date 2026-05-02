@@ -301,9 +301,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php" class="active"><span class="icon">🍖</span> Products</a></li>
-        <li><a href="inventory.php"><span class="icon">📦</span> Inventory</a></li>
-        <li><a href="transactions.php"><span class="icon">💰</span> Transactions</a></li>
+        <li><a href="products.php" class="active"><span class="icon">�️</span> Menu</a></li>
+        <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
+        <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
+        <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
     </ul>
     <div class="sidebar-footer">
         <a href="logout.php"><span class="icon">🚪</span> Logout</a>
@@ -312,7 +313,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="main">
     <header class="topbar">
-        <div class="topbar-title">Edit Product</div>
+        <div class="topbar-title">Edit Menu Item</div>
         <div class="topbar-spacer"></div>
         <div class="topbar-user">
             <div class="avatar"><?= strtoupper(substr($_SESSION['full_name'], 0, 1)) ?></div>
@@ -324,8 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card">
             <div class="page-header">
                 <h2>Edit Product</h2>
-                <a href="products.php" class="btn btn-primary">← Back to Products</a>
-            </div>
+            <a href="products.php" class="btn btn-primary">← Back to Menu</a>
 
             <?php if ($error): ?><div class="alert alert-error"><?= $error ?></div><?php endif; ?>
             <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>

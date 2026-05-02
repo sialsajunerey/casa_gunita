@@ -7,342 +7,343 @@ require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
 requireAdmin();
 
-// Handle delete
-if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
-    mysqli_query($conn, "DELETE FROM products WHERE product_id = $id");
-    header("Location: products.php");
+$error = '';
+$success = '';
+$search_category = trim($_GET['search_category'] ?? '');
+$search_product = trim($_GET['search_product'] ?? '');
+$category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
+
+if (isset($_GET['delete_product']) && ctype_digit((string)$_GET['delete_product'])) {
+    $delete_product_id = (int)$_GET['delete_product'];
+    $delete = mysqli_prepare($conn, "DELETE FROM products WHERE product_id = ?");
+    mysqli_stmt_bind_param($delete, 'i', $delete_product_id);
+    mysqli_stmt_execute($delete);
+    header('Location: products.php' . ($category_id ? '?category_id=' . $category_id : ''));
     exit();
 }
 
-$category_filter = isset($_GET['category']) ? (int)$_GET['category'] : 0;
-$categories = [];
-$cat_result = mysqli_query($conn, "SELECT category_id, name FROM categories ORDER BY name");
-while ($cat = mysqli_fetch_assoc($cat_result)) {
-    $categories[] = $cat;
-}
-$valid_category_ids = array_map('intval', array_column($categories, 'category_id'));
-if ($category_filter && !in_array($category_filter, $valid_category_ids, true)) {
-    $category_filter = 0;
+if (isset($_GET['delete_category']) && ctype_digit((string)$_GET['delete_category'])) {
+    $delete_category_id = (int)$_GET['delete_category'];
+    $delete = mysqli_prepare($conn, "DELETE FROM categories WHERE category_id = ?");
+    mysqli_stmt_bind_param($delete, 'i', $delete_category_id);
+    mysqli_stmt_execute($delete);
+    header('Location: products.php');
+    exit();
 }
 
-if ($category_filter) {
-    $stmt = mysqli_prepare($conn,
-        "SELECT p.*, c.name AS category_name, i.stock_quantity
-         FROM products p
-         LEFT JOIN categories c ON p.category_id = c.category_id
-         LEFT JOIN inventory i ON p.product_id = i.product_id
-         WHERE p.category_id = ?
-         ORDER BY c.name, p.name");
-    mysqli_stmt_bind_param($stmt, 'i', $category_filter);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['category_action'])) {
+    $category_action = $_POST['category_action'];
+    $name = sanitize(trim($_POST['name'] ?? ''));
+    $edit_category_id = isset($_POST['category_id']) ? (int)$_POST['category_id'] : 0;
+    $category_image_name = '';
+    $current_image = null;
+
+    if ($name === '') {
+        $error = 'Category name is required.';
+    } else {
+        if ($category_action === 'edit' && $edit_category_id > 0) {
+            $check = mysqli_prepare($conn, "SELECT category_id FROM categories WHERE name = ? AND category_id != ?");
+            mysqli_stmt_bind_param($check, 'si', $name, $edit_category_id);
+            mysqli_stmt_execute($check);
+            mysqli_stmt_store_result($check);
+            if (mysqli_stmt_num_rows($check) > 0) {
+                $error = 'A category with that name already exists.';
+            }
+            if (!$error) {
+                $img_stmt = mysqli_prepare($conn, "SELECT image FROM categories WHERE category_id = ?");
+                mysqli_stmt_bind_param($img_stmt, 'i', $edit_category_id);
+                mysqli_stmt_execute($img_stmt);
+                $img_row = mysqli_stmt_get_result($img_stmt)->fetch_assoc();
+                $current_image = $img_row['image'] ?? null;
+            }
+        } else {
+            $check = mysqli_prepare($conn, "SELECT category_id FROM categories WHERE name = ?");
+            mysqli_stmt_bind_param($check, 's', $name);
+            mysqli_stmt_execute($check);
+            mysqli_stmt_store_result($check);
+            if (mysqli_stmt_num_rows($check) > 0) {
+                $error = 'A category with that name already exists.';
+            }
+        }
+    }
+
+    if (!$error && !empty($_FILES['category_image']['name'])) {
+        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+        $ext = strtolower(pathinfo($_FILES['category_image']['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowed, true)) {
+            $error = 'Only JPG, PNG, and WEBP images are allowed.';
+        } else {
+            $category_image_name = time() . '_' . uniqid() . '.' . $ext;
+            $upload_dir = __DIR__ . '/../assets/images/';
+            if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+                $error = 'Unable to create upload directory.';
+            } elseif (!move_uploaded_file($_FILES['category_image']['tmp_name'], $upload_dir . $category_image_name)) {
+                $error = 'Failed to upload category image.';
+            }
+        }
+    }
+
+    if (!$error) {
+        if ($category_action === 'edit' && $edit_category_id > 0) {
+            if ($category_image_name === '') {
+                $category_image_name = $current_image;
+            }
+            $update = mysqli_prepare($conn, "UPDATE categories SET name = ?, image = ? WHERE category_id = ?");
+            mysqli_stmt_bind_param($update, 'ssi', $name, $category_image_name, $edit_category_id);
+            mysqli_stmt_execute($update);
+            $success = 'Category updated successfully.';
+        } else {
+            $insert = mysqli_prepare($conn, "INSERT INTO categories (name, image) VALUES (?, ?)");
+            mysqli_stmt_bind_param($insert, 'ss', $name, $category_image_name);
+            mysqli_stmt_execute($insert);
+            $success = 'Category added successfully.';
+        }
+    }
+}
+
+$selected_category = null;
+if ($category_id > 0) {
+    $cat_stmt = mysqli_prepare($conn, "SELECT * FROM categories WHERE category_id = ?");
+    mysqli_stmt_bind_param($cat_stmt, 'i', $category_id);
+    mysqli_stmt_execute($cat_stmt);
+    $selected_category = mysqli_stmt_get_result($cat_stmt)->fetch_assoc();
+    if (!$selected_category) {
+        $category_id = 0;
+    }
+}
+
+$category_query = "SELECT * FROM categories";
+$category_params = [];
+if ($search_category !== '') {
+    $category_query .= " WHERE name LIKE ?";
+    $category_params[] = '%' . $search_category . '%';
+}
+$category_query .= " ORDER BY name";
+if (!empty($category_params)) {
+    $stmt = mysqli_prepare($conn, $category_query);
+    mysqli_stmt_bind_param($stmt, 's', $category_params[0]);
+    mysqli_stmt_execute($stmt);
+    $categories_result = mysqli_stmt_get_result($stmt);
+} else {
+    $categories_result = mysqli_query($conn, $category_query);
+}
+
+$product_counts = [];
+$count_result = mysqli_query($conn, "SELECT category_id, COUNT(*) AS count FROM products GROUP BY category_id");
+while ($row = mysqli_fetch_assoc($count_result)) {
+    $product_counts[$row['category_id']] = $row['count'];
+}
+
+$products = null;
+if ($category_id > 0) {
+    $product_query = "SELECT p.*, i.stock_quantity FROM products p LEFT JOIN inventory i ON p.product_id = i.product_id WHERE p.category_id = ?";
+    if ($search_product !== '') {
+        $product_query .= " AND p.name LIKE ?";
+    }
+    $product_query .= " ORDER BY p.name";
+    $stmt = mysqli_prepare($conn, $product_query);
+    if ($search_product !== '') {
+        $like_product = '%' . $search_product . '%';
+        mysqli_stmt_bind_param($stmt, 'is', $category_id, $like_product);
+    } else {
+        mysqli_stmt_bind_param($stmt, 'i', $category_id);
+    }
     mysqli_stmt_execute($stmt);
     $products = mysqli_stmt_get_result($stmt);
-} else {
-    $products = mysqli_query($conn,
-        "SELECT p.*, c.name AS category_name, i.stock_quantity
-         FROM products p
-         LEFT JOIN categories c ON p.category_id = c.category_id
-         LEFT JOIN inventory i ON p.product_id = i.product_id
-         ORDER BY c.name, p.name");
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Products — Casa Gunita Admin</title>
+<title>Menu — Casa Gunita Admin</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; }
-:root {
-    --crimson: #210303;
-    --crimson-d: #130301;
-    --primary-dark: var(--crimson-d);
-    --crimson-l: #f7e3c6;
-    --gold: #e8d191;
-    --ink: #130301;
-    --muted: #674328;
-    --line: rgba(33,3,3,.1);
-    --surface: #fff8eb;
-    --bg: #f4f2ea;
-    --sidebar-w: 220px;
-    --header-h: 64px;
-    --radius: 14px;
-    --shadow: 0 2px 18px rgba(33,3,3,.08);
-}
-body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-    display: flex;
-}
-.sidebar {
-    width: var(--sidebar-w);
-    background: var(--crimson);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-}
-.sidebar-logo {
-    padding: 22px 20px 18px;
-    border-bottom: 1px solid rgba(255,255,255,.12);
-}
-.sidebar-logo .brand {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 17px;
-    color: #fff;
-    line-height: 1.2;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-.sidebar-logo .sub {
-    font-size: 11px;
-    color: rgba(255,255,255,.55);
-    margin-top: 2px;
-    letter-spacing: .5px;
-}
-.nav-list {
-    list-style: none;
-    padding: 16px 12px;
-    flex: 1;
-}
-.nav-list li { margin-bottom: 4px; }
-.nav-list a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    color: rgba(255,255,255,.75);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background .15s, color .15s;
-}
-.nav-list a:hover,
-.nav-list a.active {
-    background: rgba(255,255,255,.14);
-    color: #fff;
-}
-.nav-list a .icon { font-size: 16px; width: 20px; text-align: center; }
-.sidebar-footer {
-    padding: 16px 12px;
-    border-top: 1px solid rgba(255,255,255,.12);
-}
-.sidebar-footer a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    color: rgba(255,255,255,.65);
-    text-decoration: none;
-    font-size: 14px;
-    transition: background .15s, color .15s;
-}
-.sidebar-footer a:hover { background: rgba(255,255,255,.1); color: #fff; }
-.main {
-    margin-left: var(--sidebar-w);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-.topbar {
-    height: var(--header-h);
-    background: var(--surface);
-    border-bottom: 1px solid var(--line);
-    display: flex;
-    align-items: center;
-    padding: 0 28px;
-    gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-}
-.topbar-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    color: var(--crimson);
-    white-space: nowrap;
-}
-.topbar-spacer { flex: 1; }
-.topbar-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--ink);
-}
-.avatar {
-    width: 34px;
-    height: 34px;
-    background: var(--crimson);
-    color: #fff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 700;
-}
-.content {
-    padding: 24px 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-    flex: 1;
-}
-.card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 20px;
-    box-shadow: var(--shadow);
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--surface);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-}
-th, td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #ecebf1;
-    text-align: left;
-}
-th {
-    background: var(--gold);
-    color: var(--primary-dark);
-    text-transform: uppercase;
-    font-size: 12px;
-    letter-spacing: .08em;
-}
-tr:last-child td { border-bottom: none; }
-tr:nth-child(even) { background: #fbfbfd; }
-.btn {
-    padding: 10px 20px; border-radius: 10px;
-    text-decoration: none; font-weight: bold;
-    display: inline-flex; align-items: center; gap: 8px;
-}
-.btn-green { background: #27ae60; color: white; }
-.btn-blue { background: #3498db; color: white; }
-.btn-red { background: #e74c3c; color: white; }
-.btn-secondary { background: #f6c70c; color: #111; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-select, input, .btn { border: 1px solid #d6d2d9; }
-img.thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; }
-.no-img { width: 60px; height: 60px; background: #f0e0e0; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 24px; }
-.available { color: #27ae60; font-weight: bold; }
-.unavailable { color: #e74c3c; font-weight: bold; }
+:root { --crimson:#210303; --gold:#e8d191; --ink:#130301; --surface:#fff8eb; --bg:#f4f2ea; --line:rgba(33,3,3,.1); --radius:14px; --shadow:0 2px 18px rgba(33,3,3,.08); --sidebar-w:220px; --header-h:64px; }
+body{margin:0;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;}
+.sidebar{width:var(--sidebar-w);background:var(--crimson);min-height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.12);}
+.sidebar-logo .brand{font-family:'Cinzel Decorative',serif;font-size:17px;color:#fff;letter-spacing:.08em;text-transform:uppercase;};
+.nav-list{list-style:none;padding:16px 12px;margin:0;flex:1;};
+.nav-list li{margin-bottom:4px;}
+.nav-list a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;text-decoration:none;color:rgba(255,255,255,.75);font-size:14px;font-weight:500;}
+.nav-list a.active,.nav-list a:hover{background:rgba(255,255,255,.14);color:#fff;}
+.nav-list a .icon{width:20px;text-align:center;}
+.sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.12);}
+.sidebar-footer a{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.65);text-decoration:none;}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:5;}
+.topbar-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--crimson);}.topbar-spacer{flex:1;}.topbar-user{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:14px;}.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--crimson);color:#fff;font-weight:700;}
+.content{padding:24px 28px;display:flex;flex-direction:column;gap:20px;}
+.card{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
+.top-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:none;padding:12px 18px;font-weight:700;text-decoration:none;cursor:pointer;}
+.btn-blue{background:#3498db;color:#fff;}.btn-green{background:#27ae60;color:#fff;}.btn-gray{background:#6b7280;color:#fff;}.btn-red{background:#e74c3c;color:#fff;}
+.input-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.input-group input{padding:12px 14px;border-radius:12px;border:1px solid #d6d2d9;min-width:240px;}
+.folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
+.folder-card{background:#fff;border-radius:20px;padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.folder-card a.full-link{position:absolute;inset:0;z-index:1;text-decoration:none;}
+.folder-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.folder-name{font-size:18px;font-weight:700;}
+.folder-meta{color:#6b7280;font-size:14px;}
+.folder-actions{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:2;}
+.small-btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-size:13px;}
+.small-btn-blue{background:#3498db;color:#fff;}.small-btn-red{background:#e74c3c;color:#fff;}.small-btn-gray{background:#f4f4f4;color:#333;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:20px;z-index:20;}
+.modal-overlay.active{display:flex;}
+.modal{width:100%;max-width:520px;background:#fff;border-radius:18px;padding:24px;position:relative;}
+.modal h2{margin:0 0 18px;font-family:'Cinzel Decorative',serif;font-size:1.75rem;}
+.modal .form-group{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.modal label{font-weight:600;}.modal input{width:100%;border:1px solid #d6d2d9;border-radius:12px;padding:12px 14px;}.modal-close{position:absolute;top:18px;right:18px;background:#f4f4f4;border:none;width:34px;height:34px;border-radius:50%;cursor:pointer;}
+.alert{padding:14px 16px;border-radius:14px;}.alert-error{background:#fee2e2;color:#981b1b;}.alert-success{background:#d1fae5;color:#065f46;}
 </style>
 </head>
 <body>
-
 <aside class="sidebar">
-    <div class="sidebar-logo">
-        <div class="brand">Casa Gunita</div>
-    </div>
+    <div class="sidebar-logo"><div class="brand">Casa Gunita</div></div>
     <ul class="nav-list">
         <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
         <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="products.php" class="active"><span class="icon">🍖</span> Products</a></li>
-        <li><a href="inventory.php"><span class="icon">📦</span> Inventory</a></li>
-        <li><a href="transactions.php"><span class="icon">💰</span> Transactions</a></li>
+        <li><a href="products.php" class="active"><span class="icon">🍽️</span> Menu</a></li>
+        <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
+        <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
+        <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
     </ul>
-    <div class="sidebar-footer">
-        <a href="logout.php"><span class="icon">🚪</span> Logout</a>
-    </div>
+    <div class="sidebar-footer"><a href="logout.php"><span class="icon">🚪</span> Logout</a></div>
 </aside>
-
 <div class="main">
     <header class="topbar">
-        <div class="topbar-title">Products</div>
+        <div class="topbar-title">Menu<?= $selected_category ? ' › ' . htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') : '' ?></div>
         <div class="topbar-spacer"></div>
-        <div class="topbar-user">
-            <div class="avatar"><?= strtoupper(substr($_SESSION['full_name'], 0, 1)) ?></div>
-            <span><?= htmlspecialchars($_SESSION['full_name'], ENT_QUOTES, 'UTF-8') ?></span>
-        </div>
+        <div class="topbar-user"><div class="avatar"><?= strtoupper(substr($_SESSION['full_name'], 0, 1)) ?></div><span><?= htmlspecialchars($_SESSION['full_name'], ENT_QUOTES, 'UTF-8') ?></span></div>
     </header>
-
     <div class="content">
-        <div class="card">
-            <div class="top-bar" style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <form method="GET" style="display:flex; gap:10px; align-items:center; margin:0;">
-                        <label style="margin:0; color:#333; font-weight:bold;">Category:</label>
-                        <select name="category" onchange="this.form.submit()" style="padding:10px 12px; border-radius:10px; border:1px solid #ddd;">
-                            <option value="0">All Categories</option>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= (int)$cat['category_id'] ?>" <?= $category_filter === (int)$cat['category_id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <?php if ($category_filter): ?>
-                            <a href="products.php" class="btn btn-secondary">Show All</a>
-                        <?php endif; ?>
-                    </form>
+        <?php if ($error): ?><div class="alert alert-error"><?= $error ?></div><?php endif; ?>
+        <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+        <div class="card top-bar">
+            <?php if ($selected_category): ?>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <a href="products.php" class="btn btn-gray">← Back to Categories</a>
+                    <div style="font-weight:700;font-size:1.05rem;">Category: <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
-                <a href="products_add.php" class="btn btn-green">+ Add New Product</a>
-            </div>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <a href="products_add.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-green">+ Add Product</a>
+                    <a href="modifiers.php" class="btn btn-blue">Modifiers</a>
+                </div>
+            <?php else: ?>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><div style="font-weight:700;font-size:1.05rem;">Categories</div></div>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn btn-green" onclick="openCategoryModal('add')">+ Add Category</button><a href="modifiers.php" class="btn btn-blue">Modifiers</a></div>
+            <?php endif; ?>
         </div>
-    <?php if (mysqli_num_rows($products) === 0): ?>
-        <p style="text-align:center; color:#999; padding:30px;">
-            No products yet. Click "Add New Product" to start.
-        </p>
-    <?php else: ?>
-    <table>
-        <tr>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Available</th>
-            <th>Actions</th>
-        </tr>
-        <?php while ($p = mysqli_fetch_assoc($products)): ?>
-        <tr>
-            <td>
-                <?php if ($p['image']): ?>
-                    <img class="thumb"
-                         src="/casa_gunita/assets/images/<?= $p['image'] ?>"
-                         alt="<?= $p['name'] ?>">
+        <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <form method="GET" class="input-group" style="margin:0;">
+                <?php if ($selected_category): ?>
+                    <input type="hidden" name="category_id" value="<?= $selected_category['category_id'] ?>">
+                    <input type="search" name="search_product" placeholder="Search products in <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="submit" class="btn btn-blue">Search</button>
+                    <?php if ($search_product): ?><a href="products.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-gray">Clear</a><?php endif; ?>
                 <?php else: ?>
-                    <div class="no-img">🍽️</div>
+                    <input type="search" name="search_category" placeholder="Search categories" value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="submit" class="btn btn-blue">Search</button>
+                    <?php if ($search_category): ?><a href="products.php" class="btn btn-gray">Clear</a><?php endif; ?>
                 <?php endif; ?>
-            </td>
-            <td><?= htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8') ?></td>
-            <td><?= htmlspecialchars($p['category_name'] ?? 'Uncategorized', ENT_QUOTES, 'UTF-8') ?></td>
-            <td><?= formatPrice($p['price']) ?></td>
-            <td><?= $p['stock_quantity'] ?? 0 ?></td>
-            <td>
-                <?php if ($p['is_available']): ?>
-                    <span class="available">Yes</span>
-                <?php else: ?>
-                    <span class="unavailable">No</span>
-                <?php endif; ?>
-            </td>
-            <td>
-                <a href="products_edit.php?id=<?= $p['product_id'] ?>"
-                   class="btn btn-blue">Edit</a>
-                <a href="products.php?delete=<?= $p['product_id'] ?>"
-                   class="btn btn-red"
-                   onclick="return confirm('Delete this product?')">Delete</a>
-            </td>
-        </tr>
-        <?php endwhile; ?>
-    </table>
-    <?php endif; ?>
+            </form>
+        </div>
+        <?php if ($selected_category): ?>
+            <?php if (!$products || mysqli_num_rows($products) === 0): ?>
+                <div class="card" style="text-align:center;color:#777;padding:60px 0;">No products found in this category.</div>
+            <?php else: ?>
+                <div class="folder-grid">
+                    <?php while ($p = mysqli_fetch_assoc($products)): ?>
+                        <div class="folder-card">
+                            <div class="folder-heading">
+                                <div>
+                                    <div class="folder-name"><?= htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <div class="folder-meta"><?= formatPrice($p['price']) ?> · Stock: <?= $p['stock_quantity'] !== null ? (int)$p['stock_quantity'] : 'N/A' ?></div>
+                                </div>
+                                <?php if ($p['image']): ?>
+                                    <img src="/casa_gunita/assets/images/<?= htmlspecialchars($p['image'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8') ?>" style="width:72px;height:72px;object-fit:cover;border-radius:18px;">
+                                <?php else: ?>
+                                    <div style="width:72px;height:72px;border-radius:18px;background:#f0eee8;display:flex;align-items:center;justify-content:center;font-size:24px;color:#7c6a4b;">🍽️</div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="folder-actions">
+                                <a href="products_edit.php?id=<?= $p['product_id'] ?>" class="small-btn small-btn-blue">Edit</a>
+                                <a href="products.php?delete_product=<?= $p['product_id'] ?>&category_id=<?= $selected_category['category_id'] ?>" class="small-btn small-btn-red" onclick="return confirm('Delete this product?')">Delete</a>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if (mysqli_num_rows($categories_result) === 0): ?>
+                <div class="card" style="text-align:center;color:#777;padding:60px 0;">No categories found. Add one to start organizing the menu.</div>
+            <?php else: ?>
+                <div class="folder-grid">
+                    <?php while ($cat = mysqli_fetch_assoc($categories_result)): ?>
+                        <div class="folder-card">
+                            <div class="folder-heading">
+                                <div>
+                                    <div class="folder-name"><?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <div class="folder-meta"><?= ($product_counts[$cat['category_id']] ?? 0) ?> products</div>
+                                </div>
+                                <?php if (!empty($cat['image'])): ?>
+                                    <img src="/casa_gunita/assets/images/<?= htmlspecialchars($cat['image'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>" style="width:72px;height:72px;object-fit:cover;border-radius:18px;">
+                                <?php else: ?>
+                                    <div style="width:72px;height:72px;border-radius:18px;background:#f0eee8;display:flex;align-items:center;justify-content:center;font-size:24px;color:#7c6a4b;">+</div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="folder-actions">
+                                <button type="button" class="small-btn small-btn-blue" onclick='openCategoryModal("edit", <?= $cat['category_id'] ?>, <?= json_encode($cat['name']) ?>)'>Edit</button>
+                                <a href="products.php?delete_category=<?= $cat['category_id'] ?>" class="small-btn small-btn-red" onclick="return confirm('Delete this category?')">Delete</a>
+                            </div>
+                            <a class="full-link" href="products.php?category_id=<?= $cat['category_id'] ?>" aria-label="Open category"></a>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
 </div>
 
+<div class="modal-overlay" id="categoryModal">
+    <div class="modal">
+        <button type="button" class="modal-close" onclick="closeCategoryModal()">✕</button>
+        <h2 id="modalTitle">Add Category</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="category_action" id="categoryAction" value="add">
+            <input type="hidden" name="category_id" id="categoryId" value="0">
+            <div class="form-group">
+                <label for="categoryName">Category Name</label>
+                <input type="text" name="name" id="categoryName" required>
+            </div>
+            <div class="form-group">
+                <label for="categoryImage">Category Image</label>
+                <input type="file" name="category_image" id="categoryImage" accept="image/*">
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:10px;">
+                <button type="button" class="btn btn-gray" onclick="closeCategoryModal()">Cancel</button>
+                <button type="submit" class="btn btn-green">Save Category</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+function openCategoryModal(action, id = 0, name = '') {
+    document.getElementById('categoryModal').classList.add('active');
+    document.getElementById('categoryAction').value = action;
+    document.getElementById('categoryId').value = id;
+    document.getElementById('categoryName').value = name;
+    document.getElementById('modalTitle').textContent = action === 'edit' ? 'Edit Category' : 'Add Category';
+}
+function closeCategoryModal() {
+    document.getElementById('categoryModal').classList.remove('active');
+}
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') closeCategoryModal();
+});
+</script>
 </body>
 </html>

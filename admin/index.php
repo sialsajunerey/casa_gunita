@@ -674,17 +674,22 @@ body {
         </li>
         <li>
             <a href="products.php">
-                <span class="icon">🍖</span> Products
+                <span class="icon">�️</span> Menu
             </a>
         </li>
         <li>
-            <a href="inventory.php">
-                <span class="icon">📦</span> Inventory
+            <a href="modifiers.php">
+                <span class="icon">🧂</span> Modifiers
             </a>
         </li>
         <li>
-            <a href="transactions.php">
-                <span class="icon">💰</span> Transactions
+            <a href="customers.php">
+                <span class="icon">🧑‍🤝‍🧑</span> Customers
+            </a>
+        </li>
+        <li>
+            <a href="audit.php">
+                <span class="icon">📜</span> Audit
             </a>
         </li>
     </ul>
