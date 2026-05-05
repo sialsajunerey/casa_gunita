@@ -18,6 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     mysqli_stmt_bind_param($stmt, 'si', $newstatus, $order_id);
     mysqli_stmt_execute($stmt);
 
+    // Log audit: order_status_change
+    $admin_id = $_SESSION['user_id'] ?? null;
+    $audit_stmt = mysqli_prepare($conn,
+        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, order_id, details)
+         VALUES (?, 'order_status_change', 'order', ?, ?, ?)");
+    $details = "Changed order status to: " . strtoupper($newstatus);
+    mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $order_id, $order_id, $details);
+    mysqli_stmt_execute($audit_stmt);
+
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
         header('Content-Type: application/json');
         echo json_encode(['success' => true]);

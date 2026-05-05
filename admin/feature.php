@@ -39,6 +39,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_query($conn, "UPDATE products SET is_featured = 1 WHERE product_id IN (" . implode(',', $selected_products) . ")");
         }
 
+        // Log audit: featured update
+        $admin_id = $_SESSION['user_id'] ?? null;
+        $cat_list = !empty($selected_categories) ? implode(', ', $selected_categories) : 'None';
+        $prod_list = !empty($selected_products) ? implode(', ', $selected_products) : 'None';
+        $audit_stmt = mysqli_prepare($conn,
+            "INSERT INTO audit_logs (admin_id, action, target_type, details)
+             VALUES (?, 'menu_featured', 'featured', ?)");
+        $details = "Featured Categories: $cat_list | Featured Products: $prod_list";
+        mysqli_stmt_bind_param($audit_stmt, 'is', $admin_id, $details);
+        mysqli_stmt_execute($audit_stmt);
+
         $success = 'Featured categories and dishes have been updated.';
     }
 }

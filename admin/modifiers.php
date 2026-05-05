@@ -13,9 +13,26 @@ $success = '';
 
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = (int)$_GET['delete'];
+    // Get modifier name before delete
+    $get_name = mysqli_prepare($conn, "SELECT name FROM modifier_groups WHERE modifier_group_id = ?");
+    mysqli_stmt_bind_param($get_name, 'i', $id);
+    mysqli_stmt_execute($get_name);
+    $name_result = mysqli_fetch_assoc(mysqli_stmt_get_result($get_name));
+    $mod_name = $name_result['name'] ?? 'Unknown';
+    
     $stmt = mysqli_prepare($conn, "DELETE FROM modifier_groups WHERE modifier_group_id = ?");
     mysqli_stmt_bind_param($stmt, 'i', $id);
     mysqli_stmt_execute($stmt);
+    
+    // Log audit: modifier_delete
+    $admin_id = $_SESSION['user_id'] ?? null;
+    $audit_stmt = mysqli_prepare($conn,
+        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
+         VALUES (?, 'modifier_delete', 'modifier', ?, ?)");
+    $details = "Deleted modifier: $mod_name";
+    mysqli_stmt_bind_param($audit_stmt, 'iis', $admin_id, $id, $details);
+    mysqli_stmt_execute($audit_stmt);
+    
     header('Location: modifiers.php');
     exit();
 }
@@ -41,6 +58,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "INSERT INTO modifier_groups (name, pricing_type, select_option) VALUES (?, ?, ?)");
                 mysqli_stmt_bind_param($insert, 'sss', $name, $pricing_type, $select_option);
                 if (mysqli_stmt_execute($insert)) {
+                    $modifier_id = mysqli_insert_id($conn);
+
+                    // Log audit: modifier_add
+                    $admin_id = $_SESSION['user_id'] ?? null;
+                    $audit_stmt = mysqli_prepare($conn,
+                        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
+                         VALUES (?, 'modifier_add', 'modifier', ?, ?)");
+                    $details = "Added modifier: $name ($pricing_type, $select_option)";
+                    mysqli_stmt_bind_param($audit_stmt, 'iis', $admin_id, $modifier_id, $details);
+                    mysqli_stmt_execute($audit_stmt);
+                    
                     $success = 'Modifier created successfully.';
                 } else {
                     $error = 'Unable to save modifier.';
@@ -59,6 +87,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "UPDATE modifier_groups SET name = ?, pricing_type = ?, select_option = ? WHERE modifier_group_id = ?");
                 mysqli_stmt_bind_param($update, 'sssi', $name, $pricing_type, $select_option, $modifier_group_id);
                 if (mysqli_stmt_execute($update)) {
+                    // Log audit: modifier_edit
+                    $admin_id = $_SESSION['user_id'] ?? null;
+                    $audit_stmt = mysqli_prepare($conn,
+                        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
+                         VALUES (?, 'modifier_edit', 'modifier', ?, ?)");
+                    $details = "Updated modifier: $name ($pricing_type, $select_option)";
+                    mysqli_stmt_bind_param($audit_stmt, 'iis', $admin_id, $modifier_group_id, $details);
+                    mysqli_stmt_execute($audit_stmt);
+                    
                     $success = 'Modifier updated successfully.';
                 } else {
                     $error = 'Unable to update modifier.';

@@ -30,6 +30,17 @@ while ($cat = mysqli_fetch_assoc($cat_result)) {
     $categories[] = $cat;
 }
 
+// Load available modifier groups
+$modifierGroups = [];
+$modifierResult = mysqli_query($conn, "SELECT modifier_group_id, name, pricing_type, select_option FROM modifier_groups ORDER BY name");
+while ($modifier = mysqli_fetch_assoc($modifierResult)) {
+    $modifierGroups[] = $modifier;
+}
+$modifierMap = [];
+foreach ($modifierGroups as $modifier) {
+    $modifierMap[$modifier['modifier_group_id']] = $modifier;
+}
+
 // Fetch current stock
 $inv_stmt = mysqli_prepare($conn,
     "SELECT * FROM inventory WHERE product_id = ?");
@@ -73,9 +84,24 @@ if (!empty($existing_groups)) {
     }
 }
 
+$existing_modifier_links = [];
+$linkStmt = mysqli_prepare($conn,
+    "SELECT modifier_group_id, is_required
+     FROM product_modifier_groups
+     WHERE product_id = ?
+     ORDER BY display_order");
+mysqli_stmt_bind_param($linkStmt, 'i', $id);
+mysqli_stmt_execute($linkStmt);
+$linkResult = mysqli_stmt_get_result($linkStmt);
+while ($link = mysqli_fetch_assoc($linkResult)) {
+    $existing_modifier_links[] = $link;
+}
+
 $posted_group_names = $_POST['group_name'] ?? [];
 $posted_group_types = $_POST['group_type'] ?? [];
 $posted_group_required = $_POST['group_required'] ?? [];
+$posted_group_modifier_ids = $_POST['group_modifier_id'] ?? [];
+$posted_group_pricing_type = $_POST['group_pricing_type'] ?? [];
 $posted_option_names = $_POST['option_name'] ?? [];
 $posted_option_prices = $_POST['option_price'] ?? [];
 $posted_option_images = $_POST['option_image_existing'] ?? [];
@@ -138,6 +164,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($inv_update, 'ii', $stock, $id);
             mysqli_stmt_execute($inv_update);
 
+            // Log audit: menu_edit
+            $admin_id = $_SESSION['user_id'] ?? null;
+            $audit_stmt = mysqli_prepare($conn,
+                "INSERT INTO audit_logs (admin_id, action, target_type, target_id, product_id, details)
+                 VALUES (?, 'menu_edit', 'product', ?, ?, ?)");
+            $details = "Updated product: $name (Price: ₱" . number_format($price, 2) . ")";
+            mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $id, $id, $details);
+            mysqli_stmt_execute($audit_stmt);
+
             // Remove old customization groups/options
             $deleteOptions = mysqli_prepare($conn,
                 "DELETE o FROM product_customization_options o
@@ -151,7 +186,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($deleteGroups, 'i', $id);
             mysqli_stmt_execute($deleteGroups);
 
-            // Save new customization groups and options
+            $deleteModifierLinks = mysqli_prepare($conn,
+                "DELETE FROM product_modifier_groups WHERE product_id = ?");
+            mysqli_stmt_bind_param($deleteModifierLinks, 'i', $id);
+            mysqli_stmt_execute($deleteModifierLinks);
+
+            // Save new customization groups, options, and modifier links
             if (!empty($posted_group_names) && is_array($posted_group_names)) {
                 $groupOrder = 0;
                 $groupStmt = mysqli_prepare($conn,
@@ -162,20 +202,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "INSERT INTO product_customization_options
                      (group_id, name, additional_price, image, display_order)
                      VALUES (?, ?, ?, ?, ?)");
+                $modifierLinkStmt = mysqli_prepare($conn,
+                    "INSERT INTO product_modifier_groups
+                     (product_id, modifier_group_id, is_required, display_order)
+                     VALUES (?, ?, ?, ?)");
 
-                foreach ($posted_group_names as $groupIndex => $groupTypeKey) {
-                    $groupLabels = ['addon' => 'Add-ons', 'flavor' => 'Flavor', 'size' => 'Size'];
-                    $groupTypeKey = in_array($groupTypeKey, ['addon', 'flavor', 'size'], true) ? $groupTypeKey : 'flavor';
-                    $groupName = sanitize($groupLabels[$groupTypeKey]);
-                    $groupType = in_array($posted_group_types[$groupIndex] ?? $groupTypeKey, ['single', 'addon'], true)
+                foreach ($posted_group_names as $groupIndex => $groupNameRaw) {
+                    $groupName = sanitize(trim($groupNameRaw));
+                    if ($groupName === '') {
+                        continue;
+                    }
+                    $groupType = in_array($posted_group_types[$groupIndex] ?? '', ['single', 'addon'], true)
                         ? $posted_group_types[$groupIndex]
-                        : ($groupTypeKey === 'addon' ? 'addon' : 'single');
+                        : 'single';
                     $groupRequired = isset($posted_group_required[$groupIndex]) ? 1 : 0;
 
                     mysqli_stmt_bind_param($groupStmt, 'issii',
                         $id, $groupName, $groupType, $groupRequired, $groupOrder);
                     mysqli_stmt_execute($groupStmt);
                     $groupId = mysqli_insert_id($conn);
+
+                    $modifierGroupId = isset($posted_group_modifier_ids[$groupIndex]) ? (int)$posted_group_modifier_ids[$groupIndex] : 0;
+                    if ($modifierGroupId > 0) {
+                        mysqli_stmt_bind_param($modifierLinkStmt, 'iiii', $id, $modifierGroupId, $groupRequired, $groupOrder);
+                        mysqli_stmt_execute($modifierLinkStmt);
+                    }
 
                     $optionOrder = 0;
                     if (!empty($posted_option_names[$groupIndex]) && is_array($posted_option_names[$groupIndex])) {
@@ -384,27 +435,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group" style="grid-column: span 2;">
             <label>Customization</label>
             <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-                <select id="new-cust-type" style="width:100%;max-width:260px;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff">
-                    <option value="">Select type</option>
-                    <option value="addon">Add-ons</option>
-                    <option value="flavor">Flavor</option>
-                    <option value="size">Size</option>
-                </select>
+                <?php if (empty($modifierGroups)): ?>
+                    <p class="customization-footer">No modifier groups available. Create them first in the Modifiers admin page.</p>
+                <?php else: ?>
+                    <select id="new-modifier-group" style="width:100%;max-width:320px;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff">
+                        <option value="">Add modifier group...</option>
+                        <?php foreach ($modifierGroups as $modifier): ?>
+                            <option value="<?= (int)$modifier['modifier_group_id'] ?>"
+                                    data-name="<?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>"
+                                    data-pricing="<?= htmlspecialchars($modifier['pricing_type'], ENT_QUOTES, 'UTF-8') ?>"
+                                    data-select="<?= htmlspecialchars($modifier['select_option'], ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
             </div>
             <div id="customization-groups">
                 <?php
                 $renderGroups = !empty($posted_group_names) ? $posted_group_names : [];
                 if (empty($renderGroups) && !empty($existing_groups)) {
                     foreach ($existing_groups as $group) {
-                        $renderGroups[] = $group['group_type'] === 'addon'
-                            ? 'addon'
-                            : (strtolower($group['name']) === 'size' ? 'size' : 'flavor');
+                        $renderGroups[] = $group['group_type'] === 'addon' ? 'addon' : 'single';
                     }
                 }
                 if (!empty($renderGroups)):
-                    foreach ($renderGroups as $groupIndex => $groupTypeValue):
-                        $groupTypeValue = in_array($groupTypeValue, ['addon', 'flavor', 'size'], true) ? $groupTypeValue : 'flavor';
-                        $groupRequiredValue = isset($posted_group_required[$groupIndex]) ? true : false;
+                    foreach ($renderGroups as $groupIndex => $groupName):
+                        $groupLabel = sanitize(trim($groupName));
+                        $groupKey = array_keys($existing_groups)[$groupIndex] ?? null;
+                        $existingGroup = $groupKey !== null ? $existing_groups[$groupKey] : null;
+                        $groupTypeValue = $posted_group_types[$groupIndex] ?? null;
+                        if (!in_array($groupTypeValue, ['addon', 'single'], true)) {
+                            if ($existingGroup) {
+                                $groupTypeValue = $existingGroup['group_type'] === 'addon' ? 'addon' : 'single';
+                            } else {
+                                $existingModifier = $existing_modifier_links[$groupIndex] ?? null;
+                                $modifierGroupId = $existingModifier['modifier_group_id'] ?? null;
+                                $modifierMeta = $modifierGroupId && isset($modifierMap[$modifierGroupId]) ? $modifierMap[$modifierGroupId] : null;
+                                if ($modifierMeta) {
+                                    $groupTypeValue = $modifierMeta['select_option'] === 'multiple' ? 'addon' : 'single';
+                                } else {
+                                    $groupTypeValue = in_array($groupLabel, ['addon', 'size', 'flavor'], true)
+                                        ? ($groupLabel === 'addon' ? 'addon' : 'single')
+                                        : 'single';
+                                }
+                            }
+                        }
+                        $groupRequiredValue = isset($posted_group_required[$groupIndex]) ? true : ($existingGroup ? (bool)$existingGroup['is_required'] : false);
+                        $modifierGroupId = $posted_group_modifier_ids[$groupIndex] ?? null;
+                        if (!$modifierGroupId && isset($existing_modifier_links[$groupIndex])) {
+                            $modifierGroupId = $existing_modifier_links[$groupIndex]['modifier_group_id'];
+                        }
+                        $modifierGroupId = $modifierGroupId ? (int)$modifierGroupId : '';
+                        $modifierMeta = $modifierGroupId && isset($modifierMap[$modifierGroupId]) ? $modifierMap[$modifierGroupId] : null;
+                        if ($modifierMeta) {
+                            $groupLabel = $posted_group_names[$groupIndex] ?? $modifierMeta['name'];
+                            if (!in_array($groupTypeValue, ['addon', 'single'], true)) {
+                                $groupTypeValue = $modifierMeta['select_option'] === 'multiple' ? 'addon' : 'single';
+                            }
+                        }
+                        if ($groupLabel === '' && $existingGroup) {
+                            $groupLabel = $existingGroup['name'];
+                        }
+                        if ($groupLabel === '') {
+                            $groupLabel = $modifierMeta ? $modifierMeta['name'] : ($groupTypeValue === 'addon' ? 'Add-ons' : 'Options');
+                        }
+                        $pricingType = $posted_group_pricing_type[$groupIndex] ?? ($modifierMeta['pricing_type'] ?? 'set_price');
                         $optionNames = $posted_option_names[$groupIndex] ?? [];
                         $optionPrices = $posted_option_prices[$groupIndex] ?? [];
                         $optionImages = $posted_option_images[$groupIndex] ?? [];
@@ -419,18 +515,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
                 ?>
-                        <div class="customization-card" data-index="<?= (int)$groupIndex ?>" data-type="<?= htmlspecialchars($groupTypeValue, ENT_QUOTES, 'UTF-8') ?>" style="border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:14px;background:#fcfcfc">
+                        <div class="customization-card" data-index="<?= (int)$groupIndex ?>" data-modifier-id="<?= htmlspecialchars($modifierGroupId, ENT_QUOTES, 'UTF-8') ?>" data-type="<?= htmlspecialchars($groupTypeValue, ENT_QUOTES, 'UTF-8') ?>" style="border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:14px;background:#fcfcfc">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                                 <div style="display:flex;align-items:center;gap:10px">
-                                    <strong style="font-size:15px"><?= $groupTypeValue === 'addon' ? 'Add-ons' : ($groupTypeValue === 'size' ? 'Size' : 'Flavor') ?></strong>
-                                    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:<?= $groupTypeValue === 'addon' ? '#fde8c8' : ($groupTypeValue === 'size' ? '#d4e9ff' : '#d4f5e2') ?>;color:<?= $groupTypeValue === 'addon' ? '#784212' : ($groupTypeValue === 'size' ? '#1a5276' : '#145a32') ?>;font-weight:600">
+                                    <strong style="font-size:15px"><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:<?= $groupTypeValue === 'addon' ? '#fde8c8' : '#d4f5e2' ?>;color:<?= $groupTypeValue === 'addon' ? '#784212' : '#145a32' ?>;font-weight:600">
                                         <?= $groupTypeValue === 'addon' ? 'multiple choice • extra charge' : 'single choice • set price' ?>
                                     </span>
                                 </div>
+                                <button type="button" class="btn btn-gray btn-remove-group" style="white-space:nowrap;">Remove group</button>
                             </div>
-                            <input type="hidden" name="group_name[<?= (int)$groupIndex ?>]" value="<?= $groupTypeValue ?>">
-                            <input type="hidden" name="group_type[<?= (int)$groupIndex ?>]" value="<?= $groupTypeValue === 'addon' ? 'addon' : 'single' ?>">
-                            <input type="hidden" name="group_required[<?= (int)$groupIndex ?>]" value="<?= $groupTypeValue === 'addon' ? 0 : 1 ?>">
+                            <input type="hidden" name="group_modifier_id[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($modifierGroupId, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="group_name[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="group_type[<?= (int)$groupIndex ?>]" value="<?= $groupTypeValue ?>">
+                            <input type="hidden" name="group_required[<?= (int)$groupIndex ?>]" value="<?= $groupRequiredValue ? 1 : 0 ?>">
+                            <input type="hidden" name="group_pricing_type[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($pricingType, ENT_QUOTES, 'UTF-8') ?>">
                             <div class="options-list" style="display:flex;flex-direction:column;gap:12px;padding:0 0 6px;font-size:11px;color:#999">
                                 <?php if (!empty($optionNames)): ?>
                                     <?php foreach ($optionNames as $optionIndex => $optionValue): ?>
@@ -485,20 +584,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('customization-groups');
-    const typeSelect = document.getElementById('new-cust-type');
+    const modifierSelect = document.getElementById('new-modifier-group');
+    const availableModifiers = modifierSelect ? Array.from(modifierSelect.querySelectorAll('option[data-name]')).map(option => ({
+        id: option.value,
+        name: option.dataset.name,
+        pricingType: option.dataset.pricing || 'set_price',
+        selectType: option.dataset.select || 'single'
+    })) : [];
 
-    const typeConfig = {
-        size:   { label: 'Size',    priceNote: 'Full price (₱)',       inputType: 'radio',    groupType: 'size'   },
-        flavor: { label: 'Flavor',  priceNote: 'Full price (₱)',       inputType: 'radio',    groupType: 'flavor' },
-        addon:  { label: 'Add-ons', priceNote: 'Additional price (₱)', inputType: 'checkbox', groupType: 'addon'  }
-    };
-
-    function makeOption(groupIndex, type) {
-        const cfg = typeConfig[type];
+    function createOptionRow(groupIndex) {
         const wrap = document.createElement('div');
         wrap.className = 'option-item';
         wrap.style.cssText = 'display:grid;grid-template-columns:1.5fr 1fr minmax(120px,180px) auto;gap:12px;align-items:start;margin-bottom:14px;padding:14px;border:1px dashed #ddd;border-radius:12px;background:#fff';
-
         wrap.innerHTML = `
             <div style="min-width:0;">
                 <label style="display:block;font-size:13px;color:#555;margin-bottom:6px">Option Image</label>
@@ -511,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div style="min-width:0;">
                 <label style="display:block;font-size:13px;color:#555;margin-bottom:6px">Price</label>
                 <input type="number" step="0.01" min="0" name="option_price[${groupIndex}][]" placeholder="0.00" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px">
-                <div style="font-size:11px;color:#999;margin-top:6px">${cfg.priceNote}</div>
+                <div style="font-size:11px;color:#999;margin-top:6px">Additional price (₱) or set price depending on modifier group</div>
             </div>
             <button type="button" style="background:#e74c3c;color:white;border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;margin-left:8px">✕</button>
         `;
@@ -523,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const card = list.closest('.customization-card');
                 if (card) {
                     card.remove();
-                    updateTypeOptions();
+                    updateModifierSelect();
                 }
             }
         });
@@ -540,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const card = list.closest('.customization-card');
                     if (card) {
                         card.remove();
-                        updateTypeOptions();
+                        updateModifierSelect();
                     }
                 }
             });
@@ -552,89 +649,105 @@ document.addEventListener('DOMContentLoaded', function () {
         const groupIndex = card.dataset.index;
         card.querySelector('.btn-remove-group')?.addEventListener('click', () => {
             card.remove();
-            updateTypeOptions();
+            updateModifierSelect();
         });
         card.querySelector('.btn-add-option')?.addEventListener('click', () => {
-            card.querySelector('.options-list').appendChild(makeOption(groupIndex, groupType));
+            card.querySelector('.options-list').appendChild(createOptionRow(groupIndex));
         });
         attachOptionRemovers(card);
     }
 
-    function makeCard(type, groupIndex) {
-        const cfg = typeConfig[type];
-        const groupLabel = type === 'addon' ? 'Add-ons' : (type === 'size' ? 'Size' : 'Flavor');
-        const groupTypeValue = cfg.groupType === 'addon' ? 'addon' : 'single';
-        const requiredValue = cfg.groupType === 'addon' ? 0 : 1;
+    function createModifierCard(modifier, groupIndex) {
+        const type = modifier.selectType === 'multiple' ? 'addon' : 'single';
         const card = document.createElement('div');
         card.className = 'customization-card';
         card.dataset.index = groupIndex;
+        card.dataset.modifierId = modifier.id;
         card.dataset.type = type;
         card.style.cssText = 'position:relative;border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:14px;background:#fcfcfc';
         card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap;">
-                <div style="display:flex;align-items:center;gap:10px">
-                    <strong style="font-size:15px">${groupLabel}</strong>
-                    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${type === 'addon' ? '#fde8c8' : (type === 'size' ? '#d4e9ff' : '#d4f5e2')};color:${type === 'addon' ? '#784212' : (type === 'size' ? '#1a5276' : '#145a32')};font-weight:600">
-                        ${type === 'addon' ? 'multiple choice • extra charge' : 'single choice • set price'}
-                    </span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <strong style="font-size:15px">${modifier.name}</strong>
+                    <span style="font-size:11px;padding:6px 12px;border-radius:999px;background:${type === 'addon' ? '#fde8c8' : '#d4f5e2'};color:${type === 'addon' ? '#784212' : '#145a32'};font-weight:700;">${type === 'addon' ? 'multiple choice' : 'single choice'} · ${modifier.pricingType === 'extra_charge' ? 'extra charge' : 'set price'}</span>
                 </div>
                 <button type="button" class="btn btn-gray btn-remove-group" style="white-space:nowrap;">Remove group</button>
             </div>
-            <input type="hidden" name="group_name[${groupIndex}]" value="${type}">
-            <input type="hidden" name="group_type[${groupIndex}]" value="${groupTypeValue}">
-            <input type="hidden" name="group_required[${groupIndex}]" value="${requiredValue}">
+            <input type="hidden" name="group_modifier_id[${groupIndex}]" value="${modifier.id}">
+            <input type="hidden" name="group_name[${groupIndex}]" value="${modifier.name}">
+            <input type="hidden" name="group_type[${groupIndex}]" value="${type}">
+            <input type="hidden" name="group_required[${groupIndex}]" value="${type === 'addon' ? '0' : '1'}">
+            <input type="hidden" name="group_pricing_type[${groupIndex}]" value="${modifier.pricingType}">
             <div class="options-list"></div>
-            <button type="button" class="btn-add-option">Add Option</button>
+            <button type="button" class="btn btn-gray btn-add-option" style="margin-top:14px;">Add Option</button>
         `;
-        card.querySelector('.options-list').appendChild(makeOption(groupIndex, type));
+        const removeButton = card.querySelector('.btn-remove-group');
+        const addButton = card.querySelector('.btn-add-option');
+        const optionList = card.querySelector('.options-list');
+        removeButton.addEventListener('click', () => {
+            card.remove();
+            updateModifierSelect();
+        });
+        addButton.addEventListener('click', () => optionList.appendChild(createOptionRow(groupIndex)));
+        optionList.appendChild(createOptionRow(groupIndex));
         return card;
     }
 
-    function getNextGroupIndex() {
-        let max = -1;
-        container.querySelectorAll('.customization-card').forEach(c => {
-            const i = parseInt(c.dataset.index, 10);
-            if (!isNaN(i) && i > max) max = i;
+    function updateModifierSelect() {
+        if (!modifierSelect) return;
+        const selectedIds = new Set(Array.from(container.querySelectorAll('.customization-card')).map(card => card.dataset.modifierId));
+        modifierSelect.querySelectorAll('option').forEach(option => {
+            if (!option.value) return;
+            option.disabled = selectedIds.has(option.value);
         });
-        return max + 1;
     }
 
-    function updateTypeOptions() {
-        const existing = new Set(Array.from(container.querySelectorAll('.customization-card')).map(c => c.dataset.type));
-        typeSelect.querySelectorAll('option').forEach(option => {
-            if (option.value && existing.has(option.value)) {
-                option.disabled = true;
-            } else {
-                option.disabled = false;
+    function attachExistingCardEvents() {
+        container.querySelectorAll('.customization-card').forEach(card => {
+            const removeButton = card.querySelector('.btn-remove-group');
+            const addButton = card.querySelector('.btn-add-option');
+            const optionList = card.querySelector('.options-list');
+            const index = card.dataset.index;
+            if (removeButton) {
+                removeButton.addEventListener('click', () => {
+                    card.remove();
+                    updateModifierSelect();
+                });
+            }
+            if (addButton) {
+                addButton.addEventListener('click', () => optionList.appendChild(createOptionRow(index)));
+            }
+            attachOptionRemovers(card);
+        });
+    }
+
+    function getNextGroupIndex() {
+        const indices = Array.from(container.querySelectorAll('.customization-card')).map(card => parseInt(card.dataset.index, 10)).filter(Number.isFinite);
+        return indices.length ? Math.max(...indices) + 1 : 0;
+    }
+
+    function addModifierGroup(modifier) {
+        const groupIndex = getNextGroupIndex();
+        container.appendChild(createModifierCard(modifier, groupIndex));
+        updateModifierSelect();
+        if (modifierSelect) {
+            modifierSelect.value = '';
+        }
+    }
+
+    if (modifierSelect) {
+        modifierSelect.addEventListener('change', function () {
+            const selectedModifierId = this.value;
+            if (!selectedModifierId) return;
+            const modifier = availableModifiers.find(m => m.id === selectedModifierId);
+            if (modifier) {
+                addModifierGroup(modifier);
             }
         });
     }
 
-    function groupExists(type) {
-        return Array.from(container.querySelectorAll('.customization-card')).some(c => c.dataset.type === type);
-    }
-
-    function addSelectedGroup() {
-        if (!typeSelect.value) {
-            return;
-        }
-        if (groupExists(typeSelect.value)) {
-            typeSelect.value = '';
-            return;
-        }
-        const idx = getNextGroupIndex();
-        const card = makeCard(typeSelect.value, idx);
-        container.appendChild(card);
-        attachCardEvents(card);
-        typeSelect.value = '';
-        updateTypeOptions();
-    }
-
-    container.querySelectorAll('.customization-card').forEach(attachCardEvents);
-    updateTypeOptions();
-
-    typeSelect.addEventListener('change', addSelectedGroup);
-
+    attachExistingCardEvents();
+    updateModifierSelect();
 });
 </script>
 </body>

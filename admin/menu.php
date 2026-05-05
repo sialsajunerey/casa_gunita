@@ -15,18 +15,52 @@ $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
 if (isset($_GET['delete_product']) && ctype_digit((string)$_GET['delete_product'])) {
     $delete_product_id = (int)$_GET['delete_product'];
+    // Get product name before delete
+    $get_name = mysqli_prepare($conn, "SELECT name FROM products WHERE product_id = ?");
+    mysqli_stmt_bind_param($get_name, 'i', $delete_product_id);
+    mysqli_stmt_execute($get_name);
+    $name_result = mysqli_fetch_assoc(mysqli_stmt_get_result($get_name));
+    $prod_name = $name_result['name'] ?? 'Unknown';
+    
     $delete = mysqli_prepare($conn, "DELETE FROM products WHERE product_id = ?");
     mysqli_stmt_bind_param($delete, 'i', $delete_product_id);
     mysqli_stmt_execute($delete);
+    
+    // Log audit: menu_delete
+    $admin_id = $_SESSION['user_id'] ?? null;
+    $audit_stmt = mysqli_prepare($conn,
+        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, product_id, details)
+         VALUES (?, 'menu_delete', 'product', ?, ?, ?)");
+    $details = "Deleted product: $prod_name";
+    mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $delete_product_id, $delete_product_id, $details);
+    mysqli_stmt_execute($audit_stmt);
+    
     header('Location: menu.php' . ($category_id ? '?category_id=' . $category_id : ''));
     exit();
 }
 
 if (isset($_GET['delete_category']) && ctype_digit((string)$_GET['delete_category'])) {
     $delete_category_id = (int)$_GET['delete_category'];
+    // Get category name before delete
+    $get_name = mysqli_prepare($conn, "SELECT name FROM categories WHERE category_id = ?");
+    mysqli_stmt_bind_param($get_name, 'i', $delete_category_id);
+    mysqli_stmt_execute($get_name);
+    $name_result = mysqli_fetch_assoc(mysqli_stmt_get_result($get_name));
+    $cat_name = $name_result['name'] ?? 'Unknown';
+    
     $delete = mysqli_prepare($conn, "DELETE FROM categories WHERE category_id = ?");
     mysqli_stmt_bind_param($delete, 'i', $delete_category_id);
     mysqli_stmt_execute($delete);
+    
+    // Log audit: category_delete
+    $admin_id = $_SESSION['user_id'] ?? null;
+    $audit_stmt = mysqli_prepare($conn,
+        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, category_id, details)
+         VALUES (?, 'category_delete', 'category', ?, ?, ?)");
+    $details = "Deleted category: $cat_name";
+    mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $delete_category_id, $delete_category_id, $details);
+    mysqli_stmt_execute($audit_stmt);
+    
     header('Location: menu.php');
     exit();
 }
@@ -91,11 +125,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['category_action'])) {
             $update = mysqli_prepare($conn, "UPDATE categories SET name = ?, image = ? WHERE category_id = ?");
             mysqli_stmt_bind_param($update, 'ssi', $name, $category_image_name, $edit_category_id);
             mysqli_stmt_execute($update);
+            
+            // Log audit: category_edit
+            $admin_id = $_SESSION['user_id'] ?? null;
+            $audit_stmt = mysqli_prepare($conn,
+                "INSERT INTO audit_logs (admin_id, action, target_type, target_id, category_id, details)
+                 VALUES (?, 'category_edit', 'category', ?, ?, ?)");
+            $details = "Updated category: $name";
+            mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $edit_category_id, $edit_category_id, $details);
+            mysqli_stmt_execute($audit_stmt);
+            
             $success = 'Category updated successfully.';
         } else {
             $insert = mysqli_prepare($conn, "INSERT INTO categories (name, image) VALUES (?, ?)");
             mysqli_stmt_bind_param($insert, 'ss', $name, $category_image_name);
             mysqli_stmt_execute($insert);
+            
+            $category_id_new = mysqli_insert_id($conn);
+            // Log audit: category_add
+            $admin_id = $_SESSION['user_id'] ?? null;
+            $audit_stmt = mysqli_prepare($conn,
+                "INSERT INTO audit_logs (admin_id, action, target_type, target_id, category_id, details)
+                 VALUES (?, 'category_add', 'category', ?, ?, ?)");
+            $details = "Added category: $name";
+            mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $category_id_new, $category_id_new, $details);
+            mysqli_stmt_execute($audit_stmt);
+            
             $success = 'Category added successfully.';
         }
     }

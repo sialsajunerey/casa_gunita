@@ -19,6 +19,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['full_name'] = $user['full_name'];
         $_SESSION['role']      = $user['role'];
 
+        // Log successful login
+        $log_stmt = mysqli_prepare($conn, 
+            "INSERT INTO user_access_logs (user_id, event_type) VALUES (?, 'login')");
+        mysqli_stmt_bind_param($log_stmt, 'i', $user['user_id']);
+        mysqli_stmt_execute($log_stmt);
+
+        // Log admin login to audit_logs
+        if ($user['role'] === 'admin') {
+            $audit_stmt = mysqli_prepare($conn,
+                "INSERT INTO audit_logs (admin_id, action, target_type, details)
+                 VALUES (?, 'login', 'admin', ?)");
+            $details = "Admin logged in";
+            mysqli_stmt_bind_param($audit_stmt, 'is', $user['user_id'], $details);
+            mysqli_stmt_execute($audit_stmt);
+        }
+
         if ($user['role'] === 'admin') {
             header("Location: /casa_gunita/admin/index.php");
         } else {
@@ -26,6 +42,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         exit();
     } else {
+        // Log failed login attempt
+        $fail_stmt = mysqli_prepare($conn, 
+            "INSERT INTO user_access_logs (user_id, event_type) 
+             SELECT user_id, 'failed_login' FROM users WHERE email = ? LIMIT 1");
+        mysqli_stmt_bind_param($fail_stmt, 's', $email);
+        mysqli_stmt_execute($fail_stmt);
+        
+        // Log failed admin login attempt to audit_logs
+        $check_admin = mysqli_prepare($conn, 
+            "SELECT user_id FROM users WHERE email = ? AND role = 'admin' LIMIT 1");
+        mysqli_stmt_bind_param($check_admin, 's', $email);
+        mysqli_stmt_execute($check_admin);
+        $admin_check = mysqli_fetch_assoc(mysqli_stmt_get_result($check_admin));
+        if ($admin_check) {
+            $admin_id = $admin_check['user_id'];
+            $audit_stmt = mysqli_prepare($conn,
+                "INSERT INTO audit_logs (admin_id, action, target_type, details)
+                 VALUES (?, 'failed_login', 'admin', ?)");
+            $details = "Failed login attempt from IP: $ip";
+            mysqli_stmt_bind_param($audit_stmt, 'is', $admin_id, $details);
+            mysqli_stmt_execute($audit_stmt);
+        }
+        
         $error = "Invalid email or password.";
     }
 }

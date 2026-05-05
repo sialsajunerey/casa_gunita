@@ -34,7 +34,7 @@ if ($view_customer_id > 0) {
     $customer_detail = mysqli_fetch_assoc(mysqli_stmt_get_result($detail_stmt));
     if ($customer_detail) {
         $log_stmt = mysqli_prepare($conn,
-            "SELECT event_type, event_time, ip_address FROM user_access_logs
+            "SELECT event_type, event_time FROM user_access_logs
              WHERE user_id = ? ORDER BY event_time DESC LIMIT 50");
         mysqli_stmt_bind_param($log_stmt, 'i', $view_customer_id);
         mysqli_stmt_execute($log_stmt);
@@ -160,14 +160,13 @@ body { margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:v
                 <?php else: ?>
                     <table class="table">
                         <thead>
-                            <tr><th>Event</th><th>Timestamp</th><th>IP Address</th></tr>
+                            <tr><th>Event</th><th>Timestamp</th></tr>
                         </thead>
                         <tbody>
                             <?php while ($log = mysqli_fetch_assoc($access_logs)): ?>
                                 <tr>
                                     <td><span class="status-tag <?= $log['event_type'] === 'failed_login' ? 'status-failed' : 'status-success' ?>"><?= strtoupper(str_replace('_', ' ', $log['event_type'])) ?></span></td>
                                     <td><?= htmlspecialchars($log['event_time'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($log['ip_address'] ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
                                 </tr>
                             <?php endwhile; ?>
                         </tbody>
