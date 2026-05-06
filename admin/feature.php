@@ -39,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_query($conn, "UPDATE products SET is_featured = 1 WHERE product_id IN (" . implode(',', $selected_products) . ")");
         }
 
-        // Log audit: featured update
         $admin_id = $_SESSION['user_id'] ?? null;
         $cat_list = !empty($selected_categories) ? implode(', ', $selected_categories) : 'None';
         $prod_list = !empty($selected_products) ? implode(', ', $selected_products) : 'None';
@@ -106,79 +105,23 @@ while ($row = mysqli_fetch_assoc($sel)) {
     <title>Feature — Casa Gunita Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; }
-        :root {
-            --crimson: #210303;
-            --crimson-d: #130301;
-            --gold: #e8d191;
-            --ink: #130301;
-            --surface: #fff8eb;
-            --bg: #f4f2ea;
-            --line: rgba(33,3,3,.1);
-            --radius: 14px;
-            --shadow: 0 2px 18px rgba(33,3,3,.08);
-            --sidebar-w: 220px;
-            --header-h: 64px;
-        }
-        body { margin: 0; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; }
-        .sidebar { width: var(--sidebar-w); background: var(--crimson); min-height: 100vh; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; }
-        .sidebar-logo { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,.12); }
-        .sidebar-logo .brand { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: #fff; letter-spacing: 0.08em; text-transform: uppercase; }
-        .nav-list { list-style: none; padding: 16px 12px; flex: 1; margin: 0; }
-        .nav-list li { margin-bottom: 4px; }
-        .nav-list a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,.75); text-decoration: none; font-size: 14px; font-weight: 500; transition: background .15s, color .15s; }
-        .nav-list a.active, .nav-list a:hover { background: rgba(255,255,255,.14); color: #fff; }
-        .nav-list a .icon { width: 20px; text-align: center; font-size: 16px; }
-        .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,.12); }
-        .sidebar-footer a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,.65); text-decoration: none; font-size: 14px; transition: background .15s, color .15s; }
-        .sidebar-footer a:hover { background: rgba(255,255,255,.1); color: #fff; }
-        .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-        .topbar { height: var(--header-h); background: var(--surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 28px; gap: 16px; position: sticky; top: 0; z-index: 50; }
-        .topbar-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--crimson); white-space: nowrap; }
-        .topbar-spacer { flex: 1; }
-        .topbar-user { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 500; color: var(--ink); }
-        .avatar { width: 34px; height: 34px; background: var(--crimson); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
-        .content { padding: 24px 28px; display: flex; flex-direction: column; gap: 22px; }
-        .card { background: var(--surface); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
-        .page-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .page-header h2 { font-family: 'Cinzel Decorative', serif; font-size: 2rem; margin: 0; color: var(--crimson); }
-        .hint { margin: 10px 0 0; color: #555; font-size: 0.95rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .filter-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; align-items: center; }
-        .filter-row input { height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid #c6c6c6; background: #fff; color: #111; flex: 1; min-width: 220px; }
-        .filter-row button, .filter-row a { border-radius: 12px; }
-        .feature-card { border: 1px solid #ddd; border-radius: 18px; overflow: hidden; background: #fff; display: flex; flex-direction: column; position: relative; }
-        .feature-card input { position: absolute; top: 12px; right: 12px; width: 18px; height: 18px; }
-        .feature-card img { width: 100%; min-height: 160px; object-fit: cover; }
-        .feature-card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .feature-card-title { font-size: 1rem; margin: 0 0 12px; font-weight: 700; }
-        .feature-card-meta { color: #666; font-size: 0.95rem; line-height: 1.4; }
-        .feature-actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
-        button { border: none; border-radius: 12px; padding: 12px 18px; font-weight: 700; cursor: pointer; background: var(--crimson); color: #fff; transition: background .2s; }
-        button:hover { background: var(--crimson-d); }
-        .button-secondary { background: #6b7280; }
-        .alert { border-radius: 14px; padding: 14px 18px; font-weight: 500; }
-        .alert-error { background: #fee2e2; color: #981b1b; }
-        .alert-success { background: #d1fae5; color: #065f46; }
-        .disabled-note { color: #999; font-size: 0.95rem; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="feature.css">
 </head>
 <body>
 
 <aside class="sidebar">
     <div class="sidebar-logo"><div class="brand">Casa Gunita</div></div>
     <ul class="nav-list">
-        <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
-        <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="menu.php"><span class="icon">🍽️</span> Menu</a></li>
-        <li><a href="feature.php" class="active"><span class="icon">⭐</span> Feature</a></li>
-        <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
-        <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
-        <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
+        <li><a href="index.php">Dashboard</a></li>
+        <li><a href="orders.php">Orders</a></li>
+        <li><a href="menu.php">Menu</a></li>
+        <li><a href="feature.php" class="active">Feature</a></li>
+        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customers.php">Customers</a></li>
+        <li><a href="audit.php">Audit</a></li>
     </ul>
-    <div class="sidebar-footer"><a href="logout.php"><span class="icon">🚪</span> Logout</a></div>
+    <div class="sidebar-footer"><a href="logout.php">Logout</a></div>
 </aside>
 
 <div class="main">
@@ -207,13 +150,13 @@ while ($row = mysqli_fetch_assoc($sel)) {
             <?php if ($success): ?><div class="alert alert-success"><?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
             <form id="featureForm" method="POST">
-                <div class="card" style="padding:20px; margin-bottom:24px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div class="section-block">
+                    <div class="section-header">
                         <div>
-                            <h3 style="margin-bottom:16px;">Featured Categories</h3>
-                            <p class="hint" style="margin-top:0;">Search featured categories and select up to 3.</p>
+                            <h3>Featured Categories</h3>
+                            <p class="hint">Select up to 3 categories.</p>
                         </div>
-                        <input id="categorySearch" type="search" placeholder="Search categories" value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>" style="width:260px; min-width:200px;">
+                        <input id="categorySearch" type="search" placeholder="Search categories" value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     <div class="grid" id="categoryGrid">
                         <?php while ($cat = mysqli_fetch_assoc($categories)): ?>
@@ -229,13 +172,14 @@ while ($row = mysqli_fetch_assoc($sel)) {
                         <?php endwhile; ?>
                     </div>
                 </div>
-                <div class="card" style="padding:20px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+
+                <div class="section-block">
+                    <div class="section-header">
                         <div>
-                            <h3 style="margin-bottom:16px;">Featured Dishes</h3>
-                            <p class="hint" style="margin-top:0;">Search featured dishes and select up to 3.</p>
+                            <h3>Featured Dishes</h3>
+                            <p class="hint">Select up to 3 dishes.</p>
                         </div>
-                        <input id="productSearch" type="search" placeholder="Search dishes" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>" style="width:260px; min-width:200px;">
+                        <input id="productSearch" type="search" placeholder="Search dishes" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     <div class="grid" id="productGrid">
                         <?php while ($item = mysqli_fetch_assoc($products)): ?>

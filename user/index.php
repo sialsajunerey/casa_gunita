@@ -44,7 +44,7 @@ $featured = mysqli_query($conn,
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
-        <a href="about.php">About</a>
+        <a href="#about">About</a>
     </div>
     <div class="nav-icons">
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
@@ -163,11 +163,7 @@ $featured = mysqli_query($conn,
         <?php else: ?>
             <div class="featured-grid">
                 <?php
-                $imgMap = [
-                    'Sinigang na Salmon' => 'sinigangsalmon.png',
-                    'Pochero'            => 'pochero.png',
-                    'Kare Kare'          => 'karekare.png',
-                ];
+
                 while ($item = mysqli_fetch_assoc($featured)):
                     $imgFile = $imgMap[$item['name']] ?? $item['image'];
                     if (!empty($imgFile) && strpos($imgFile, '/') === false) {
@@ -226,13 +222,19 @@ $featured = mysqli_query($conn,
     <nav class="footer-nav" aria-label="Footer navigation">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
-        <a href="about.php">About Us</a>
+        <a href="#about">About Us</a>
         <a href="#contact">Contact</a>
-        <a href="promos.php">Promos</a>
         <a href="#featured">Featured Dishes</a>
     </nav>
 </footer>
 <div class="footer-copy">© <?= date('Y') ?> Casa Gunita — Authentic Filipino Cuisine</div>
+
+<!-- Back to Top Button -->
+<button class="back-to-top" id="backToTop" aria-label="Back to top">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"/>
+    </svg>
+</button>
 
 <script>
     // Account dropdown
@@ -254,7 +256,8 @@ $featured = mysqli_query($conn,
         });
     }, { threshold: 0.10 });
     observer.observe(weOfferTitle);
-</script>
+
+</script> 
 
 </body>
 </html>

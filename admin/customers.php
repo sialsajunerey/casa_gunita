@@ -45,77 +45,59 @@ if ($view_customer_id > 0) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Customers — Casa Gunita Admin</title>
-<style>
-*, *::before, *::after { box-sizing: border-box; }
-:root { --crimson: #210303; --ink: #130301; --surface: #fff8eb; --bg: #f4f2ea; --line: rgba(33,3,3,.1); --radius: 14px; --shadow: 0 2px 18px rgba(33,3,3,.08); --sidebar-w:220px; }
-body { margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; display:flex; }
-.sidebar{width:var(--sidebar-w); background:var(--crimson); min-height:100vh; position:fixed; top:0; left:0; display:flex; flex-direction:column; }
-.sidebar-logo{padding:22px 20px 18px; border-bottom:1px solid rgba(255,255,255,.12); }
-.sidebar-logo .brand{font-family:'Cinzel Decorative',serif;font-size:17px;color:#fff;letter-spacing:.08em;text-transform:uppercase; }
-.nav-list{list-style:none;padding:16px 12px;margin:0;flex:1;}
-.nav-list li{margin-bottom:4px;}
-.nav-list a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;text-decoration:none;color:rgba(255,255,255,.75);font-size:14px;font-weight:500;}
-.nav-list a.active,.nav-list a:hover{background:rgba(255,255,255,.14);color:#fff;}
-.nav-list a .icon{width:20px;text-align:center;}
-.sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.12);}
-.sidebar-footer a{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.65);text-decoration:none;}
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
-.topbar{height:64px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:5;}
-.topbar-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--crimson);} .topbar-spacer{flex:1;}.topbar-user{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:14px;}.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--crimson);color:#fff;font-weight:700;}
-.content{padding:24px 28px;display:flex;flex-direction:column;gap:20px;}
-.card{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
-.table-wrap{overflow-x:auto;}
-.table{width:100%;border-collapse:collapse;}
-.table th,.table td{padding:14px 16px;border-bottom:1px solid #ecebf1;text-align:left;}
-.table th{background:#e8d191;color:#130301;text-transform:uppercase;font-size:12px;letter-spacing:.08em;}
-.status-tag{padding:6px 10px;border-radius:999px;font-size:13px;display:inline-flex;align-items:center;gap:6px;}
-.status-failed{background:#fde2e2;color:#9b1c1c;}
-.status-success{background:#d1fae5;color:#0f5132;}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;text-decoration:none;}
-.btn-blue{background:#3498db;color:#fff;}.btn-gray{background:#6b7280;color:#fff;}.btn-red{background:#e74c3c;color:#fff;}
-.input-inline{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
-.input-inline input{padding:12px 14px;border-radius:12px;border:1px solid #d6d2d9;min-width:220px;}
-.password-cell{display:flex;align-items:center;gap:10px;}
-.password-mask{font-family:monospace;letter-spacing:0.12em;}
-.link-button{border:none;background:none;color:#3498db;cursor:pointer;text-decoration:underline;padding:0;font-size:0.95rem;}
-.details-card{margin-top:16px;}
-.details-card h3{margin:0 0 12px;font-size:1.2rem;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers — Casa Gunita Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="customers.css">
 </head>
 <body>
+
 <aside class="sidebar">
     <div class="sidebar-logo"><div class="brand">Casa Gunita</div></div>
     <ul class="nav-list">
-        <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
-        <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="menu.php"><span class="icon">🍽️</span> Menu</a></li>        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>        <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
-        <li><a href="customers.php" class="active"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
-        <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
+        <li><a href="index.php">Dashboard</a></li>
+        <li><a href="orders.php">Orders</a></li>
+        <li><a href="menu.php">Menu</a></li>
+        <li><a href="feature.php">Feature</a></li>
+        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customers.php" class="active">Customers</a></li>
+        <li><a href="audit.php">Audit</a></li>
     </ul>
-    <div class="sidebar-footer"><a href="logout.php"><span class="icon">🚪</span> Logout</a></div>
+    <div class="sidebar-footer"><a href="logout.php">Logout</a></div>
 </aside>
+
 <div class="main">
     <header class="topbar">
         <div class="topbar-title">Customers</div>
         <div class="topbar-spacer"></div>
-        <div class="topbar-user"><div class="avatar"><?= strtoupper(substr($_SESSION['full_name'], 0, 1)) ?></div><span><?= htmlspecialchars($_SESSION['full_name'], ENT_QUOTES, 'UTF-8') ?></span></div>
+        <div class="topbar-user">
+            <div class="avatar"><?= strtoupper(substr($_SESSION['full_name'], 0, 1)) ?></div>
+            <span><?= htmlspecialchars($_SESSION['full_name'], ENT_QUOTES, 'UTF-8') ?></span>
+        </div>
     </header>
 
     <div class="content">
-        <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-            <div style="font-weight:700;font-size:1.05rem;">Customer Accounts</div>
-            <form method="GET" class="input-inline">
-                <input type="text" name="search_id" placeholder="Search by customer ID" value="<?= htmlspecialchars($search_id, ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit" class="btn btn-blue">Search</button>
-                <?php if ($search_id !== ''): ?><a href="customers.php" class="btn btn-gray">Clear</a><?php endif; ?>
-            </form>
+
+        <div class="card top-bar">
+            <div class="top-bar-left">
+                <div class="top-bar-title">Customer Accounts</div>
+            </div>
+            <div class="top-bar-right">
+                <form method="GET" style="display:flex;gap:8px;align-items:center;">
+                    <input class="input-group" type="text" name="search_id" placeholder="Search by customer ID" value="<?= htmlspecialchars($search_id, ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    <?php if ($search_id !== ''): ?>
+                        <a href="customers.php" class="btn btn-gray">Clear</a>
+                    <?php endif; ?>
+                </form>
+            </div>
         </div>
 
-        <div class="card table-wrap">
-            <table class="table">
+        <div class="table-card">
+            <table class="customers-table">
                 <thead>
                     <tr>
                         <th>Customer ID</th>
@@ -128,22 +110,30 @@ body { margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:v
                 </thead>
                 <tbody>
                 <?php if (mysqli_num_rows($customers) === 0): ?>
-                    <tr><td colspan="6" style="text-align:center;color:#777;padding:30px 0;">No customer found.</td></tr>
+                    <tr class="empty-row">
+                        <td colspan="6">
+                            <div class="empty-inner">
+                                <p>No customers found.</p>
+                            </div>
+                        </td>
+                    </tr>
                 <?php else: ?>
                     <?php while ($customer = mysqli_fetch_assoc($customers)): ?>
                         <tr>
-                            <td><?= $customer['user_id'] ?></td>
-                            <td><?= htmlspecialchars($customer['full_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars($customer['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><span class="customer-id">#<?= $customer['user_id'] ?></span></td>
+                            <td><span class="customer-name"><?= htmlspecialchars($customer['full_name'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                            <td><span class="customer-email"><?= htmlspecialchars($customer['email'], ENT_QUOTES, 'UTF-8') ?></span></td>
                             <td>
                                 <div class="password-cell">
-                                    <span class="password-mask">********</span>
-                                    <button type="button" class="link-button" onclick="togglePassword(this, 'pw-<?= $customer['user_id'] ?>')">Show</button>
-                                    <span id="pw-<?= $customer['user_id'] ?>" style="display:none; font-family:monospace;"><?= htmlspecialchars($customer['password'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="password-mask" id="mask-<?= $customer['user_id'] ?>">••••••••</span>
+                                    <span class="password-text" id="pw-<?= $customer['user_id'] ?>" style="display:none;"><?= htmlspecialchars($customer['password'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <button type="button" class="toggle-btn" onclick="togglePassword(this, <?= $customer['user_id'] ?>)">Show</button>
                                 </div>
                             </td>
-                            <td><?= htmlspecialchars($customer['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><a href="customers.php?view_customer_id=<?= $customer['user_id'] ?>" class="btn btn-gray">View Access Log</a></td>
+                            <td><span class="date-text"><?= htmlspecialchars($customer['created_at'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                            <td>
+                                <a href="customers.php?view_customer_id=<?= $customer['user_id'] ?>" class="receipt-link">View Access Log</a>
+                            </td>
                         </tr>
                     <?php endwhile; ?>
                 <?php endif; ?>
@@ -152,21 +142,35 @@ body { margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:v
         </div>
 
         <?php if ($customer_detail): ?>
-            <div class="card details-card">
-                <h3>Access Log for <?= htmlspecialchars($customer_detail['full_name'] ?: 'Customer #' . $customer_detail['user_id'], ENT_QUOTES, 'UTF-8') ?></h3>
-                <div style="margin-bottom:16px;">Customer ID: <?= $customer_detail['user_id'] ?> · Created: <?= htmlspecialchars($customer_detail['created_at'], ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="table-card access-log-card">
+                <div class="access-log-header">
+                    <div>
+                        <div class="access-log-title"><?= htmlspecialchars($customer_detail['full_name'] ?: 'Customer #' . $customer_detail['user_id'], ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="access-log-meta">Customer ID: <?= $customer_detail['user_id'] ?> &middot; Joined: <?= htmlspecialchars($customer_detail['created_at'], ENT_QUOTES, 'UTF-8') ?></div>
+                    </div>
+                    <a href="customers.php" class="btn btn-gray">Close</a>
+                </div>
                 <?php if (mysqli_num_rows($access_logs) === 0): ?>
-                    <div style="color:#777;">No login/logout activity found for this customer.</div>
+                    <div class="empty-inner" style="padding: 40px 24px;">
+                        <p>No login/logout activity found for this customer.</p>
+                    </div>
                 <?php else: ?>
-                    <table class="table">
+                    <table class="customers-table">
                         <thead>
-                            <tr><th>Event</th><th>Timestamp</th></tr>
+                            <tr>
+                                <th>Event</th>
+                                <th>Timestamp</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php while ($log = mysqli_fetch_assoc($access_logs)): ?>
                                 <tr>
-                                    <td><span class="status-tag <?= $log['event_type'] === 'failed_login' ? 'status-failed' : 'status-success' ?>"><?= strtoupper(str_replace('_', ' ', $log['event_type'])) ?></span></td>
-                                    <td><?= htmlspecialchars($log['event_time'], ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td>
+                                        <span class="badge <?= $log['event_type'] === 'failed_login' ? 'badge-failed' : 'badge-success' ?>">
+                                            <?= strtoupper(str_replace('_', ' ', $log['event_type'])) ?>
+                                        </span>
+                                    </td>
+                                    <td><span class="date-text"><?= htmlspecialchars($log['event_time'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                 </tr>
                             <?php endwhile; ?>
                         </tbody>
@@ -174,17 +178,22 @@ body { margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:v
                 <?php endif; ?>
             </div>
         <?php endif; ?>
+
     </div>
 </div>
+
 <script>
 function togglePassword(button, id) {
-    const target = document.getElementById(id);
-    if (!target) return;
-    if (target.style.display === 'none') {
-        target.style.display = 'inline';
+    const mask = document.getElementById('mask-' + id);
+    const text = document.getElementById('pw-' + id);
+    if (!mask || !text) return;
+    if (text.style.display === 'none') {
+        text.style.display = 'inline';
+        mask.style.display = 'none';
         button.textContent = 'Hide';
     } else {
-        target.style.display = 'none';
+        text.style.display = 'none';
+        mask.style.display = 'inline';
         button.textContent = 'Show';
     }
 }
