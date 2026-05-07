@@ -99,7 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
     <div class="nav-search-wrap">
-        <input type="text" class="nav-search" placeholder="Search">
+        <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
+        <div class="search-results-dropdown" id="searchResults"></div>
     </div>
     <div class="nav-links">
         <a href="index.php">Home</a>
@@ -283,6 +284,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     orderTypeSelect.addEventListener('change', updateAddressFields);
     updateAddressFields();
 </script>
+
+<script src="search.js"></script>
 
 </body>
 </html>

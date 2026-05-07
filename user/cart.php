@@ -14,11 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add') {
-        $id       = (int)$_POST['product_id'];
-        $quantity = max(1, (int)$_POST['quantity']);
-        $isAjax   = isset($_POST['ajax']) && $_POST['ajax'] == '1';
+        $id          = (int)$_POST['product_id'];
+        $quantity    = max(1, (int)$_POST['quantity']);
+        $editCartKey = trim($_POST['edit_cart_key'] ?? '');
+        $isAjax      = isset($_POST['ajax']) && $_POST['ajax'] == '1';
 
-        $stmt = mysqli_prepare($conn, "SELECT product_id, name, price FROM products WHERE product_id = ? AND is_available = 1");
+        if ($editCartKey !== '' && isset($_SESSION['cart'][$editCartKey])) {
+            $quantity = $_SESSION['cart'][$editCartKey]['quantity'];
+            unset($_SESSION['cart'][$editCartKey]);
+        }
+
+        $stmt = mysqli_prepare($conn, "SELECT product_id, name, price, category_id FROM products WHERE product_id = ? AND is_available = 1");
         mysqli_stmt_bind_param($stmt, 'i', $id);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
@@ -107,7 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        header('Location: cart.php');
+        $categoryId = (int)$product['category_id'];
+        header('Location: menu.php?category_id=' . $categoryId);
         exit();
     }
 
@@ -164,7 +171,8 @@ function getCartTotalAmount($cart) {
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
     <div class="nav-search-wrap">
-        <input type="text" class="nav-search" placeholder="Search">
+        <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
+        <div class="search-results-dropdown" id="searchResults"></div>
     </div>
     <div class="nav-links">
         <a href="index.php">Home</a>
@@ -270,12 +278,15 @@ function getCartTotalAmount($cart) {
                         <?= formatPrice($item['price'] * $item['quantity']) ?>
                     </td>
                     <td>
-                        <form method="POST" style="margin:0;">
-                            <input type="hidden" name="action" value="remove">
-                            <input type="hidden" name="cart_key" value="<?= htmlspecialchars($key) ?>">
-                            <input type="hidden" name="product_id" value="<?= htmlspecialchars($item['product_id'] ?? $key) ?>">
-                            <button type="submit" class="secondary-button">Remove</button>
-                        </form>
+                        <div class="cart-actions">
+                            <a href="customize.php?product_id=<?= htmlspecialchars($item['product_id']) ?>&cart_key=<?= urlencode($key) ?>" class="secondary-button edit-button">Edit</a>
+                            <form method="POST" style="margin:0; display:inline-flex;">
+                                <input type="hidden" name="action" value="remove">
+                                <input type="hidden" name="cart_key" value="<?= htmlspecialchars($key) ?>">
+                                <input type="hidden" name="product_id" value="<?= htmlspecialchars($item['product_id'] ?? $key) ?>">
+                                <button type="submit" class="secondary-button remove-button">Remove</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -341,6 +352,8 @@ function getCartTotalAmount($cart) {
 
     updateCartTotals();
 </script>
+
+<script src="search.js"></script>
 
 </body>
 </html>

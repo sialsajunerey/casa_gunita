@@ -78,7 +78,8 @@ function buildOptionLabel($option) {
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
     <div class="nav-search-wrap">
-        <input type="text" class="nav-search" placeholder="Search">
+        <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
+        <div class="search-results-dropdown" id="searchResults"></div>
     </div>
     <div class="nav-links">
         <a href="index.php">Home</a>
@@ -132,7 +133,11 @@ function buildOptionLabel($option) {
             <div class="product-meta">
                 <h1 class="product-name"><?= htmlspecialchars($product['name']) ?></h1>
                 <p class="product-desc"><?= nl2br(htmlspecialchars($product['description'] ?? 'Choose your options before adding to cart.')) ?></p>
-                <div class="product-price">Price: <?= formatPrice($product['price']) ?></div>
+                <div class="product-price">
+                    <span>Price: </span>
+                    <span id="displayPrice"><?= formatPrice($product['price']) ?></span>
+                    <input type="hidden" id="basePrice" value="<?= htmlspecialchars($product['price']) ?>">
+                </div>
                 <?php if (empty($groups)): ?>
                     <p class="helper-text">This item has no extra customization options. Click Add to Cart to continue.</p>
                 <?php endif; ?>
@@ -159,6 +164,8 @@ function buildOptionLabel($option) {
                                     type="<?= $group['group_type'] === 'addon' ? 'checkbox' : 'radio' ?>"
                                     name="<?= $inputName ?>"
                                     value="<?= htmlspecialchars($option['option_id']) ?>"
+                                    data-price="<?= htmlspecialchars($option['additional_price']) ?>"
+                                    data-group-type="<?= htmlspecialchars($group['group_type']) ?>"
                                     <?= $group['group_type'] !== 'addon' ? 'required' : '' ?>
                                 >
                                 <div class="option-content">
@@ -204,7 +211,65 @@ function buildOptionLabel($option) {
     document.addEventListener('click', function() {
         accountDropdown.classList.remove('open');
     });
+
+    // Price update on modifier selection
+    const basePrice = parseFloat(document.getElementById('basePrice').value);
+    const displayPrice = document.getElementById('displayPrice');
+    const form = document.querySelector('.customization-section');
+
+    function updatePrice() {
+        let totalPrice = basePrice;
+        let replacementPrice = null;
+
+        // Get all checked inputs
+        const checkedInputs = form.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked');
+
+        checkedInputs.forEach(input => {
+            const price = parseFloat(input.dataset.price) || 0;
+            const groupType = input.dataset.groupType;
+
+            if (groupType === 'addon') {
+                // Add-ons: add all prices
+                totalPrice += price;
+            } else {
+                // Set price options: track the highest replacement price
+                if (price > 0) {
+                    replacementPrice = replacementPrice === null ? price : Math.max(replacementPrice, price);
+                }
+            }
+        });
+
+        // Apply replacement price if it exists
+        if (replacementPrice !== null) {
+            totalPrice = replacementPrice;
+            // Add any add-ons on top
+            const addonCheckboxes = form.querySelectorAll('input[type="checkbox"]:checked');
+            addonCheckboxes.forEach(input => {
+                const price = parseFloat(input.dataset.price) || 0;
+                totalPrice += price;
+            });
+        }
+
+        // Format and display the price
+        const formattedPrice = new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+            minimumFractionDigits: 2
+        }).format(totalPrice);
+
+        displayPrice.textContent = formattedPrice;
+    }
+
+    // Listen to all input changes
+    form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+        input.addEventListener('change', updatePrice);
+    });
+
+    // Initial price calculation
+    updatePrice();
 </script>
+
+<script src="search.js"></script>
 
 </body>
 </html>

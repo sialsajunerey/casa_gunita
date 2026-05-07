@@ -39,7 +39,8 @@ $featured = mysqli_query($conn,
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
     <div class="nav-search-wrap">
-        <input type="text" class="nav-search" placeholder="Search">
+        <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
+        <div class="search-results-dropdown" id="searchResults"></div>
     </div>
     <div class="nav-links">
         <a href="index.php">Home</a>
@@ -252,6 +253,8 @@ $featured = mysqli_query($conn,
     observer.observe(weOfferTitle);
 
 </script> 
+
+<script src="search.js"></script>
 
 </body>
 </html>

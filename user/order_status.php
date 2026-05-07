@@ -37,7 +37,8 @@ $result = mysqli_stmt_get_result($orders);
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
     <div class="nav-search-wrap">
-        <input type="text" class="nav-search" placeholder="Search">
+        <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
+        <div class="search-results-dropdown" id="searchResults"></div>
     </div>
     <div class="nav-links">
         <a href="index.php">Home</a>
@@ -126,6 +127,8 @@ $result = mysqli_stmt_get_result($orders);
         accountDropdown.classList.remove('open');
     });
 </script>
+
+<script src="search.js"></script>
 
 </body>
 </html>
