@@ -50,7 +50,7 @@ $inventory = mysqli_fetch_assoc(mysqli_stmt_get_result($inv_stmt));
 // Load existing customization groups and options
 $existing_groups = [];
 $groupStmt = mysqli_prepare($conn,
-    "SELECT group_id, name, group_type, is_required
+    "SELECT group_id, name, group_type, pricing_type, is_required
      FROM product_customization_groups
      WHERE product_id = ?
      ORDER BY display_order, group_id");
@@ -171,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($posted_group_names) && is_array($posted_group_names)) {
                 $groupOrder       = 0;
                 $groupStmt        = mysqli_prepare($conn,
-                    "INSERT INTO product_customization_groups (product_id, name, group_type, is_required, display_order) VALUES (?, ?, ?, ?, ?)");
+                    "INSERT INTO product_customization_groups (product_id, name, group_type, pricing_type, is_required, display_order) VALUES (?, ?, ?, ?, ?, ?)");
                 $groupOptionStmt  = mysqli_prepare($conn,
                     "INSERT INTO product_customization_options (group_id, name, additional_price, image, display_order) VALUES (?, ?, ?, ?, ?)");
                 $modifierLinkStmt = mysqli_prepare($conn,
@@ -182,9 +182,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($groupName === '') continue;
                     $groupType     = in_array($posted_group_types[$groupIndex] ?? '', ['single', 'addon'], true)
                         ? $posted_group_types[$groupIndex] : 'single';
+                    $pricingType   = in_array($posted_group_pricing_type[$groupIndex] ?? '', ['set_price', 'extra_charge'], true)
+                        ? $posted_group_pricing_type[$groupIndex] : 'set_price';
                     $groupRequired = isset($posted_group_required[$groupIndex]) ? 1 : 0;
 
-                    mysqli_stmt_bind_param($groupStmt, 'issii', $id, $groupName, $groupType, $groupRequired, $groupOrder);
+                    mysqli_stmt_bind_param($groupStmt, 'isssii', $id, $groupName, $groupType, $pricingType, $groupRequired, $groupOrder);
                     mysqli_stmt_execute($groupStmt);
                     $groupId = mysqli_insert_id($conn);
 
@@ -416,7 +418,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                                 if ($groupLabel === '' && $existingGroup) $groupLabel = $existingGroup['name'];
                                 if ($groupLabel === '') $groupLabel = $modifierMeta ? $modifierMeta['name'] : ($groupTypeValue === 'addon' ? 'Add-ons' : 'Options');
-                                $pricingType  = $posted_group_pricing_type[$groupIndex] ?? ($modifierMeta['pricing_type'] ?? 'set_price');
+                                $pricingType  = $posted_group_pricing_type[$groupIndex] ?? ($existingGroup['pricing_type'] ?? ($modifierMeta['pricing_type'] ?? 'set_price'));
                                 $optionNames  = $posted_option_names[$groupIndex] ?? [];
                                 $optionPrices = $posted_option_prices[$groupIndex] ?? [];
                                 $optionImages = $posted_option_images[$groupIndex] ?? [];

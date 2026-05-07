@@ -128,25 +128,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($posted_group_names) && is_array($posted_group_names)) {
                 $groupStmt = mysqli_prepare($conn,
                     "INSERT INTO product_customization_groups
-                     (product_id, name, group_type, is_required, display_order)
-                     VALUES (?, ?, ?, ?, ?)");
-                $optionStmt = mysqli_prepare($conn,
-                    "INSERT INTO product_customization_options
-                     (group_id, name, additional_price, image, display_order)
-                     VALUES (?, ?, ?, ?, ?)");
+                         (product_id, name, group_type, pricing_type, is_required, display_order)
+                         VALUES (?, ?, ?, ?, ?, ?)");
+                    $optionStmt = mysqli_prepare($conn,
+                        "INSERT INTO product_customization_options
+                         (group_id, name, additional_price, image, display_order)
+                         VALUES (?, ?, ?, ?, ?)");
 
-                $displayOrder = 0;
-                foreach ($posted_group_names as $groupIndex => $groupName) {
-                    $groupName = sanitize(trim($groupName));
-                    if ($groupName === '') continue;
+                    $displayOrder = 0;
+                    foreach ($posted_group_names as $groupIndex => $groupName) {
+                        $groupName = sanitize(trim($groupName));
+                        if ($groupName === '') continue;
 
-                    $groupType = $posted_group_types[$groupIndex] ?? 'single';
-                    $isRequired = isset($posted_group_required[$groupIndex]) ? (int)$posted_group_required[$groupIndex] : 0;
+                        $groupType = $posted_group_types[$groupIndex] ?? 'single';
+                        $pricingType = $posted_group_pricing_type[$groupIndex] ?? 'set_price';
+                        $isRequired = isset($posted_group_required[$groupIndex]) ? (int)$posted_group_required[$groupIndex] : 0;
 
-                    mysqli_stmt_bind_param($groupStmt, 'issii',
-                        $product_id, $groupName, $groupType, $isRequired, $displayOrder);
-                    mysqli_stmt_execute($groupStmt);
-                    $groupId = mysqli_insert_id($conn);
+                        mysqli_stmt_bind_param($groupStmt, 'isssii',
+                            $product_id, $groupName, $groupType, $pricingType, $isRequired, $displayOrder);
+                        mysqli_stmt_execute($groupStmt);
+                        $groupId = mysqli_insert_id($conn);
 
                     // Save options for this group
                     $optionNames = $posted_option_names[$groupIndex] ?? [];

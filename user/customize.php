@@ -5,6 +5,12 @@ require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
 requireCustomer();
 
+$editCartKey = trim($_GET['cart_key'] ?? '');
+$editCartItem = null;
+if ($editCartKey !== '' && isset($_SESSION['cart'][$editCartKey])) {
+    $editCartItem = $_SESSION['cart'][$editCartKey];
+}
+
 $product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
 if ($product_id <= 0) {
     header('Location: menu.php');
@@ -23,7 +29,7 @@ if (!$product) {
 }
 
 $groups = [];
-$groupStmt = mysqli_prepare($conn, "SELECT group_id, name, group_type, is_required FROM product_customization_groups WHERE product_id = ? ORDER BY display_order, group_id");
+$groupStmt = mysqli_prepare($conn, "SELECT group_id, name, group_type, pricing_type, is_required FROM product_customization_groups WHERE product_id = ? ORDER BY display_order, group_id");
 mysqli_stmt_bind_param($groupStmt, 'i', $product_id);
 mysqli_stmt_execute($groupStmt);
 $groupResult = mysqli_stmt_get_result($groupStmt);
@@ -148,7 +154,8 @@ function buildOptionLabel($option) {
         <form method="POST" action="cart.php" class="customization-section">
             <input type="hidden" name="action" value="add">
             <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['product_id']) ?>">
-            <input type="hidden" name="quantity" value="1">
+            <input type="hidden" name="cart_key" value="<?= htmlspecialchars($editCartKey) ?>">
+            <input type="hidden" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>">
 
             <?php foreach ($groups as $group): ?>
                 <div class="customization-group">
@@ -159,6 +166,7 @@ function buildOptionLabel($option) {
                     <div class="option-list">
                         <?php foreach ($group['options'] as $option): ?>
                             <?php $inputName = 'option_ids[' . $group['group_id'] . ']' . ($group['group_type'] === 'addon' ? '[]' : ''); ?>
+                            <?php $selected = $editCartItem && !empty($editCartItem['options']) && in_array($option['option_id'], array_column($editCartItem['options'], 'option_id'), true); ?>
                             <label class="option-card">
                                 <input
                                     type="<?= $group['group_type'] === 'addon' ? 'checkbox' : 'radio' ?>"
@@ -166,7 +174,9 @@ function buildOptionLabel($option) {
                                     value="<?= htmlspecialchars($option['option_id']) ?>"
                                     data-price="<?= htmlspecialchars($option['additional_price']) ?>"
                                     data-group-type="<?= htmlspecialchars($group['group_type']) ?>"
+                                    data-pricing="<?= htmlspecialchars($group['pricing_type'] ?? 'set_price') ?>"
                                     <?= $group['group_type'] !== 'addon' ? 'required' : '' ?>
+                                    <?= $selected ? 'checked' : '' ?>
                                 >
                                 <div class="option-content">
                                     <p class="option-name"><?= htmlspecialchars($option['name']) ?></p>
@@ -174,7 +184,11 @@ function buildOptionLabel($option) {
                                         <?php if ($group['group_type'] === 'addon'): ?>
                                             <?= $option['additional_price'] > 0 ? '+ ' . formatPrice($option['additional_price']) : 'No extra charge' ?>
                                         <?php else: ?>
-                                            <?= $option['additional_price'] > 0 ? formatPrice($option['additional_price']) : 'Included' ?>
+                                            <?php if ($group['pricing_type'] === 'extra_charge'): ?>
+                                                <?= $option['additional_price'] > 0 ? '+ ' . formatPrice($option['additional_price']) : 'No extra charge' ?>
+                                            <?php else: ?>
+                                                <?= $option['additional_price'] > 0 ? formatPrice($option['additional_price']) : 'Included' ?>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </p>
                                 </div>
@@ -218,8 +232,8 @@ function buildOptionLabel($option) {
     const form = document.querySelector('.customization-section');
 
     function updatePrice() {
-        let totalPrice = basePrice;
         let replacementPrice = null;
+        let extraChargeTotal = 0;
 
         // Get all checked inputs
         const checkedInputs = form.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked');
@@ -227,27 +241,21 @@ function buildOptionLabel($option) {
         checkedInputs.forEach(input => {
             const price = parseFloat(input.dataset.price) || 0;
             const groupType = input.dataset.groupType;
+            const pricingType = input.dataset.pricing || 'set_price';
 
-            if (groupType === 'addon') {
-                // Add-ons: add all prices
-                totalPrice += price;
+            if (groupType === 'addon' || pricingType === 'extra_charge') {
+                extraChargeTotal += price;
             } else {
-                // Set price options: track the highest replacement price
                 if (price > 0) {
                     replacementPrice = replacementPrice === null ? price : Math.max(replacementPrice, price);
                 }
             }
         });
 
-        // Apply replacement price if it exists
         if (replacementPrice !== null) {
-            totalPrice = replacementPrice;
-            // Add any add-ons on top
-            const addonCheckboxes = form.querySelectorAll('input[type="checkbox"]:checked');
-            addonCheckboxes.forEach(input => {
-                const price = parseFloat(input.dataset.price) || 0;
-                totalPrice += price;
-            });
+            totalPrice = replacementPrice + extraChargeTotal;
+        } else {
+            totalPrice = basePrice + extraChargeTotal;
         }
 
         // Format and display the price

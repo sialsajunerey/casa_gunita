@@ -18,17 +18,15 @@ if ($filter_date)   $where[] = "DATE(o.created_at) = '" . mysqli_real_escape_str
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $pending = mysqli_fetch_assoc(mysqli_query($conn,
-    "SELECT COUNT(*) AS total FROM orders o JOIN users u ON o.user_id = u.user_id " . ($where_sql ? $where_sql . " AND o.status = 'pending'" : "WHERE o.status = 'pending'")))['total'];
+    "SELECT COUNT(*) AS total FROM orders o WHERE o.status = 'pending'"))['total'];
 
 $total_orders = mysqli_fetch_assoc(mysqli_query($conn,
-    "SELECT COUNT(*) AS total FROM orders o JOIN users u ON o.user_id = u.user_id " . $where_sql))['total'];
+    "SELECT COUNT(*) AS total FROM orders"))['total'];
 
 $total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COALESCE(SUM(t.amount_paid), 0) AS total 
      FROM orders o 
-     JOIN users u ON o.user_id = u.user_id 
-     LEFT JOIN transactions t ON o.order_id = t.order_id 
-     " . $where_sql))['total'];
+     LEFT JOIN transactions t ON o.order_id = t.order_id"))['total'];
 
 
 $orders_result = mysqli_query($conn,

@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($selectedOptionIds)) {
             $placeholders = implode(',', array_fill(0, count($selectedOptionIds), '?'));
             $types = str_repeat('i', count($selectedOptionIds));
-            $sql = "SELECT o.option_id, o.name, o.additional_price, g.name AS group_name, g.group_type
+            $sql = "SELECT o.option_id, o.name, o.additional_price, g.name AS group_name, g.group_type, g.pricing_type
                     FROM product_customization_options o
                     JOIN product_customization_groups g ON o.group_id = g.group_id
                     WHERE o.option_id IN ($placeholders)";
@@ -80,10 +80,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'option_id'        => (int)$option['option_id'],
                     'group_name'       => $option['group_name'],
                     'group_type'       => $option['group_type'],
+                    'pricing_type'     => $option['pricing_type'] ?? 'set_price',
                     'name'             => $option['name'],
                     'additional_price' => $optionPrice
                 ];
-                if ($option['group_type'] === 'addon') {
+                if ($option['group_type'] === 'addon' || ($option['pricing_type'] ?? 'set_price') === 'extra_charge') {
                     $optionsTotal += $optionPrice;
                 } elseif ($optionPrice > 0) {
                     $replacementPrice = $replacementPrice === null ? $optionPrice : max($replacementPrice, $optionPrice);
@@ -131,8 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'remove') {
-        $id = $_POST['product_id'];
-        unset($_SESSION['cart'][$id]);
+        $key = $_POST['cart_key'] ?? $_POST['product_id'];
+        unset($_SESSION['cart'][$key]);
         header('Location: cart.php');
         exit();
     }
