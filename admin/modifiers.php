@@ -176,12 +176,11 @@ while ($row = mysqli_fetch_assoc($result)) {
             <div class="top-bar-right">
                 <form method="GET" style="display:flex;gap:8px;align-items:center;">
                     <input class="input-group" type="search" name="search" placeholder="Search modifiers…" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" class="btn btn-primary">Search</button>
                     <?php if ($search !== ''): ?>
                         <a href="modifiers.php" class="btn btn-gray">Clear</a>
                     <?php endif; ?>
                 </form>
-                <button type="button" class="btn btn-green" onclick="openModifierModal('add')">+ Add Modifier</button>
+                <button type="button" class="btn btn-green" onclick="openModifierModal('add')">Add Modifier</button>
             </div>
         </div>
 

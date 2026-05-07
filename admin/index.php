@@ -137,7 +137,7 @@ foreach ($orders as $o) {
         <div class="topbar-title">Dashboard</div>
         <div class="search-wrap">
             <form method="GET" action="" id="search-form">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"></span>
                 <input type="text" name="search" placeholder="Search Order ID or Name"
                     value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="debounceSubmit()">
             </form>

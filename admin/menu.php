@@ -244,27 +244,27 @@ if ($category_id > 0) {
         <div class="card top-bar">
             <div class="top-bar-left">
                 <?php if ($selected_category): ?>
-                    <a href="menu.php" class="btn btn-gray">← Back to Categories</a>
+                    <a href="menu.php" class="btn btn-gray">Back to Categories</a>
                     <span class="top-bar-title">
                         <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?>
                     </span>
-                    <input id="menuSearch" type="search" name="search_product"
-                           placeholder="Search items in <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?>"
-                           value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>"
-                           class="input-group">
                 <?php else: ?>
                     <span class="top-bar-title">Categories</span>
-                    <input id="categorySearch" type="search" name="search_category"
-                           placeholder="Search categories"
-                           value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>"
-                           class="input-group">
                 <?php endif; ?>
             </div>
             <div class="top-bar-right">
                 <?php if ($selected_category): ?>
-                    <a href="menu_add.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-green">+ Add Menu Item</a>
+                    <input id="menuSearch" type="search" name="search_product"
+                           placeholder="Search items in <?= htmlspecialchars($selected_category['name'], ENT_QUOTES, 'UTF-8') ?>"
+                           value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>"
+                           class="input-group">
+                    <a href="menu_add.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-green">Add Menu Item</a>
                 <?php else: ?>
-                    <button type="button" class="btn btn-green" onclick="openCategoryModal('add')">+ Add Category</button>
+                    <input id="categorySearch" type="search" name="search_category"
+                           placeholder="Search categories"
+                           value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>"
+                           class="input-group">
+                    <button type="button" class="btn btn-green" onclick="openCategoryModal('add')">Add Category</button>
                 <?php endif; ?>
             </div>
         </div>

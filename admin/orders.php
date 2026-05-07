@@ -124,7 +124,7 @@ if ($orders && mysqli_num_rows($orders) > 0) {
         <div class="header-card">
             <h2>Orders</h2>
             <form method="GET" class="filter-row" id="filter-form">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"></span>
                 <input type="text" name="search" placeholder="Search Order ID or Customer Name" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="date" name="date"
                        value="<?= htmlspecialchars($filter_date, ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
