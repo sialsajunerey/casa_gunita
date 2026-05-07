@@ -16,12 +16,12 @@ $total_orders = mysqli_fetch_assoc(mysqli_query($conn,
 $total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COALESCE(SUM(amount_paid), 0) AS total FROM transactions"))['total'];
 
-$search_id     = isset($_GET['search']) ? (int)$_GET['search'] : 0;
+$search = trim($_GET['search'] ?? '');
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-$filter_date   = isset($_GET['date']) ? $_GET['date'] : '';
+$filter_date = isset($_GET['date']) ? $_GET['date'] : '';
 
 $where = [];
-if ($search_id)     $where[] = "o.order_id = $search_id";
+if ($search) $where[] = "(o.order_id LIKE '%" . mysqli_real_escape_string($conn, $search) . "%' OR u.full_name LIKE '%" . mysqli_real_escape_string($conn, $search) . "%')";
 if ($status_filter) $where[] = "o.status = '" . mysqli_real_escape_string($conn, $status_filter) . "'";
 if ($filter_date)   $where[] = "DATE(o.created_at) = '" . mysqli_real_escape_string($conn, $filter_date) . "'";
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -131,14 +131,10 @@ foreach ($orders as $o) {
     <header class="topbar">
         <div class="topbar-title">Dashboard</div>
         <div class="search-wrap">
-            <form method="GET" action="">
+            <form method="GET" action="" id="search-form">
                 <span class="search-icon">🔍</span>
-                <input type="number" name="search" placeholder="Search Order ID…"
-                    value="<?= htmlspecialchars($search_id ?: '', ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit">Go</button>
-                <?php if ($search_id || $status_filter || $filter_date): ?>
-                    <a href="index.php" style="font-size:12px;color:var(--muted);text-decoration:none;padding:4px 6px;">✕ Clear</a>
-                <?php endif; ?>
+                <input type="text" name="search" placeholder="Search Order ID or Name"
+                    value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="debounceSubmit()">
             </form>
         </div>
         <div class="topbar-spacer"></div>
@@ -176,12 +172,8 @@ foreach ($orders as $o) {
             <div class="orders-panel">
                 <div class="panel-header">
                     <h3>All Orders <span style="color:var(--muted);font-weight:400;font-size:13px;">(<?= count($orders) ?>)</span></h3>
-                    <form method="GET" class="filter-row">
-                        <input type="date" name="date" value="<?= htmlspecialchars($filter_date ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                        <?php if ($filter_date ?? ''): ?>
-                            <a href="index.php" class="btn btn-gray">Clear</a>
-                        <?php endif; ?>
+                    <form method="GET" class="filter-row" id="date-form">
+                        <input type="date" name="date" value="<?= htmlspecialchars($filter_date ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
                     </form>
                 </div>
 
@@ -198,7 +190,7 @@ foreach ($orders as $o) {
                     foreach ($tabs as $val => $label):
                         $active = ($status_filter === $val) ? 'active' : '';
                         $href   = $val ? "?status=$val" : 'index.php';
-                        if ($search_id) $href .= ($val ? "&search=$search_id" : "?search=$search_id");
+                        if ($search) $href .= ($val ? "&search=$search" : "?search=$search");
                         if ($filter_date) $href .= (strpos($href, '?') !== false ? "&date=$filter_date" : "?date=$filter_date");
                     ?>
                     <a href="<?= $href ?>" class="filter-tab <?= $active ?>"><?= $label ?></a>
@@ -298,6 +290,15 @@ foreach ($orders as $o) {
 </div>
 
 <script>
+let timeout;
+function debounceSubmit() {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        const searchForm = document.getElementById('search-form');
+        if (searchForm) searchForm.submit();
+    }, 500);
+}
+
 const ORDERS = <?= json_encode($orders_js, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 
 function formatPrice(n) {

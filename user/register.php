@@ -6,6 +6,7 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $full_name = sanitize($_POST['full_name']);
     $email    = sanitize($_POST['email']);
     $password = $_POST['password'];
     $confirm  = $_POST['confirm_password'];
@@ -23,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $hashed = password_hash($password, PASSWORD_DEFAULT);
             $stmt = mysqli_prepare($conn,
-                "INSERT INTO users (email, password, role) VALUES (?, ?, 'customer')");
-            mysqli_stmt_bind_param($stmt, 'ss', $email, $hashed);
+                "INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, 'customer')");
+            mysqli_stmt_bind_param($stmt, 'sss', $full_name, $email, $hashed);
 
             if (mysqli_stmt_execute($stmt)) {
                 $success = "Account created! You can now login.";
@@ -65,6 +66,7 @@ function sanitize($data) {
         <?php endif; ?>
 
         <form method="POST" class="auth-form">
+            <input type="text"    name="full_name" class="auth-input" placeholder="Full Name"            required>
             <input type="email"    name="email"            class="auth-input" placeholder="Email"            required>
             <input type="password" name="password"         class="auth-input" placeholder="Password"         required>
             <input type="password" name="confirm_password" class="auth-input" placeholder="Confirm Password" required>

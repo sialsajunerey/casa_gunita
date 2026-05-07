@@ -61,8 +61,7 @@ $query = "SELECT o.*, u.full_name
           ORDER BY o.created_at DESC";
 $stmt = mysqli_prepare($conn, $query);
 if (!empty($bind_params)) {
-    array_unshift($bind_params, $types);
-    call_user_func_array('mysqli_stmt_bind_param', array_merge([$stmt], $bind_params));
+    mysqli_stmt_bind_param($stmt, $types, ...$bind_params);
 }
 mysqli_stmt_execute($stmt);
 $orders = mysqli_stmt_get_result($stmt);
@@ -124,15 +123,12 @@ if ($orders && mysqli_num_rows($orders) > 0) {
         <!-- Header + Filter -->
         <div class="header-card">
             <h2>Orders</h2>
-            <form method="GET" class="filter-row">
-                <input type="text" name="search" placeholder="Search Order ID or Customer Name"
-                       value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
+            <form method="GET" class="filter-row" id="filter-form">
+                <span class="search-icon">🔍</span>
+                <input type="text" name="search" placeholder="Search Order ID or Customer Name" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="date" name="date"
-                       value="<?= htmlspecialchars($filter_date, ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <?php if ($filter_date || $search): ?>
-                    <a href="orders.php" class="btn btn-gray">Clear</a>
-                <?php endif; ?>
+                       value="<?= htmlspecialchars($filter_date, ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
+                <button type="submit">Go</button>
             </form>
         </div>
 
