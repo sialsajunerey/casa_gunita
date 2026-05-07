@@ -98,14 +98,11 @@ $featured = mysqli_query($conn,
             <?php else: ?>
                 <?php while ($category = mysqli_fetch_assoc($featuredCategories)): ?>
                     <?php
+                        $placeholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCBmaWxsPSIjZThhMDcyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjwvc3ZnPg==';
                         if (!empty($category['image'])) {
-                            $catImg = strpos($category['image'], '/') === false ? '/casa_gunita/assets/images/' . $category['image'] : $category['image'];
-                        } elseif (stripos($category['name'], 'breakfast') !== false) {
-                            $catImg = 'bfastbg.jpg';
-                        } elseif (stripos($category['name'], 'drink') !== false) {
-                            $catImg = 'drinksdessbg.jpg';
+                            $catImg = strpos($category['image'], '/') === false ? '../assets/images/' . $category['image'] : $category['image'];
                         } else {
-                            $catImg = 'lunchbg.jpg';
+                            $catImg = $placeholder;
                         }
                     ?>
                     <div class="offer-card">
@@ -163,20 +160,17 @@ $featured = mysqli_query($conn,
         <?php else: ?>
             <div class="featured-grid">
                 <?php
-
-                while ($item = mysqli_fetch_assoc($featured)):
-                    $imgFile = $imgMap[$item['name']] ?? $item['image'];
-                    if (!empty($imgFile) && strpos($imgFile, '/') === false) {
-                        $imgFile = '/casa_gunita/assets/images/' . $imgFile;
-                    }
+                    while ($item = mysqli_fetch_assoc($featured)):
+                        $placeholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCBmaWxsPSIjZThhMDcyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjwvc3ZnPg==';
+                        if (!empty($item['image'])) {
+                            $imgFile = strpos($item['image'], '/') === false ? '../assets/images/' . $item['image'] : $item['image'];
+                        } else {
+                            $imgFile = $placeholder;
+                        }
                 ?>
                 <div class="dish-card">
-                    <?php if ($imgFile): ?>
-                        <img src="<?= htmlspecialchars($imgFile) ?>"
-                             alt="<?= htmlspecialchars($item['name']) ?>">
-                    <?php else: ?>
-                        <div class="dish-no-img">🍽️</div>
-                    <?php endif; ?>
+                    <img src="<?= htmlspecialchars($imgFile) ?>"
+                         alt="<?= htmlspecialchars($item['name']) ?>">
                     <div class="dish-overlay">
                         <span class="dish-name"><?= htmlspecialchars($item['name']) ?></span>
                     </div>

@@ -122,7 +122,9 @@ function buildOptionLabel($option) {
             <div class="product-image">
                 <?php if (!empty($product['image'])): ?>
                     <img src="../assets/images/<?= htmlspecialchars($product['image']) ?>"
-                         alt="<?= htmlspecialchars($product['name']) ?>">
+                         alt="<?= htmlspecialchars($product['name']) ?>"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="product-image-placeholder" style="display:none;">No image available</div>
                 <?php else: ?>
                     <div class="product-image-placeholder">No image available</div>
                 <?php endif; ?>
@@ -172,7 +174,8 @@ function buildOptionLabel($option) {
                                 <?php if (!empty($option['image'])): ?>
                                     <div class="option-image">
                                         <img src="../assets/images/<?= htmlspecialchars($option['image']) ?>"
-                                             alt="<?= htmlspecialchars($option['name']) ?>">
+                                             alt="<?= htmlspecialchars($option['name']) ?>"
+                                             onerror="this.style.display='none';">
                                     </div>
                                 <?php endif; ?>
                             </label>

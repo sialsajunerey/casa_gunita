@@ -13,7 +13,7 @@ $success = '';
 $name         = '';
 $description  = '';
 $price        = '';
-$category_id  = 0;
+$category_id  = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $is_available = 1;
 $stock        = 50;
 $image_name   = '';
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "INSERT INTO audit_logs (admin_id, action, target_type, target_id, product_id, details)
                  VALUES (?, 'menu_add', 'product', ?, ?, ?)");
             $details = "Added product: $name (Price: ₱" . number_format($price, 2) . ")";
-            mysqli_stmt_bind_param($audit_stmt, 'iis', $admin_id, $product_id, $product_id, $details);
+            mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $product_id, $product_id, $details);
             mysqli_stmt_execute($audit_stmt);
 
             // Save customization groups and options
@@ -202,7 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             }
 
-            header('Location: menu.php');
+            $redirectUrl = 'menu.php' . ($category_id > 0 ? '?category_id=' . $category_id : '');
+            header('Location: ' . $redirectUrl);
             exit();
         } else {
             $error = "Failed to add menu item. Please ensure the selected category still exists.";
@@ -517,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    imgPreviewWrap.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width:100%;height:auto;border-radius:12px;">`;
+                    imgPreviewWrap.innerHTML = `<img src="${e.target.result}" alt="Preview" class="preview-img">`;
                 };
                 reader.readAsDataURL(file);
             } else if (file) {

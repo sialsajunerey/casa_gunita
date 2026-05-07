@@ -229,7 +229,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            header('Location: menu.php');
+            $redirectCategoryId = $category_id > 0 ? $category_id : $product['category_id'];
+            header('Location: menu.php' . ($redirectCategoryId ? '?category_id=' . $redirectCategoryId : ''));
             exit();
         } else {
             $error = "Failed to update menu item.";
@@ -548,6 +549,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const imageInput = document.querySelector('input[name="image"]');
+    const imgPreviewWrap = document.querySelector('.img-preview-wrap');
+    if (imageInput && imgPreviewWrap) {
+        imageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imgPreviewWrap.innerHTML = `<img src="${e.target.result}" alt="Preview" class="preview-img">`;
+                };
+                reader.readAsDataURL(file);
+            } else if (file) {
+                imgPreviewWrap.innerHTML = '<span class="img-placeholder">Invalid image file</span>';
+            }
+        });
+    }
+
     const container      = document.getElementById('customization-groups');
     const modifierSelect = document.getElementById('new-modifier-group');
     const availableModifiers = modifierSelect

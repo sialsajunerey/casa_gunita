@@ -160,10 +160,16 @@ while ($row = mysqli_fetch_assoc($sel)) {
                     </div>
                     <div class="grid" id="categoryGrid">
                         <?php while ($cat = mysqli_fetch_assoc($categories)): ?>
-                            <?php $catImage = $cat['image'] ? (strpos($cat['image'], '/') === false ? '/casa_gunita/assets/images/' . $cat['image'] : $cat['image']) : 'bfastbg.jpg'; ?>
+                            <?php 
+                                if ($cat['image']) {
+                                    $catImage = strpos($cat['image'], '/') === false ? '../assets/images/' . $cat['image'] : $cat['image'];
+                                } else {
+                                    $catImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCBmaWxsPSIjZThhMDcyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjwvc3ZnPg==';
+                                }
+                            ?>
                             <label class="feature-card" data-title="<?= htmlspecialchars(strtolower($cat['name']), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="checkbox" class="feature-checkbox feature-category" name="featured_categories[]" value="<?= (int)$cat['category_id'] ?>" <?= in_array($cat['category_id'], $featured_categories, true) ? 'checked' : '' ?> />
-                                <img src="<?= htmlspecialchars($catImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                <img src="<?= $catImage ?>" alt="<?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="feature-card-body">
                                     <div class="feature-card-title"><?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?></div>
                                     <div class="feature-card-meta">Category ID: <?= (int)$cat['category_id'] ?></div>
@@ -183,10 +189,16 @@ while ($row = mysqli_fetch_assoc($sel)) {
                     </div>
                     <div class="grid" id="productGrid">
                         <?php while ($item = mysqli_fetch_assoc($products)): ?>
-                            <?php $imgFile = $item['image'] ? (strpos($item['image'], '/') === false ? '/casa_gunita/assets/images/' . $item['image'] : $item['image']) : 'foodbg.png'; ?>
+                            <?php 
+                                if ($item['image']) {
+                                    $imgFile = strpos($item['image'], '/') === false ? '../assets/images/' . $item['image'] : $item['image'];
+                                } else {
+                                    $imgFile = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCBmaWxsPSIjZThhMDcyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjwvc3ZnPg==';
+                                }
+                            ?>
                             <label class="feature-card" data-title="<?= htmlspecialchars(strtolower($item['name']), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="checkbox" class="feature-checkbox feature-product" name="featured_products[]" value="<?= (int)$item['product_id'] ?>" <?= in_array($item['product_id'], $featured_products, true) ? 'checked' : '' ?> />
-                                <img src="<?= htmlspecialchars($imgFile, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                <img src="<?= $imgFile ?>" alt="<?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="feature-card-body">
                                     <div class="feature-card-title"><?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?></div>
                                     <div class="feature-card-meta">PHP <?= formatPrice($item['price']) ?></div>
