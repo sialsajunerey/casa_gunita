@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add') {
         $id          = (int)$_POST['product_id'];
         $quantity    = max(1, (int)$_POST['quantity']);
-        $editCartKey = trim($_POST['edit_cart_key'] ?? '');
+        $editCartKey = trim($_POST['edit_cart_key'] ?? $_POST['cart_key'] ?? '');
         $isAjax      = isset($_POST['ajax']) && $_POST['ajax'] == '1';
 
         if ($editCartKey !== '' && isset($_SESSION['cart'][$editCartKey])) {

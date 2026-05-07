@@ -154,7 +154,7 @@ function buildOptionLabel($option) {
         <form method="POST" action="cart.php" class="customization-section">
             <input type="hidden" name="action" value="add">
             <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['product_id']) ?>">
-            <input type="hidden" name="cart_key" value="<?= htmlspecialchars($editCartKey) ?>">
+            <input type="hidden" name="edit_cart_key" value="<?= htmlspecialchars($editCartKey) ?>">
             <input type="hidden" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>">
 
             <?php foreach ($groups as $group): ?>
@@ -207,7 +207,7 @@ function buildOptionLabel($option) {
 
             <div class="submit-panel">
                 <p class="submit-note"><strong>Note:</strong> Required groups are marked with an asterisk.</p>
-                <button type="submit" class="btn-add-cart">Add to Cart</button>
+                <button type="submit" class="btn-add-cart"><?= $editCartItem ? 'Save Changes' : 'Add to Cart' ?></button>
             </div>
         </form>
 
