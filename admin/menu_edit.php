@@ -271,7 +271,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="main">
 
     <header class="topbar">
-        <a href="menu.php" class="topbar-back">← Menu</a>
+        <a href="menu.php?category_id=<?= $product['category_id'] ?>" class="topbar-back">← Back to <?php
+            $cat_name = '';
+            foreach ($categories as $cat) {
+                if ((int)$cat['category_id'] === (int)$product['category_id']) {
+                    $cat_name = $cat['name'];
+                    break;
+                }
+            }
+            echo htmlspecialchars($cat_name, ENT_QUOTES, 'UTF-8');
+            ?></a>
         <span class="topbar-divider">|</span>
         <span class="topbar-title">
             <?= htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8') ?>
@@ -309,14 +318,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="form-group">
                             <label>Category</label>
-                            <select name="category_id">
-                                <?php foreach ($categories as $cat): ?>
-                                    <option value="<?= (int)$cat['category_id'] ?>"
-                                        <?= (isset($category_id) ? $category_id : (int)$product['category_id']) === (int)$cat['category_id'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <input type="hidden" name="category_id" value="<?= isset($category_id) ? $category_id : (int)$product['category_id'] ?>">
+                            <input type="text" readonly value="<?php
+                                $current_cat_id = isset($category_id) ? $category_id : (int)$product['category_id'];
+                                $cat_name = '';
+                                foreach ($categories as $cat) {
+                                    if ((int)$cat['category_id'] === $current_cat_id) {
+                                        $cat_name = $cat['name'];
+                                        break;
+                                    }
+                                }
+                                echo htmlspecialchars($cat_name, ENT_QUOTES, 'UTF-8');
+                                ?>">
                         </div>
 
                         <div class="form-group full">
@@ -428,6 +441,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="customization-card-header-left">
                                         <span class="group-label"><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                         <span class="group-badge <?= $badgeClass ?>"><?= $badgeLabel ?></span>
+                                        <label style="display:flex;align-items:center;gap:6px;margin-left:12px;font-weight:500;font-size:13px;cursor:pointer;">
+                                            <input type="checkbox" class="group-required-checkbox" data-group-index="<?= (int)$groupIndex ?>" <?= $groupRequiredValue ? 'checked' : '' ?>>
+                                            Required
+                                        </label>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-danger btn-remove-group">Remove</button>
                                 </div>
@@ -517,7 +534,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="save-bar">
                     <span class="save-bar-hint">Changes are saved immediately.</span>
-                    <a href="menu.php" class="btn btn-gray">Cancel</a>
+                    <a href="menu.php?category_id=<?= $product['category_id'] ?>" class="btn btn-gray">Cancel</a>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
 
@@ -597,6 +614,16 @@ document.addEventListener('DOMContentLoaded', function () {
         card.querySelector('.btn-add-option')?.addEventListener('click', () => {
             card.querySelector('.options-list').appendChild(createOptionRow(card.dataset.index));
         });
+        const requiredCheckbox = card.querySelector('.group-required-checkbox');
+        if (requiredCheckbox) {
+            requiredCheckbox.addEventListener('change', () => {
+                const groupIndex = card.dataset.index;
+                const hiddenInput = card.querySelector(`input[name="group_required[${groupIndex}]"]`);
+                if (hiddenInput) {
+                    hiddenInput.value = requiredCheckbox.checked ? 1 : 0;
+                }
+            });
+        }
         attachOptionRemovers(card);
     }
 
@@ -614,6 +641,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="customization-card-header-left">
                     <span class="group-label">${modifier.name}</span>
                     <span class="group-badge ${badgeClass}">${badge}</span>
+                    <label style="display:flex;align-items:center;gap:6px;margin-left:12px;font-weight:500;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" class="group-required-checkbox" data-group-index="${groupIndex}" ${type === 'addon' ? '' : 'checked'}>
+                        Required
+                    </label>
                 </div>
                 <button type="button" class="btn btn-sm btn-danger btn-remove-group">Remove</button>
             </div>

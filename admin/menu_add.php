@@ -220,6 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="menu_edit.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -286,22 +287,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="brand">Casa Gunita</div>
     </div>
     <ul class="nav-list">
-        <li><a href="index.php"><span class="icon">🏠</span> Dashboard</a></li>
-        <li><a href="orders.php"><span class="icon">📋</span> Orders</a></li>
-        <li><a href="menu.php" class="active"><span class="icon">�️</span> Menu</a></li>
-        <li><a href="feature.php"><span class="icon">⭐</span> Feature</a></li>
-        <li><a href="modifiers.php"><span class="icon">🧂</span> Modifiers</a></li>
-        <li><a href="customers.php"><span class="icon">🧑‍🤝‍🧑</span> Customers</a></li>
-        <li><a href="audit.php"><span class="icon">📜</span> Audit</a></li>
+        <li><a href="index.php">Dashboard</a></li>
+        <li><a href="orders.php">Orders</a></li>
+        <li><a href="menu.php" class="active">Menu</a></li>
+        <li><a href="feature.php">Feature</a></li>
+        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customers.php">Customers</a></li>
+        <li><a href="audit.php">Audit</a></li>
     </ul>
     <div class="sidebar-footer">
-        <a href="logout.php"><span class="icon">🚪</span> Logout</a>
+        <a href="logout.php">Logout</a>
     </div>
 </aside>
 
 <div class="main">
     <header class="topbar">
-        <div class="topbar-title">Add Menu Item</div>
+        <a href="menu.php?category_id=<?= $category_id ?>" class="topbar-back">← Back to <?php
+            $cat_name = '';
+            foreach ($categories as $cat) {
+                if ((int)$cat['category_id'] === $category_id) {
+                    $cat_name = $cat['name'];
+                    break;
+                }
+            }
+            echo htmlspecialchars($cat_name, ENT_QUOTES, 'UTF-8');
+            ?></a>
+        <span class="topbar-divider">|</span>
+        <span class="topbar-title">Add Menu Item</span>
         <div class="topbar-spacer"></div>
         <div class="topbar-user">
             <div class="avatar"><?= strtoupper(substr($_SESSION['full_name'], 0, 1)) ?></div>
@@ -310,145 +322,183 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </header>
 
     <main class="content">
-        <div class="card">
-            <div class="page-header">
-                <h2>Add New Menu Item</h2>
-                <div>
-<a href="menu.php" class="btn btn-primary">← Back to Menu</a>
-                </div>
-            </div>
+        <?php if ($error): ?><div class="alert alert-error"><?= $error ?></div><?php endif; ?>
+        <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
 
-            <?php if ($error): ?><div class="alert alert-error"><?= $error ?></div><?php endif; ?>
-            <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="edit-layout">
 
-            <form method="POST" enctype="multipart/form-data" class="form-grid">
-                <div class="form-group">
-                    <label>Dish Name</label>
-                    <input type="text" name="name" placeholder="e.g. Adobong Manok" value="<?= htmlspecialchars($name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea name="description" placeholder="Short description of the dish"><?= htmlspecialchars($description, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Price (₱)</label>
-                    <input type="number" name="price" step="0.01" value="<?= htmlspecialchars($price, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
-                </div>
-                <div class="form-group">
-                    <label>Category</label>
-                    <select name="category_id">
-                        <?php if (empty($categories)): ?>
-                            <option value="0">No categories available</option>
-                        <?php else: ?>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= (int)$cat['category_id'] ?>" <?= $category_id === (int)$cat['category_id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </select>
-                    <?php if (empty($categories)): ?>
-                        <p class="customization-footer">Add categories first under the categories admin page before adding menu items.</p>
-                    <?php endif; ?>
-                </div>
-                <div class="form-group">
-                    <label>Stock Quantity</label>
-                    <input type="number" name="stock_quantity" value="<?= htmlspecialchars($stock, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
-                </div>
-                <div class="form-group">
-                    <label>Dish Image (optional)</label>
-                    <input type="file" name="image" accept="image/*">
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>Customizations</label>
-                    <div style="margin-bottom:12px;">
-                        <?php if (empty($modifierGroups)): ?>
-                            <p class="customization-footer">No modifier groups available. Create them first in the Modifiers admin page.</p>
-                        <?php else: ?>
-                            <select id="new-modifier-group" style="padding:8px 12px;border:1px solid #d6d2d9;border-radius:6px;background:#fff;">
-                                <option value="">Add modifier group...</option>
-                                <?php foreach ($modifierGroups as $modifier): ?>
-                                    <option value="<?= (int)$modifier['modifier_group_id'] ?>"
-                                            data-name="<?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>"
-                                            data-pricing="<?= htmlspecialchars($modifier['pricing_type'], ENT_QUOTES, 'UTF-8') ?>"
-                                            data-select="<?= htmlspecialchars($modifier['select_option'], ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        <?php endif; ?>
-                    </div>
-                    <div id="customization-groups">
-                        <?php
-                        $renderGroups = !empty($posted_group_names) ? $posted_group_names : [];
-                        if (!empty($renderGroups)):
-                            foreach ($renderGroups as $groupIndex => $groupName):
-                                $groupName = sanitize($groupName);
-                                $groupTypeValue = $posted_group_types[$groupIndex] ?? 'single';
-                                $groupTypeValue = $groupTypeValue === 'addon' ? 'addon' : 'single';
-                                $groupRequiredValue = isset($posted_group_required[$groupIndex]) ? true : false;
-                                $optionNames = $posted_option_names[$groupIndex] ?? [];
-                                $optionPrices = $posted_option_prices[$groupIndex] ?? [];
-                                $optionImages = $posted_option_images[$groupIndex] ?? [];
-                                $pricingType = $posted_group_pricing_type[$groupIndex] ?? 'set_price';
-                        ?>
-                                <div class="customization-card" data-index="<?= (int)$groupIndex ?>" data-modifier-id="<?= htmlspecialchars($posted_group_modifier_ids[$groupIndex] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-type="<?= htmlspecialchars($groupTypeValue, ENT_QUOTES, 'UTF-8') ?>" style="border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:14px;background:#fcfcfc">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                                        <div style="display:flex;align-items:center;gap:10px">
-                                            <strong style="font-size:15px"><?= htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8') ?></strong>
-                                            <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:<?= $groupTypeValue === 'addon' ? '#fde8c8' : '#d4f5e2' ?>;color:<?= $groupTypeValue === 'addon' ? '#784212' : '#145a32' ?>;font-weight:600">
-                                                <?= $groupTypeValue === 'addon' ? 'multiple choice' : 'single choice' ?> · <?= $pricingType === 'extra_charge' ? 'extra charge' : 'set price' ?>
-                                            </span>
-                                        </div>
-                                        <button type="button" class="btn-remove-group" style="background:#e74c3c;color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
-                                    </div>
-                                    <input type="hidden" name="group_modifier_id[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($posted_group_modifier_ids[$groupIndex] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="group_name[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="group_type[<?= (int)$groupIndex ?>]" value="<?= $groupTypeValue ?>">
-                                    <input type="hidden" name="group_required[<?= (int)$groupIndex ?>]" value="<?= $groupRequiredValue ? 1 : 0 ?>">
-                                    <input type="hidden" name="group_pricing_type[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($pricingType, ENT_QUOTES, 'UTF-8') ?>">
-                                    <div class="options-list" style="display:flex;flex-direction:column;gap:12px;padding:0 0 6px;font-size:11px;color:#999">
-                                        <?php if (!empty($optionNames)): ?>
-                                            <?php foreach ($optionNames as $optionIndex => $optionValue): ?>
-                                                <div class="option-item" style="display:grid;grid-template-columns:1.5fr 1fr minmax(120px,180px) auto;gap:12px;align-items:start;margin-bottom:14px;padding:14px;border:1px dashed #ddd;border-radius:12px;background:#fff">
-                                                    <div class="form-group" style="min-width:0;">
-                                                        <label>Option Name</label>
-                                                        <input type="text" name="option_name[<?= (int)$groupIndex ?>][]" value="<?= htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8') ?>" required>
-                                                    </div>
-                                                    <div class="form-group" style="min-width:0;">
-                                                        <label>Price</label>
-                                                        <input type="number" step="0.01" name="option_price[<?= (int)$groupIndex ?>][]" value="<?= htmlspecialchars($optionPrices[$optionIndex] ?? '0.00', ENT_QUOTES, 'UTF-8') ?>" style="width:100%;">
-                                                    </div>
-                                                    <div class="form-group" style="min-width:0;">
-                                                        <label>Option Image</label>
-                                                        <input type="file" name="option_image_file[<?= (int)$groupIndex ?>][]" accept="image/*">
-                                                        <?php if (!empty($optionImages[$optionIndex])): ?>
-                                                            <input type="hidden" name="option_image_existing[<?= (int)$groupIndex ?>][]" value="<?= htmlspecialchars($optionImages[$optionIndex], ENT_QUOTES, 'UTF-8') ?>">
-                                                            <p style="margin:8px 0 0; font-size:13px; color:#555;">Current: <?= htmlspecialchars($optionImages[$optionIndex], ENT_QUOTES, 'UTF-8') ?></p>
-                                                        <?php else: ?>
-                                                            <input type="hidden" name="option_image_existing[<?= (int)$groupIndex ?>][]" value="">
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <button type="button" class="btn-remove-option" style="background:#e74c3c;color:white;border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;margin-left:8px">✕</button>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </div>
-                                    <button type="button" class="btn-add-option">Add Option</button>
+                    <div class="edit-main">
+
+                        <div class="card">
+                            <div class="card-title">Basic Information</div>
+                            <div class="form-grid">
+
+                                <div class="form-group">
+                                    <label>Dish Name</label>
+                                    <input type="text" name="name"
+                                        value="<?= htmlspecialchars($name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
                                 </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+
+                                <div class="form-group">
+                                    <label>Category</label>
+                                    <input type="hidden" name="category_id" value="<?= $category_id ?>">
+                                    <input type="text" readonly value="<?php
+                                        $cat_name = '';
+                                        foreach ($categories as $cat) {
+                                            if ((int)$cat['category_id'] === $category_id) {
+                                                $cat_name = $cat['name'];
+                                                break;
+                                            }
+                                        }
+                                        echo htmlspecialchars($cat_name, ENT_QUOTES, 'UTF-8');
+                                        ?>">
+                                </div>
+
+                                <div class="form-group full">
+                                    <label>Description</label>
+                                    <textarea name="description"><?= htmlspecialchars($description, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Price (₱)</label>
+                                    <input type="number" name="price" step="0.01"
+                                        value="<?= htmlspecialchars($price, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Stock Quantity</label>
+                                    <input type="number" name="stock_quantity"
+                                        value="<?= htmlspecialchars($stock, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">Customization Groups</div>
+                            <div class="customization-section">
+                                <?php if (empty($modifierGroups)): ?>
+                                    <p class="no-modifiers-notice">No modifier groups available. Create them first in the <a href="modifiers.php" style="color:var(--dark);font-weight:600;">Modifiers</a> page.</p>
+                                <?php else: ?>
+                                    <div class="modifier-select-row">
+                                        <select id="new-modifier-group">
+                                            <option value="">+ Add modifier group…</option>
+                                            <?php foreach ($modifierGroups as $modifier): ?>
+                                                <option value="<?= (int)$modifier['modifier_group_id'] ?>"
+                                                        data-name="<?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>"
+                                                        data-pricing="<?= htmlspecialchars($modifier['pricing_type'], ENT_QUOTES, 'UTF-8') ?>"
+                                                        data-select="<?= htmlspecialchars($modifier['select_option'], ENT_QUOTES, 'UTF-8') ?>">
+                                                    <?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                <?php endif; ?>
+                                <div id="customization-groups">
+                                    <?php
+                                    $renderGroups = !empty($posted_group_names) ? $posted_group_names : [];
+                                    if (!empty($renderGroups)):
+                                        foreach ($renderGroups as $groupIndex => $groupName):
+                                            $groupName = sanitize($groupName);
+                                            $groupTypeValue = $posted_group_types[$groupIndex] ?? 'single';
+                                            $groupTypeValue = $groupTypeValue === 'addon' ? 'addon' : 'single';
+                                            $groupRequiredValue = isset($posted_group_required[$groupIndex]) ? true : false;
+                                            $optionNames = $posted_option_names[$groupIndex] ?? [];
+                                            $optionPrices = $posted_option_prices[$groupIndex] ?? [];
+                                            $optionImages = $posted_option_images[$groupIndex] ?? [];
+                                            $pricingType = $posted_group_pricing_type[$groupIndex] ?? 'set_price';
+                                    ?>
+                                            <div class="customization-card" data-index="<?= (int)$groupIndex ?>" data-modifier-id="<?= htmlspecialchars($posted_group_modifier_ids[$groupIndex] ?? '', ENT_QUOTES, 'UTF-8') ?>" data-type="<?= htmlspecialchars($groupTypeValue, ENT_QUOTES, 'UTF-8') ?>">
+                                                <div class="customization-card-header">
+                                                    <div class="customization-card-header-left">
+                                                        <span class="group-label"><?= htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <span class="group-badge <?= $groupTypeValue === 'addon' ? 'badge-addon' : 'badge-single' ?>">
+                                                            <?= $groupTypeValue === 'addon' ? 'Multiple choice' : 'Single choice' ?>
+                                                        </span>
+                                                        <label style="display:flex;align-items:center;gap:6px;margin-left:12px;font-weight:500;font-size:13px;cursor:pointer;">
+                                                            <input type="checkbox" class="group-required-checkbox" data-group-index="<?= (int)$groupIndex ?>" <?= $groupRequiredValue ? 'checked' : '' ?>>
+                                                            Required
+                                                        </label>
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-danger btn-remove-group">Remove</button>
+                                                </div>
+
+                                                <input type="hidden" name="group_modifier_id[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($posted_group_modifier_ids[$groupIndex] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="group_name[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="group_type[<?= (int)$groupIndex ?>]" value="<?= $groupTypeValue ?>">
+                                                <input type="hidden" name="group_required[<?= (int)$groupIndex ?>]" value="<?= $groupRequiredValue ? 1 : 0 ?>">
+                                                <input type="hidden" name="group_pricing_type[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($pricingType, ENT_QUOTES, 'UTF-8') ?>">
+
+                                                <div class="customization-card-body options-list">
+                                                    <?php if (!empty($optionNames)): ?>
+                                                        <?php foreach ($optionNames as $optionIndex => $optionValue): ?>
+                                                            <div class="option-row">
+                                                                <div class="form-group">
+                                                                    <label>Option Name</label>
+                                                                    <input type="text" name="option_name[<?= (int)$groupIndex ?>][]" value="<?= htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8') ?>" required>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label>Price (₱)</label>
+                                                                    <input type="number" step="0.01" name="option_price[<?= (int)$groupIndex ?>][]" value="<?= htmlspecialchars($optionPrices[$optionIndex] ?? '0.00', ENT_QUOTES, 'UTF-8') ?>">
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label>Image</label>
+                                                                    <input type="file" name="option_image_file[<?= (int)$groupIndex ?>][]" accept="image/*">
+                                                                    <?php if (!empty($optionImages[$optionIndex])): ?>
+                                                                        <input type="hidden" name="option_image_existing[<?= (int)$groupIndex ?>][]" value="<?= htmlspecialchars($optionImages[$optionIndex], ENT_QUOTES, 'UTF-8') ?>">
+                                                                        <span class="option-current-img"><?= htmlspecialchars($optionImages[$optionIndex], ENT_QUOTES, 'UTF-8') ?></span>
+                                                                    <?php else: ?>
+                                                                        <input type="hidden" name="option_image_existing[<?= (int)$groupIndex ?>][]" value="">
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                                <button type="button" class="btn-icon btn-remove-option" title="Remove option">✕</button>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    <?php endif; ?>
+                                                </div>
+
+                                                <div class="customization-card-footer">
+                                                    <button type="button" class="btn btn-sm btn-gray btn-add-option">+ Add Option</button>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="hint">Optional — groups appear when customers select this menu item.</p>
+                            </div>
+                        </div>
+
                     </div>
-                    <p style="margin-top:6px; color:#666; font-size:14px;">Optional: groups appear when customers choose this menu item.</p>
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>
-                        <input type="checkbox" name="is_available" <?= $is_available ? 'checked' : '' ?>> Available for ordering
-                    </label>
-                </div>
-                <div style="grid-column: span 2; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-                    <button type="submit" class="btn btn-primary" <?= empty($categories) ? 'disabled' : '' ?>>Add Menu Item</button>
-                    <?php if (empty($categories)): ?><span class="customization-footer">Cannot add menu items until categories exist.</span><?php endif; ?>
+
+                    <div class="edit-side">
+                        <div class="card">
+                            <div class="card-title">Dish Image</div>
+                            <div class="img-preview-wrap">
+                                <span class="img-placeholder">No image selected</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Choose Image</label>
+                                <input type="file" name="image" accept="image/*">
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">Availability</div>
+                            <div class="availability-row">
+                                <label>
+                                    <input type="checkbox" name="is_available" <?= $is_available ? 'checked' : '' ?>> Available for ordering
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="save-bar">
+                            <span class="save-bar-hint">Ready to add this item.</span>
+                            <a href="menu.php?category_id=<?= $category_id ?>" class="btn btn-gray">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Add Menu Item</button>
+                        </div>
+                    </div>
+
                 </div>
             </form>
         </div>
@@ -457,136 +507,168 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const container = document.getElementById('customization-groups');
+    // Handle image preview
+    const imageInput = document.querySelector('input[name="image"]');
+    const imgPreviewWrap = document.querySelector('.img-preview-wrap');
+    
+    if (imageInput && imgPreviewWrap) {
+        imageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imgPreviewWrap.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width:100%;height:auto;border-radius:12px;">`;
+                };
+                reader.readAsDataURL(file);
+            } else if (file) {
+                imgPreviewWrap.innerHTML = '<span class="img-placeholder">Invalid image file</span>';
+            }
+        });
+    }
+
+    const container      = document.getElementById('customization-groups');
     const modifierSelect = document.getElementById('new-modifier-group');
-    const availableModifiers = modifierSelect ? Array.from(modifierSelect.querySelectorAll('option[data-name]')).map(option => ({
-        id: option.value,
-        name: option.dataset.name,
-        pricingType: option.dataset.pricing || 'set_price',
-        selectType: option.dataset.select || 'single'
-    })) : [];
+    const availableModifiers = modifierSelect
+        ? Array.from(modifierSelect.querySelectorAll('option[data-name]')).map(o => ({
+            id:          o.value,
+            name:        o.dataset.name,
+            pricingType: o.dataset.pricing || 'set_price',
+            selectType:  o.dataset.select  || 'single'
+          }))
+        : [];
 
     function createOptionRow(groupIndex) {
         const wrap = document.createElement('div');
-        wrap.className = 'option-item';
+        wrap.className = 'option-row';
         wrap.innerHTML = `
-            <div style="min-width:0;">
-                <label style="display:block;font-size:13px;color:#555;margin-bottom:6px">Option Image</label>
-                <input type="file" name="option_image_file[${groupIndex}][]" accept="image/*" style="width:100%;padding:10px;border:1px solid #d6d2d9;border-radius:12px;">
+            <div class="form-group">
+                <label>Option Name</label>
+                <input type="text" name="option_name[${groupIndex}][]" placeholder="e.g. Large" required>
             </div>
-            <div style="min-width:0;">
-                <label style="display:block;font-size:13px;color:#555;margin-bottom:6px">Option Name</label>
-                <input type="text" name="option_name[${groupIndex}][]" placeholder="Option name" required style="width:100%;padding:10px;border:1px solid #d6d2d9;border-radius:12px;">
+            <div class="form-group">
+                <label>Price (₱)</label>
+                <input type="number" step="0.01" min="0" name="option_price[${groupIndex}][]" placeholder="0.00">
             </div>
-            <div style="min-width:0;">
-                <label style="display:block;font-size:13px;color:#555;margin-bottom:6px">Price</label>
-                <input type="number" step="0.01" min="0" name="option_price[${groupIndex}][]" placeholder="0.00" style="width:100%;padding:10px;border:1px solid #d6d2d9;border-radius:12px;">
-                <div style="font-size:11px;color:#6b7280;margin-top:6px">Additional price (₱) or set price depending on modifier group</div>
+            <div class="form-group">
+                <label>Image</label>
+                <input type="file" name="option_image_file[${groupIndex}][]" accept="image/*">
+                <input type="hidden" name="option_image_existing[${groupIndex}][]" value="">
             </div>
-            <button type="button" class="btn btn-gray" style="min-width:unset;width:34px;height:34px;padding:0;border-radius:50%;">✕</button>
+            <button type="button" class="btn-icon btn-remove-option" title="Remove">✕</button>
         `;
-        wrap.querySelector('button').addEventListener('click', () => {
-            const list = wrap.parentElement;
+        wrap.querySelector('.btn-remove-option').addEventListener('click', () => {
             wrap.remove();
-            if (list && list.querySelectorAll('.option-item').length === 0) {
-                const card = list.closest('.customization-card');
-                if (card) {
-                    card.remove();
-                    updateModifierSelect();
-                }
-            }
+            removeCardIfEmpty(wrap);
         });
         return wrap;
     }
 
+    function removeCardIfEmpty(el) {
+        const card = el.closest ? el.closest('.customization-card') : null;
+        if (card) {
+            const list = card.querySelector('.options-list');
+            if (list && list.querySelectorAll('.option-row').length === 0) {
+                card.remove();
+                updateModifierSelect();
+            }
+        }
+    }
+
+    function attachOptionRemovers(card) {
+        card.querySelectorAll('.btn-remove-option').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = this.closest('.option-row');
+                if (row) row.remove();
+                removeCardIfEmpty(this);
+            });
+        });
+    }
+
+    function attachCardEvents(card) {
+        card.querySelector('.btn-remove-group')?.addEventListener('click', () => {
+            card.remove();
+            updateModifierSelect();
+        });
+        card.querySelector('.btn-add-option')?.addEventListener('click', () => {
+            card.querySelector('.options-list').appendChild(createOptionRow(card.dataset.index));
+        });
+        attachOptionRemovers(card);
+    }
+
     function createModifierCard(modifier, groupIndex) {
-        const type = modifier.selectType === 'multiple' ? 'addon' : 'single';
-        const card = document.createElement('div');
+        const type  = modifier.selectType === 'multiple' ? 'addon' : 'single';
+        const badge = type === 'addon' ? 'Multiple choice' : 'Single choice';
+        const badgeClass = type === 'addon' ? 'badge-addon' : 'badge-single';
+        const card  = document.createElement('div');
         card.className = 'customization-card';
-        card.dataset.index = groupIndex;
+        card.dataset.index      = groupIndex;
         card.dataset.modifierId = modifier.id;
-        card.dataset.type = type;
+        card.dataset.type       = type;
         card.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <strong style="font-size:15px">${modifier.name}</strong>
-                    <span style="font-size:11px;padding:6px 12px;border-radius:999px;background:${type === 'addon' ? '#fde8c8' : '#d4f5e2'};color:${type === 'addon' ? '#784212' : '#145a32'};font-weight:700;">${type === 'addon' ? 'multiple choice' : 'single choice'} · ${modifier.pricingType === 'extra_charge' ? 'extra charge' : 'set price'}</span>
+            <div class="customization-card-header">
+                <div class="customization-card-header-left">
+                    <span class="group-label">${modifier.name}</span>
+                    <span class="group-badge ${badgeClass}">${badge}</span>
+                    <label style="display:flex;align-items:center;gap:6px;margin-left:12px;font-weight:500;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" class="group-required-checkbox" data-group-index="${groupIndex}" ${type === 'addon' ? '' : 'checked'}>
+                        Required
+                    </label>
                 </div>
-                <button type="button" class="btn btn-gray btn-remove-group" style="white-space:nowrap;">Remove group</button>
+                <button type="button" class="btn btn-sm btn-danger btn-remove-group">Remove</button>
             </div>
             <input type="hidden" name="group_modifier_id[${groupIndex}]" value="${modifier.id}">
             <input type="hidden" name="group_name[${groupIndex}]" value="${modifier.name}">
             <input type="hidden" name="group_type[${groupIndex}]" value="${type}">
             <input type="hidden" name="group_required[${groupIndex}]" value="${type === 'addon' ? '0' : '1'}">
             <input type="hidden" name="group_pricing_type[${groupIndex}]" value="${modifier.pricingType}">
-            <div class="options-list"></div>
-            <button type="button" class="btn btn-gray btn-add-option" style="margin-top:14px;">Add Option</button>
+            <div class="customization-card-body options-list"></div>
+            <div class="customization-card-footer">
+                <button type="button" class="btn btn-sm btn-gray btn-add-option">+ Add Option</button>
+            </div>
         `;
-        const removeButton = card.querySelector('.btn-remove-group');
-        const addButton = card.querySelector('.btn-add-option');
-        const optionList = card.querySelector('.options-list');
-        removeButton.addEventListener('click', () => {
+        card.querySelector('.btn-remove-group').addEventListener('click', () => {
             card.remove();
             updateModifierSelect();
         });
-        addButton.addEventListener('click', () => optionList.appendChild(createOptionRow(groupIndex)));
-        optionList.appendChild(createOptionRow(groupIndex));
+        card.querySelector('.btn-add-option').addEventListener('click', () => {
+            card.querySelector('.options-list').appendChild(createOptionRow(groupIndex));
+        });
+        card.querySelector('.options-list').appendChild(createOptionRow(groupIndex));
         return card;
     }
 
     function updateModifierSelect() {
         if (!modifierSelect) return;
-        const selectedIds = new Set(Array.from(container.querySelectorAll('.customization-card')).map(card => card.dataset.modifierId));
-        modifierSelect.querySelectorAll('option').forEach(option => {
-            if (!option.value) return;
-            option.disabled = selectedIds.has(option.value);
-        });
-    }
-
-    function attachExistingCardEvents() {
-        container.querySelectorAll('.customization-card').forEach(card => {
-            const removeButton = card.querySelector('.btn-remove-group');
-            const addButton = card.querySelector('.btn-add-option');
-            const optionList = card.querySelector('.options-list');
-            const index = card.dataset.index;
-            if (removeButton) {
-                removeButton.addEventListener('click', () => {
-                    card.remove();
-                    updateModifierSelect();
-                });
-            }
-            if (addButton) {
-                addButton.addEventListener('click', () => optionList.appendChild(createOptionRow(index)));
-            }
+        const selectedIds = new Set(
+            Array.from(container.querySelectorAll('.customization-card')).map(c => c.dataset.modifierId)
+        );
+        modifierSelect.querySelectorAll('option').forEach(opt => {
+            if (!opt.value) return;
+            opt.disabled = selectedIds.has(opt.value);
         });
     }
 
     function getNextGroupIndex() {
-        const indices = Array.from(container.querySelectorAll('.customization-card')).map(card => parseInt(card.dataset.index, 10)).filter(Number.isFinite);
+        const indices = Array.from(container.querySelectorAll('.customization-card'))
+            .map(c => parseInt(c.dataset.index, 10)).filter(Number.isFinite);
         return indices.length ? Math.max(...indices) + 1 : 0;
     }
 
-    function addModifierGroup(modifier) {
-        const groupIndex = getNextGroupIndex();
-        container.appendChild(createModifierCard(modifier, groupIndex));
-        updateModifierSelect();
-        if (modifierSelect) {
-            modifierSelect.value = '';
-        }
-    }
+    container.querySelectorAll('.customization-card').forEach(attachCardEvents);
 
     if (modifierSelect) {
         modifierSelect.addEventListener('change', function () {
-            const selectedModifierId = this.value;
-            if (!selectedModifierId) return;
-            const modifier = availableModifiers.find(m => m.id === selectedModifierId);
+            const id = this.value;
+            if (!id) return;
+            const modifier = availableModifiers.find(m => m.id === id);
             if (modifier) {
-                addModifierGroup(modifier);
+                container.appendChild(createModifierCard(modifier, getNextGroupIndex()));
+                updateModifierSelect();
+                this.value = '';
             }
         });
     }
 
-    attachExistingCardEvents();
     updateModifierSelect();
 });
 </script>

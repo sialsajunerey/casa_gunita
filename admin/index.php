@@ -18,10 +18,12 @@ $total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
 
 $search_id     = isset($_GET['search']) ? (int)$_GET['search'] : 0;
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
+$filter_date   = isset($_GET['date']) ? $_GET['date'] : '';
 
 $where = [];
 if ($search_id)     $where[] = "o.order_id = $search_id";
 if ($status_filter) $where[] = "o.status = '" . mysqli_real_escape_string($conn, $status_filter) . "'";
+if ($filter_date)   $where[] = "DATE(o.created_at) = '" . mysqli_real_escape_string($conn, $filter_date) . "'";
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $orders_result = mysqli_query($conn,
@@ -134,7 +136,7 @@ foreach ($orders as $o) {
                 <input type="number" name="search" placeholder="Search Order ID…"
                     value="<?= htmlspecialchars($search_id ?: '', ENT_QUOTES, 'UTF-8') ?>">
                 <button type="submit">Go</button>
-                <?php if ($search_id || $status_filter): ?>
+                <?php if ($search_id || $status_filter || $filter_date): ?>
                     <a href="index.php" style="font-size:12px;color:var(--muted);text-decoration:none;padding:4px 6px;">✕ Clear</a>
                 <?php endif; ?>
             </form>
@@ -174,6 +176,13 @@ foreach ($orders as $o) {
             <div class="orders-panel">
                 <div class="panel-header">
                     <h3>All Orders <span style="color:var(--muted);font-weight:400;font-size:13px;">(<?= count($orders) ?>)</span></h3>
+                    <form method="GET" class="filter-row">
+                        <input type="date" name="date" value="<?= htmlspecialchars($filter_date ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <?php if ($filter_date ?? ''): ?>
+                            <a href="index.php" class="btn btn-gray">Clear</a>
+                        <?php endif; ?>
+                    </form>
                 </div>
 
                 <div class="filter-tabs">
@@ -190,6 +199,7 @@ foreach ($orders as $o) {
                         $active = ($status_filter === $val) ? 'active' : '';
                         $href   = $val ? "?status=$val" : 'index.php';
                         if ($search_id) $href .= ($val ? "&search=$search_id" : "?search=$search_id");
+                        if ($filter_date) $href .= (strpos($href, '?') !== false ? "&date=$filter_date" : "?date=$filter_date");
                     ?>
                     <a href="<?= $href ?>" class="filter-tab <?= $active ?>"><?= $label ?></a>
                     <?php endforeach; ?>
@@ -308,7 +318,7 @@ function formatItemOptions(options) {
         groups[group].push(opt);
     });
     return Object.entries(groups).map(([group, opts]) => {
-        const items = opts.map(item => `${escHtml(item.name)}${item.additional_price ? ` (+${formatPrice(item.additional_price)})` : ''}`).join(', ');
+        const items = opts.map(item => `${escHtml(item.name)}${item.additional_price && item.group_type === 'addon' ? ` (+${formatPrice(item.additional_price)})` : ''}`).join(', ');
         return `<div class="item-options"><strong>${escHtml(group)}:</strong> ${items}</div>`;
     }).join('');
 }

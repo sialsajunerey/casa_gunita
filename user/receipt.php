@@ -86,10 +86,36 @@ $items = mysqli_stmt_get_result($items_stmt);
 <b>Items Ordered:</b><br><br>
 
 <?php while ($item = mysqli_fetch_assoc($items)): ?>
+<?php $options = !empty($item['options']) ? json_decode($item['options'], true) : []; ?>
 <div class="row">
     <span><?= $item['name'] ?> x<?= $item['quantity'] ?></span>
     <span><?= formatPrice($item['subtotal']) ?></span>
 </div>
+<?php if (!empty($options) && is_array($options)): ?>
+    <div class="row" style="padding-left:14px;font-size:13px;color:#555;">
+        <div style="width:100%;">
+            <?php
+            $grouped = [];
+            foreach ($options as $opt) {
+                $group = htmlspecialchars($opt['group_name'] ?? ($opt['group_type'] === 'addon' ? 'Add-ons' : ($opt['group_type'] === 'size' ? 'Size' : 'Flavor')), ENT_QUOTES, 'UTF-8');
+                $label = htmlspecialchars($opt['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                $price = '';
+                if (isset($opt['additional_price']) && $opt['additional_price'] > 0) {
+                    if (isset($opt['group_type']) && $opt['group_type'] === 'addon') {
+                        $price = ' (+' . formatPrice($opt['additional_price']) . ')';
+                    } else {
+                        $price = ' (' . formatPrice($opt['additional_price']) . ')';
+                    }
+                }
+                $grouped[$group][] = $label . $price;
+            }
+            foreach ($grouped as $group => $items_list):
+            ?>
+                <div><strong><?= $group ?>:</strong> <?= htmlspecialchars(implode(', ', $items_list), ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
 <?php endwhile; ?>
 
 <div class="divider"></div>

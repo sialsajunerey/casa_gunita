@@ -22,14 +22,33 @@ $order = mysqli_fetch_assoc(mysqli_stmt_get_result($order_stmt));
 if (!$order) { echo "Order not found."; exit(); }
 
 // Fetch order items
+$columnExists = mysqli_query($conn, "SHOW COLUMNS FROM order_items LIKE 'options'");
+if ($columnExists && mysqli_num_rows($columnExists) === 0) {
+    mysqli_query($conn, "ALTER TABLE order_items ADD COLUMN options TEXT NULL");
+}
+
 $items_stmt = mysqli_prepare($conn,
-    "SELECT oi.*, p.name 
+    "SELECT oi.item_id, oi.order_id, oi.product_id, oi.quantity, oi.unit_price, oi.subtotal, oi.options, p.name 
      FROM order_items oi 
      JOIN products p ON oi.product_id = p.product_id 
      WHERE oi.order_id = ?");
 mysqli_stmt_bind_param($items_stmt, 'i', $order_id);
 mysqli_stmt_execute($items_stmt);
-$items = mysqli_stmt_get_result($items_stmt);
+mysqli_stmt_store_result($items_stmt);
+mysqli_stmt_bind_result($items_stmt, $item_id, $order_id_fk, $product_id_fk, $quantity, $unit_price, $subtotal, $options_json, $name);
+$items = [];
+while (mysqli_stmt_fetch($items_stmt)) {
+    $items[] = [
+        'item_id' => $item_id,
+        'order_id' => $order_id_fk,
+        'product_id' => $product_id_fk,
+        'quantity' => $quantity,
+        'unit_price' => $unit_price,
+        'subtotal' => $subtotal,
+        'options' => $options_json,
+        'name' => $name,
+    ];
+}
 
 // Fetch transaction if completed
 $trans_stmt = mysqli_prepare($conn,
@@ -102,7 +121,7 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
 <div class="divider"></div>
 
 <b>Items Ordered:</b><br><br>
-<?php while ($item = mysqli_fetch_assoc($items)): ?>
+<?php foreach ($items as $item): ?>
 <?php $options = !empty($item['options']) ? json_decode($item['options'], true) : []; ?>
 <div class="row">
     <span><?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?> x<?= (int)$item['quantity'] ?></span>
@@ -116,7 +135,14 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
             foreach ($options as $opt) {
                 $group = htmlspecialchars($opt['group_name'] ?? ($opt['group_type'] === 'addon' ? 'Add-ons' : ($opt['group_type'] === 'size' ? 'Size' : 'Flavor')), ENT_QUOTES, 'UTF-8');
                 $label = htmlspecialchars($opt['name'] ?? '', ENT_QUOTES, 'UTF-8');
-                $price = isset($opt['additional_price']) && $opt['additional_price'] > 0 ? ' (+' . formatPrice($opt['additional_price']) . ')' : '';
+                $price = '';
+                if (isset($opt['additional_price']) && $opt['additional_price'] > 0) {
+                    if (isset($opt['group_type']) && $opt['group_type'] === 'addon') {
+                        $price = ' (+' . formatPrice($opt['additional_price']) . ')';
+                    } else {
+                        $price = ' (' . formatPrice($opt['additional_price']) . ')';
+                    }
+                }
                 $grouped[$group][] = $label . $price;
             }
             foreach ($grouped as $group => $items):
@@ -126,7 +152,7 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
         </div>
     </div>
 <?php endif; ?>
-<?php endwhile; ?>
+<?php endforeach; ?>
 
 <div class="divider"></div>
 
@@ -150,7 +176,7 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
 
 <div class="actions">
     <button class="button" onclick="window.print()">🖨️ Print Receipt</button>
-    <a class="button button-outline" href="orders.php">← Back to Orders</a>
+    <a class="button button-outline" href="index.php">← Back to Dashboard</a>
 </div>
 
     </div>

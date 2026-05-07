@@ -53,8 +53,8 @@ $featured = mysqli_query($conn,
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <path d="M16 10a4 4 0 0 1-8 0"/>
             </svg>
-            <?php if (isset($_SESSION['cart']) && count($_SESSION['cart']) > 0): ?>
-                <span class="cart-badge"><?= count($_SESSION['cart']) ?></span>
+            <?php if (isset($_SESSION['cart']) && getCartItemCount($_SESSION['cart']) > 0): ?>
+                <span class="cart-badge"><?= getCartItemCount($_SESSION['cart']) ?></span>
             <?php endif; ?>
         </a>
         <div class="account-wrap">

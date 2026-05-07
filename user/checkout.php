@@ -113,8 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <path d="M16 10a4 4 0 0 1-8 0"/>
             </svg>
-            <?php if (isset($_SESSION['cart']) && count($_SESSION['cart']) > 0): ?>
-                <span class="cart-badge"><?= count($_SESSION['cart']) ?></span>
+            <?php if (isset($_SESSION['cart']) && getCartItemCount($_SESSION['cart']) > 0): ?>
+                <span class="cart-badge"><?= getCartItemCount($_SESSION['cart']) ?></span>
             <?php endif; ?>
         </a>
         <div class="account-wrap">
@@ -159,7 +159,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
                     <?php foreach ($_SESSION['cart'] as $id => $item): ?>
                         <tr>
-                            <td><?= htmlspecialchars($item['name']) ?></td>
+                            <td>
+                                <?= htmlspecialchars($item['name']) ?>
+                                <?php if (!empty($item['options'])): ?>
+                                    <div style="font-size:12px;color:#666;margin-top:4px;">
+                                        <?php
+                                        $grouped = [];
+                                        foreach ($item['options'] as $opt) {
+                                            $group = htmlspecialchars($opt['group_name'] ?? ($opt['group_type'] === 'addon' ? 'Add-ons' : ($opt['group_type'] === 'size' ? 'Size' : 'Flavor')), ENT_QUOTES, 'UTF-8');
+                                            $label = htmlspecialchars($opt['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                                            $price = '';
+                                            if (isset($opt['additional_price']) && $opt['additional_price'] > 0) {
+                                                if (isset($opt['group_type']) && $opt['group_type'] === 'addon') {
+                                                    $price = ' (+' . formatPrice($opt['additional_price']) . ')';
+                                                } else {
+                                                    $price = ' (' . formatPrice($opt['additional_price']) . ')';
+                                                }
+                                            }
+                                            $grouped[$group][] = $label . $price;
+                                        }
+                                        foreach ($grouped as $group => $items_list):
+                                        ?>
+                                            <div><strong><?= $group ?>:</strong> <?= htmlspecialchars(implode(', ', $items_list), ENT_QUOTES, 'UTF-8') ?></div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td><?= htmlspecialchars($item['quantity']) ?></td>
                             <td><?= formatPrice($item['price']) ?></td>
                             <td><?= formatPrice($item['price'] * $item['quantity']) ?></td>
@@ -192,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <select name="payment_method" id="payment_method" required>
                             <option value="" disabled <?= empty($payment_method) ? 'selected' : '' ?>>Select</option>
                             <option value="cash" <?= isset($payment_method) && $payment_method === 'cash' ? 'selected' : '' ?>>COD</option>
-                            <option value="gcash" <?= isset($payment_method) && $payment_method === 'gcash' ? 'selected' : '' ?>>Epayment</option>
+                            <option value="gcash" <?= isset($payment_method) && $payment_method === 'gcash' ? 'selected' : '' ?>>E-Payment</option>
                         </select>
                     </div>
                 </div>

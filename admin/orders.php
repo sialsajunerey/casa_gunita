@@ -37,19 +37,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Filter by date
 $filter_date = isset($_GET['date']) ? $_GET['date'] : '';
+$search      = trim($_GET['search'] ?? '');
 $where_clause = '';
+$bind_params = [];
+$types = '';
 if ($filter_date) {
-    $filter_date = mysqli_real_escape_string($conn, $filter_date);
-    $where_clause = "WHERE DATE(o.created_at) = '$filter_date'";
+    $where_clause .= " AND DATE(o.created_at) = ?";
+    $bind_params[] = $filter_date;
+    $types .= 's';
+}
+if ($search) {
+    $where_clause .= " AND (o.order_id LIKE ? OR u.full_name LIKE ?)";
+    $bind_params[] = '%' . $search . '%';
+    $bind_params[] = '%' . $search . '%';
+    $types .= 'ss';
 }
 
 // Fetch all orders with customer name
-$orders = mysqli_query($conn,
-    "SELECT o.*, u.full_name 
-     FROM orders o 
-     JOIN users u ON o.user_id = u.user_id 
-     $where_clause
-     ORDER BY o.created_at DESC");
+$query = "SELECT o.*, u.full_name 
+          FROM orders o 
+          JOIN users u ON o.user_id = u.user_id 
+          WHERE 1=1 $where_clause
+          ORDER BY o.created_at DESC";
+$stmt = mysqli_prepare($conn, $query);
+if (!empty($bind_params)) {
+    array_unshift($bind_params, $types);
+    call_user_func_array('mysqli_stmt_bind_param', array_merge([$stmt], $bind_params));
+}
+mysqli_stmt_execute($stmt);
+$orders = mysqli_stmt_get_result($stmt);
 
 // Build orders array + status counts
 $all_orders = [];
@@ -109,10 +125,12 @@ if ($orders && mysqli_num_rows($orders) > 0) {
         <div class="header-card">
             <h2>Orders</h2>
             <form method="GET" class="filter-row">
+                <input type="text" name="search" placeholder="Search Order ID or Customer Name"
+                       value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="date" name="date"
                        value="<?= htmlspecialchars($filter_date, ENT_QUOTES, 'UTF-8') ?>">
                 <button type="submit" class="btn btn-primary">Filter</button>
-                <?php if ($filter_date): ?>
+                <?php if ($filter_date || $search): ?>
                     <a href="orders.php" class="btn btn-gray">Clear</a>
                 <?php endif; ?>
             </form>
