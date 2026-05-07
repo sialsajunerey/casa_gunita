@@ -70,23 +70,11 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Receipt #<?= $order_id ?> — Casa Gunita</title>
-    <style>
-        body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
-        .page-wrapper { max-width: 700px; margin: 20px auto; padding: 20px; }
-        .receipt-card { background: #fff; border: 1px solid #8B0000; border-radius: 12px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .receipt-header { text-align: center; margin-bottom: 22px; }
-        .receipt-header h2 { margin: 0; color: #8B0000; }
-        .receipt-header p { margin: 6px 0 0; color: #555; }
-        .divider { border-top: 1px dashed #ccc; margin: 18px 0; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 8px; color: #333; }
-        .row strong { color: #111; }
-        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; justify-content: center; }
-        .button { background: #8B0000; color: #fff; border: none; border-radius: 8px; padding: 12px 20px; text-decoration: none; cursor: pointer; font-weight: bold; }
-        .button-outline { background: #fff; color: #8B0000; border: 1px solid #8B0000; }
-        .button:hover { opacity: 0.95; }
-        @media print { button, .button { display: none; } }
-    </style>
+    <title>Receipt #<?= $order_id ?> — Casa Gunita Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../user/receipt.css">
 </head>
 <body>
 

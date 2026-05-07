@@ -7,15 +7,6 @@ require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
 requireAdmin();
 
-$pending = mysqli_fetch_assoc(mysqli_query($conn,
-    "SELECT COUNT(*) AS total FROM orders WHERE status = 'pending'"))['total'];
-
-$total_orders = mysqli_fetch_assoc(mysqli_query($conn,
-    "SELECT COUNT(*) AS total FROM orders"))['total'];
-
-$total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
-    "SELECT COALESCE(SUM(amount_paid), 0) AS total FROM transactions"))['total'];
-
 $search = trim($_GET['search'] ?? '');
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
 $filter_date = isset($_GET['date']) ? $_GET['date'] : '';
@@ -25,6 +16,20 @@ if ($search) $where[] = "(o.order_id LIKE '%" . mysqli_real_escape_string($conn,
 if ($status_filter) $where[] = "o.status = '" . mysqli_real_escape_string($conn, $status_filter) . "'";
 if ($filter_date)   $where[] = "DATE(o.created_at) = '" . mysqli_real_escape_string($conn, $filter_date) . "'";
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+$pending = mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT COUNT(*) AS total FROM orders o JOIN users u ON o.user_id = u.user_id " . ($where_sql ? $where_sql . " AND o.status = 'pending'" : "WHERE o.status = 'pending'")))['total'];
+
+$total_orders = mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT COUNT(*) AS total FROM orders o JOIN users u ON o.user_id = u.user_id " . $where_sql))['total'];
+
+$total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT COALESCE(SUM(t.amount_paid), 0) AS total 
+     FROM orders o 
+     JOIN users u ON o.user_id = u.user_id 
+     LEFT JOIN transactions t ON o.order_id = t.order_id 
+     " . $where_sql))['total'];
+
 
 $orders_result = mysqli_query($conn,
     "SELECT o.*, u.full_name, u.email
