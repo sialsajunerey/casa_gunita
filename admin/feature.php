@@ -156,7 +156,7 @@ while ($row = mysqli_fetch_assoc($sel)) {
                             <h3>Featured Categories</h3>
                             <p class="hint">Select up to 3 categories.</p>
                         </div>
-                        <input id="categorySearch" type="search" placeholder="Search categories" value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>">
+                        <input id="categorySearch" type="search" placeholder="Search Categories" value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     <div class="grid" id="categoryGrid">
                         <?php while ($cat = mysqli_fetch_assoc($categories)): ?>
@@ -185,7 +185,7 @@ while ($row = mysqli_fetch_assoc($sel)) {
                             <h3>Featured Dishes</h3>
                             <p class="hint">Select up to 3 dishes.</p>
                         </div>
-                        <input id="productSearch" type="search" placeholder="Search dishes" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>">
+                        <input id="productSearch" type="search" placeholder="Search Dishes" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     <div class="grid" id="productGrid">
                         <?php while ($item = mysqli_fetch_assoc($products)): ?>

@@ -62,7 +62,7 @@ body.auth-page::before {
   text-align: center;
 }
 .auth-subtitle {
-  font-size: 0.78rem;
+  font-size: 0.69rem;
   font-weight: 300;
   color: rgba(240, 230, 210, 0.48);
   letter-spacing: 0.04em;
