@@ -246,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Edit Menu Item — Casa Gunita Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="menu_edit.css">
 </head>
 <body>
@@ -495,7 +495,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
                         </div>
 
-                        <p class="hint">Optional — these groups appear when customers select this menu item.</p>
                     </div>
                 </div>
 

@@ -135,13 +135,6 @@ foreach ($orders as $o) {
 
     <header class="topbar">
         <div class="topbar-title">Dashboard</div>
-        <div class="search-wrap">
-            <form method="GET" action="" id="search-form">
-                <span class="search-icon"></span>
-                <input type="text" name="search" placeholder="Search Order ID or Name"
-                    value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="debounceSubmit()">
-            </form>
-        </div>
         <div class="topbar-spacer"></div>
         <div class="topbar-user">
             <div class="avatar"><?= strtoupper(substr($_SESSION['full_name'], 0, 1)) ?></div>
@@ -177,9 +170,30 @@ foreach ($orders as $o) {
             <div class="orders-panel">
                 <div class="panel-header">
                     <h3>All Orders <span style="color:var(--muted);font-weight:400;font-size:13px;">(<?= count($orders) ?>)</span></h3>
-                    <form method="GET" class="filter-row" id="date-form">
-                        <input type="date" name="date" value="<?= htmlspecialchars($filter_date ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
-                    </form>
+                    <div class="panel-header-controls">
+                        <div class="search-wrap">
+                            <form method="GET" action="" id="search-form">
+                                <span class="search-icon"></span>
+                                <input type="text" name="search" placeholder="Search Order ID or Name"
+                                    value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="debounceSubmit()">
+                                <?php if ($filter_date): ?>
+                                    <input type="hidden" name="date" value="<?= htmlspecialchars($filter_date, ENT_QUOTES, 'UTF-8') ?>">
+                                <?php endif; ?>
+                                <?php if ($status_filter): ?>
+                                    <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8') ?>">
+                                <?php endif; ?>
+                            </form>
+                        </div>
+                        <form method="GET" class="filter-row" id="date-form">
+                            <input type="date" name="date" value="<?= htmlspecialchars($filter_date ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
+                            <?php if ($search): ?>
+                                <input type="hidden" name="search" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
+                            <?php endif; ?>
+                            <?php if ($status_filter): ?>
+                                <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8') ?>">
+                            <?php endif; ?>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="filter-tabs">

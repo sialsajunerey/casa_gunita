@@ -216,7 +216,7 @@ $featured = mysqli_query($conn,
     <nav class="footer-nav" aria-label="Footer navigation">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
-        <a href="#about">About Us</a>
+        <a href="#about">About</a>
         <a href="#contact">Contact</a>
         <a href="#featured">Featured Dishes</a>
     </nav>
