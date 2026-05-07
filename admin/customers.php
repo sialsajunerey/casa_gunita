@@ -87,7 +87,7 @@ if ($view_customer_id > 0) {
             </div>
             <div class="top-bar-right">
                 <form method="GET" style="display:flex;gap:8px;align-items:center;">
-                    <input class="input-group" type="text" name="search_id" placeholder="Search by customer ID" value="<?= htmlspecialchars($search_id, ENT_QUOTES, 'UTF-8') ?>">
+                    <input class="input-group" type="text" name="search_id" placeholder="Search Customer ID" value="<?= htmlspecialchars($search_id, ENT_QUOTES, 'UTF-8') ?>">
                     <?php if ($search_id !== ''): ?>
                         <a href="customers.php" class="btn btn-gray">Clear</a>
                     <?php endif; ?>

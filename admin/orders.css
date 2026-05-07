@@ -187,7 +187,7 @@ a { text-decoration: none; color: inherit; }
     padding: 8px 12px;
     outline: none;
     transition: border-color 0.2s;
-    width: 180px;
+    width: 240px;
 }
 
 .filter-row input[type="text"]:focus {

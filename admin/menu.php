@@ -261,7 +261,7 @@ if ($category_id > 0) {
                     <a href="menu_add.php?category_id=<?= $selected_category['category_id'] ?>" class="btn btn-green">Add Menu Item</a>
                 <?php else: ?>
                     <input id="categorySearch" type="search" name="search_category"
-                           placeholder="Search categories"
+                           placeholder="Search Categories"
                            value="<?= htmlspecialchars($search_category, ENT_QUOTES, 'UTF-8') ?>"
                            class="input-group">
                     <button type="button" class="btn btn-green" onclick="openCategoryModal('add')">Add Category</button>
