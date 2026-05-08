@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="order_type">Order Type</label>
                         <select name="order_type" id="order_type" required>
                             <option value="" disabled <?= empty($order_type) ? 'selected' : '' ?>>Select</option>
-                            <option value="takeout" <?= isset($order_type) && $order_type === 'takeout' ? 'selected' : '' ?>>Takeout</option>
+                            <option value="takeout" <?= isset($order_type) && $order_type === 'takeout' ? 'selected' : '' ?>>Pick-Up</option>
                             <option value="delivery" <?= isset($order_type) && $order_type === 'delivery' ? 'selected' : '' ?>>Delivery</option>
                         </select>
                     </div>

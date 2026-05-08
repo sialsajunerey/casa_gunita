@@ -369,8 +369,13 @@ function selectOrder(idx) {
     }
 
     const bill = document.getElementById('d-bill');
+    let displayOrderType = '—';
+    if (o.order_type) {
+        displayOrderType = o.order_type === 'takeout' ? 'Pick-Up' : o.order_type.charAt(0).toUpperCase() + o.order_type.slice(1);
+    }
+
     bill.innerHTML = `
-        <div class="bill-row"><span>Order Type</span><span>${o.order_type ? o.order_type.charAt(0).toUpperCase() + o.order_type.slice(1) : '—'}</span></div>
+        <div class="bill-row"><span>Order Type</span><span>${displayOrderType}</span></div>
         ${o.address ? `<div class="bill-row"><span>Address</span><span style="max-width:200px;text-align:right;font-size:12.5px;">${escHtml(o.address)}</span></div>` : ''}
         ${o.notes ? `<div class="bill-row"><span>Notes</span><span style="max-width:200px;text-align:right;font-size:12.5px;">${escHtml(o.notes)}</span></div>` : ''}
         <div class="bill-row total"><span>Total Bill</span><span>${formatPrice(o.total_amount)}</span></div>

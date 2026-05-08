@@ -168,7 +168,7 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                 </select>
                 <select name="type" onchange="this.form.submit()">
                     <option value="">All Types</option>
-                    <option value="takeout" <?= $type_filter === 'takeout' ? 'selected' : '' ?>>Takeout</option>
+                    <option value="takeout" <?= $type_filter === 'takeout' ? 'selected' : '' ?>>Pick-Up</option>
                     <option value="delivery" <?= $type_filter === 'delivery' ? 'selected' : '' ?>>Delivery</option>
                 </select>
             </form>
@@ -213,7 +213,7 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                         </td>
                         <td>
                             <span class="type-pill">
-                                <?= ucfirst($order['order_type']) ?>
+                                <?= $order['order_type'] === 'takeout' ? 'Pick-Up' : ucfirst($order['order_type']) ?>
                             </span>
                         </td>
                         <td>

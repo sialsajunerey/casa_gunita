@@ -12,19 +12,18 @@ while ($cat = mysqli_fetch_assoc($cat_result)) {
 }
 
 $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
-$selected_category_name = null;
+$selected_category_name = 'All';
+
 if ($category_id > 0) {
+    $found = false;
     foreach ($categories as $cat) {
         if ((int)$cat['category_id'] === $category_id) {
             $selected_category_name = $cat['name'];
+            $found = true;
             break;
         }
     }
-}
-
-if (!$selected_category_name && !empty($categories)) {
-    $category_id = (int)$categories[0]['category_id'];
-    $selected_category_name = $categories[0]['name'];
+    if (!$found) $category_id = 0;
 }
 
 $query = "SELECT p.*, c.name AS category_name
@@ -113,6 +112,7 @@ while ($row = mysqli_fetch_assoc($result)) {
 
     <!-- Category Bar -->
     <div class="top-category-bar" id="categoryBar">
+        <a href="menu.php?category_id=0" class="category-button <?= $category_id === 0 ? 'active' : '' ?>">All</a>
         <?php foreach ($categories as $cat): ?>
             <a href="menu.php?category_id=<?= (int)$cat['category_id'] ?>"
                class="category-button <?= $category_id === (int)$cat['category_id'] ? 'active' : '' ?>">
@@ -222,13 +222,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Account dropdown
     const accountBtn = document.getElementById('accountBtn');
     const accountDropdown = document.getElementById('accountDropdown');
-    accountBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        accountDropdown.classList.toggle('open');
-    });
-    document.addEventListener('click', function() {
-        accountDropdown.classList.remove('open');
-    });
+    if (accountBtn && accountDropdown) {
+        accountBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            accountDropdown.classList.toggle('open');
+        });
+        document.addEventListener('click', function() {
+            accountDropdown.classList.remove('open');
+        });
+    }
 
     // Hide/show category bar on scroll
     const categoryBar = document.getElementById('categoryBar');

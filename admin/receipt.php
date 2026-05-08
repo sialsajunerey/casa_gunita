@@ -104,7 +104,7 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
 <p><b>Address:</b> <?= htmlspecialchars(implode(', ', $adminAddressParts), ENT_QUOTES, 'UTF-8') ?></p>
 <?php endif; ?>
 <p><b>Date:</b> <?= date('M d, Y h:i A', strtotime($order['created_at'])) ?></p>
-<p><b>Type:</b> <?= ucfirst($order['order_type']) ?></p>
+<p><b>Type:</b> <?= $order['order_type'] === 'takeout' ? 'Pick-Up' : ucfirst($order['order_type']) ?></p>
 <?php if ($order['notes']): ?>
 <p><b>Notes:</b> <?= $order['notes'] ?></p>
 <?php endif; ?>

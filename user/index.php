@@ -320,13 +320,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Account dropdown
     const accountBtn = document.getElementById('accountBtn');
     const accountDropdown = document.getElementById('accountDropdown');
-    accountBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        accountDropdown.classList.toggle('open');
-    });
-    document.addEventListener('click', function() {
-        accountDropdown.classList.remove('open');
-    });
+    if (accountBtn && accountDropdown) {
+        accountBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            accountDropdown.classList.toggle('open');
+        });
+        document.addEventListener('click', function() {
+            accountDropdown.classList.remove('open');
+        });
+    }
 
     // Fade in We Offer title on scroll
     const weOfferTitle = document.querySelector('.we-offer-title');

@@ -63,7 +63,7 @@ $items = mysqli_stmt_get_result($items_stmt);
 <p><b>Order #:</b> <?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?></p>
 <p><b>Customer:</b> <?= $order['full_name'] ?></p>
 <p><b>Date:</b> <?= date('M d, Y h:i A', strtotime($order['created_at'])) ?></p>
-<p><b>Type:</b> <?= ucfirst($order['order_type']) ?></p>
+<p><b>Type:</b> <?= $order['order_type'] === 'takeout' ? 'Pick-Up' : ucfirst($order['order_type']) ?></p>
 <?php
     $userAddressParts = array_filter([
         trim(($order['house_number'] ?? '') . ' ' . ($order['street'] ?? '')),

@@ -96,7 +96,7 @@ $result = mysqli_stmt_get_result($orders);
         <tr>
             <td>#<?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?></td>
             <td><?= formatPrice($order['total_amount']) ?></td>
-            <td><?= ucfirst($order['order_type']) ?></td>
+            <td><?= $order['order_type'] === 'takeout' ? 'Pick-Up' : ucfirst($order['order_type']) ?></td>
             <td>
                 <span class="badge <?= $order['status'] ?>">
                     <?= strtoupper($order['status']) ?>
