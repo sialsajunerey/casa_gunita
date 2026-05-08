@@ -19,6 +19,6 @@ if (isset($_SESSION['user_id'])) {
 session_unset();
 session_destroy();
 
-header('Location: /casa_gunita/user/login.php');
+header('Location: ../user/index.php');
 exit();
 ?>

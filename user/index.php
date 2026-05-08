@@ -5,7 +5,7 @@ require_once '../includes/db.php';
 require_once '../includes/session.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
-requireCustomer();
+require_once '../includes/auth_modal_handler.php';
 
 $categoryColumn = mysqli_query($conn, "SHOW COLUMNS FROM categories LIKE 'is_featured'");
 if ($categoryColumn && mysqli_num_rows($categoryColumn) === 0) {
@@ -58,6 +58,7 @@ $featured = mysqli_query($conn,
                 <span class="cart-badge"><?= getCartItemCount($_SESSION['cart']) ?></span>
             <?php endif; ?>
         </a>
+        <?php if (isset($_SESSION['user_id'])): ?>
         <div class="account-wrap">
             <button class="nav-icon-btn" id="accountBtn" aria-label="Account">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -72,6 +73,10 @@ $featured = mysqli_query($conn,
                 <a href="logout.php">Log Out</a>
             </div>
         </div>
+        <?php else: ?>
+            <button class="nav-auth-btn" onclick="openAuthModal('login')">Login</button>
+            <button class="nav-auth-btn reg" onclick="openAuthModal('register')">Register</button>
+        <?php endif; ?>
     </div>
 </nav>
 
@@ -223,6 +228,86 @@ $featured = mysqli_query($conn,
     </nav>
 </footer>
 <div class="footer-copy">© <?= date('Y') ?> Casa Gunita — Authentic Filipino Cuisine</div>
+
+<!-- ===== AUTH MODAL OVERLAY ===== -->
+<div class="auth-modal-overlay" id="authModal">
+    <div class="auth-modal-card">
+        <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+        
+        <!-- Login View -->
+        <div id="loginView">
+            <h1 class="auth-modal-title">Log In</h1>
+            <p class="auth-modal-subtitle">Welcome back. Enter your details to continue.</p>
+            
+            <?php if ($auth_error && ($_POST['auth_type'] ?? '') === 'login'): ?>
+                <div class="auth-modal-error"><?= htmlspecialchars($auth_error) ?></div>
+            <?php endif; ?>
+
+            <form action="" method="POST" class="auth-modal-form">
+                <input type="hidden" name="auth_type" value="login">
+                <div class="auth-modal-field">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="auth-modal-field">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="auth-modal-btn">Login</button>
+            </form>
+            <p class="auth-modal-footer">No account yet? <a href="javascript:void(0)" onclick="showAuthView('register')">Register</a></p>
+        </div>
+
+        <!-- Register View -->
+        <div id="registerView" style="display:none;">
+            <h1 class="auth-modal-title">Sign Up</h1>
+            <p class="auth-modal-subtitle">Join us for authentic Filipino favorites.</p>
+
+            <?php if ($auth_error && ($_POST['auth_type'] ?? '') === 'register'): ?>
+                <div class="auth-modal-error"><?= htmlspecialchars($auth_error) ?></div>
+            <?php endif; ?>
+
+            <form action="" method="POST" class="auth-modal-form">
+                <input type="hidden" name="auth_type" value="register">
+                <div class="auth-modal-field">
+                    <input type="text" name="full_name" placeholder="Full Name" required>
+                </div>
+                <div class="auth-modal-field">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="auth-modal-field">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <div class="auth-modal-field">
+                    <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+                </div>
+                <button type="submit" class="auth-modal-btn">Register</button>
+            </form>
+            <p class="auth-modal-footer">Already have an account? <a href="javascript:void(0)" onclick="showAuthView('login')">Login</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAuthModal(view) {
+    document.getElementById('authModal').classList.add('active');
+    showAuthView(view);
+}
+function closeAuthModal() {
+    document.getElementById('authModal').classList.remove('active');
+}
+function showAuthView(view) {
+    document.getElementById('loginView').style.display = (view === 'login') ? 'block' : 'none';
+    document.getElementById('registerView').style.display = (view === 'register') ? 'block' : 'none';
+}
+window.onclick = function(event) {
+    if (event.target == document.getElementById('authModal')) closeAuthModal();
+}
+
+<?php if ($auth_error): ?>
+document.addEventListener('DOMContentLoaded', () => {
+    openAuthModal('<?= htmlspecialchars($_POST['auth_type']) ?>');
+});
+<?php endif; ?>
+</script>
 
 <!-- Back to Top Button -->
 <button class="back-to-top" id="backToTop" aria-label="Back to top">

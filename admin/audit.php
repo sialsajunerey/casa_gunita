@@ -34,9 +34,12 @@ $action_filters = [
     'category_edit'       => ['label' => 'Category Edit',       'actions' => ['category_edit']],
     'category_add'        => ['label' => 'Category Add',        'actions' => ['category_add']],
     'category_delete'     => ['label' => 'Category Delete',     'actions' => ['category_delete']],
-    'customization_edit'   => ['label' => 'Customization Edit',   'actions' => ['customization_edit']],
-    'customization_add'    => ['label' => 'Customization Add',    'actions' => ['customization_add']],
-    'customization_delete' => ['label' => 'Customization Delete', 'actions' => ['customization_delete']],
+    'customization_edit'   => ['label' => 'Customization Edit',   'actions' => ['modifier_edit'], 'type' => 'global'],
+    'customization_add'    => ['label' => 'Customization Add',    'actions' => ['modifier_add'], 'type' => 'global'],
+    'customization_delete' => ['label' => 'Customization Delete', 'actions' => ['modifier_delete'], 'type' => 'global'],
+    'menu_customization_edit' => ['label' => 'Menu Customization Edit', 'actions' => ['modifier_edit'], 'type' => 'menu'],
+    'menu_customization_add'  => ['label' => 'Menu Customization Add',  'actions' => ['modifier_add'], 'type' => 'menu'],
+    'menu_customization_del'  => ['label' => 'Menu Customization Delete', 'actions' => ['modifier_delete'], 'type' => 'menu'],
     'order_status_change' => ['label' => 'Order Status Change', 'actions' => ['order_status_change']],
 ];
 
@@ -56,20 +59,38 @@ if ($date_from !== '' && $date_to !== '') {
 }
 
 if (!empty($action_filter)) {
-    $selected_actions = [];
+    $clauses = [];
     foreach ($action_filter as $filter_key) {
         if (isset($action_filters[$filter_key])) {
-            $selected_actions = array_merge($selected_actions, $action_filters[$filter_key]['actions']);
+            $cfg = $action_filters[$filter_key];
+            $actions = $cfg['actions'];
+            $placeholders = implode(',', array_fill(0, count($actions), '?'));
+            
+            $sub_where = "(a.action IN ($placeholders)";
+            foreach ($actions as $act) {
+                $bind_params[] = $act;
+                $types .= 's';
+            }
+
+            // Fallback for blank actions if it's a customization filter
+            if (str_contains($filter_key, 'customization')) {
+                $term = str_contains($filter_key, 'add') ? 'Added' : (str_contains($filter_key, 'edit') ? 'Updated' : 'Deleted');
+                $sub_where .= " OR (a.action = '' AND a.details LIKE ?)";
+                $bind_params[] = '%' . $term . '%';
+                $types .= 's';
+            }
+            $sub_where .= ")";
+
+            if (isset($cfg['type']) && $cfg['type'] === 'menu') {
+                $sub_where .= " AND a.product_id IS NOT NULL";
+            } elseif (isset($cfg['type']) && $cfg['type'] === 'global') {
+                $sub_where .= " AND a.product_id IS NULL";
+            }
+            $clauses[] = "($sub_where)";
         }
     }
-    $selected_actions = array_unique($selected_actions);
-    if (!empty($selected_actions)) {
-        $placeholders = implode(',', array_fill(0, count($selected_actions), '?'));
-        $where[] = "a.action IN ($placeholders)";
-        foreach ($selected_actions as $action_value) {
-            $bind_params[] = $action_value;
-            $types .= 's';
-        }
+    if (!empty($clauses)) {
+        $where[] = "(" . implode(' OR ', $clauses) . ")";
     }
 }
 
@@ -214,17 +235,34 @@ $logs = mysqli_stmt_get_result($stmt);
                                 elseif ($action === 'logout') $badgeClass = 'badge-logout';
                                 elseif ($action === 'failed_login') $badgeClass = 'badge-failed';
                                 elseif (str_contains($action, 'order')) $badgeClass = 'badge-order';
-                                elseif (str_contains($action, 'menu') || str_contains($action, 'customization')) $badgeClass = 'badge-menu';
+                                elseif (str_contains($action, 'menu') || str_contains($action, 'customization') || str_contains($action, 'modifier') || $log['target_type'] === 'customization') $badgeClass = 'badge-menu';
                                 elseif (str_contains($action, 'featured')) $badgeClass = 'badge-feature';
                             ?>
                             <?php 
-                                $displayDetails = ($action === 'failed_login') ? 'Failed log in' : preg_replace('/\s*\(?IP:\s*[\d\.]+\)?/i', '', $log['details'] ?: '—');
+                                $details = $log['details'] ?: '';
+                                if (!empty($action)) {
+                                    $displayAction = ucwords(str_replace('_', ' ', $action));
+                                    $displayAction = str_replace('Modifier', 'Customization', $displayAction);
+                                } else {
+                                    // Fallback if DB action is blank due to ENUM mismatch
+                                    if (str_contains($details, 'Added')) $displayAction = 'Customization Add';
+                                    elseif (str_contains($details, 'Updated')) $displayAction = 'Customization Edit';
+                                    elseif (str_contains($details, 'Deleted')) $displayAction = 'Customization Delete';
+                                    else $displayAction = 'Customization';
+                                }
+
+                                // Clarify if it was an inline customization (inside a menu item)
+                                if (!empty($log['product_id']) && str_contains($displayAction, 'Customization')) {
+                                    $displayAction = 'Menu ' . $displayAction;
+                                }
+
+                                $displayDetails = ($action === 'failed_login') ? 'Failed log in' : preg_replace('/\s*\(?IP:\s*[\d\.]+\)?/i', '', $details ?: '—');
                             ?>
                             <tr>
                                 <td><span class="date-text"><?= htmlspecialchars($log['created_at'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                 <td>
                                     <span class="badge <?= $badgeClass ?>">
-                                        <?= htmlspecialchars(ucwords(str_replace('_', ' ', $action)), ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($displayAction, ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 </td>
                                 <td><span class="user-name"><?= htmlspecialchars($log['admin_name'] ?: $log['customer_name'] ?: 'System', ENT_QUOTES, 'UTF-8') ?></span></td>

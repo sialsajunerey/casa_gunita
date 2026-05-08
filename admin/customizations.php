@@ -42,9 +42,11 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $admin_id = $_SESSION['user_id'] ?? null;
     $audit_stmt = mysqli_prepare($conn,
         "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
-         VALUES (?, 'customization_delete', 'customization', ?, ?)");
+         VALUES (?, ?, ?, ?, ?)");
+    $action_name = 'modifier_delete';
+    $target_type = 'customization';
     $details = "Deleted customization: $mod_name";
-    mysqli_stmt_bind_param($audit_stmt, 'iis', $admin_id, $id, $details);
+    mysqli_stmt_bind_param($audit_stmt, 'issis', $admin_id, $action_name, $target_type, $id, $details);
     mysqli_stmt_execute($audit_stmt);
 
     header('Location: customizations.php');
@@ -77,9 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $admin_id = $_SESSION['user_id'] ?? null;
                     $audit_stmt = mysqli_prepare($conn,
                         "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
-                         VALUES (?, 'customization_add', 'customization', ?, ?)");
+                         VALUES (?, ?, ?, ?, ?)");
+                    $action_name = 'modifier_add';
+                    $target_type = 'customization';
                     $details = "Added Customization: $name ($pricing_type, $select_option)";
-                    mysqli_stmt_bind_param($audit_stmt, 'iis', $admin_id, $modifier_id, $details);
+                    mysqli_stmt_bind_param($audit_stmt, 'issis', $admin_id, $action_name, $target_type, $modifier_id, $details);
                     mysqli_stmt_execute($audit_stmt);
 
                     $success = 'Customization created successfully.';
@@ -103,9 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $admin_id = $_SESSION['user_id'] ?? null;
                     $audit_stmt = mysqli_prepare($conn,
                         "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
-                         VALUES (?, 'customization_edit', 'customization', ?, ?)");
+                         VALUES (?, ?, ?, ?, ?)");
+                    $action_name = 'modifier_edit';
+                    $target_type = 'customization';
                     $details = "Updated Customization: $name ($pricing_type, $select_option)";
-                    mysqli_stmt_bind_param($audit_stmt, 'iis', $admin_id, $modifier_group_id, $details);
+                    mysqli_stmt_bind_param($audit_stmt, 'issis', $admin_id, $action_name, $target_type, $modifier_group_id, $details);
                     mysqli_stmt_execute($audit_stmt);
 
                     $success = 'Customization updated successfully.';

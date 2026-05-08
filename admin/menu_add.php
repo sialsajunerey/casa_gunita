@@ -149,6 +149,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         mysqli_stmt_execute($groupStmt);
                         $groupId = mysqli_insert_id($conn);
 
+                        // Audit log for customization group addition
+                        $cust_audit_stmt = mysqli_prepare($conn,
+                            "INSERT INTO audit_logs (admin_id, action, target_type, target_id, product_id, details)
+                             VALUES (?, 'modifier_add', 'customization', ?, ?, ?)");
+                        $cust_details = "Added Customization Group: $groupName (inline during menu add)";
+                        mysqli_stmt_bind_param($cust_audit_stmt, 'iiis', $admin_id, $groupId, $product_id, $cust_details);
+                        mysqli_stmt_execute($cust_audit_stmt);
+
                     // Save options for this group
                     $optionNames = $posted_option_names[$groupIndex] ?? [];
                     $optionPrices = $posted_option_prices[$groupIndex] ?? [];

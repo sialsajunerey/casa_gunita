@@ -191,7 +191,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Default / Edit button hover (Green) */
-.secondary-button:hover,
 .secondary-button.btn-edit:hover {
     background: rgba(42, 122, 59, 0.15) !important;
     border-color: rgba(42, 122, 59, 0.4) !important;

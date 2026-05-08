@@ -30,8 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `audit_logs` (
   `audit_id` int(11) NOT NULL,
   `admin_id` int(11) DEFAULT NULL,
-  `action` enum('login','logout','failed_login','order_status_change','menu_add','menu_edit','menu_delete','menu_hide','menu_featured','category_add','category_edit','category_delete','modifier_add','modifier_edit','modifier_delete','customer_view','other') NOT NULL,
-  `target_type` varchar(50) DEFAULT NULL,
+  `action` enum('login','logout','failed_login','order_status_change','menu_add','menu_edit','menu_delete','menu_hide','menu_featured','category_add','category_edit','category_delete','modifier_add','modifier_edit','modifier_delete','custom
   `target_id` int(11) DEFAULT NULL,
   `customer_id` int(11) DEFAULT NULL,
   `order_id` int(11) DEFAULT NULL,
