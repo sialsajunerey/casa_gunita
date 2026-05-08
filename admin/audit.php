@@ -10,9 +10,66 @@ requireAdmin();
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
+$date_from = trim($_GET['date_from'] ?? '');
+$date_to = trim($_GET['date_to'] ?? '');
+$action_filter = trim($_GET['action_filter'] ?? '');
+$date_range_value = '';
+if ($date_from !== '' && $date_to !== '') {
+    $date_range_value = $date_from . ' to ' . $date_to;
+} elseif ($date_from !== '') {
+    $date_range_value = $date_from;
+}
 
-$countResult = mysqli_query($conn, "SELECT COUNT(*) AS total FROM audit_logs");
-$totalRows = (int)mysqli_fetch_assoc($countResult)['total'];
+$action_filters = [
+    'login' => ['label' => 'Login', 'actions' => ['login']],
+    'logout' => ['label' => 'Logout', 'actions' => ['logout']],
+    'menu_add' => ['label' => 'Menu Add', 'actions' => ['menu_add']],
+    'menu_edit' => ['label' => 'Menu Edit', 'actions' => ['menu_edit']],
+    'category_add' => ['label' => 'Category Add', 'actions' => ['category_add']],
+    'category_delete' => ['label' => 'Category Delete', 'actions' => ['category_delete']],
+    'order_status_change' => ['label' => 'Order Status Change', 'actions' => ['order_status_change']],
+];
+
+$where = [];
+$bind_params = [];
+$types = '';
+
+if ($date_from !== '' && $date_to !== '') {
+    $where[] = "DATE(a.created_at) BETWEEN ? AND ?";
+    $bind_params[] = $date_from;
+    $bind_params[] = $date_to;
+    $types .= 'ss';
+} elseif ($date_from !== '') {
+    $where[] = "DATE(a.created_at) >= ?";
+    $bind_params[] = $date_from;
+    $types .= 's';
+}
+
+if (isset($action_filters[$action_filter])) {
+    $actions = $action_filters[$action_filter]['actions'];
+    $placeholders = implode(',', array_fill(0, count($actions), '?'));
+    $where[] = "a.action IN ($placeholders)";
+    foreach ($actions as $action_value) {
+        $bind_params[] = $action_value;
+        $types .= 's';
+    }
+}
+
+$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+$filter_params = [];
+if ($date_from !== '') $filter_params['date_from'] = $date_from;
+if ($date_to !== '') $filter_params['date_to'] = $date_to;
+if (isset($action_filters[$action_filter])) $filter_params['action_filter'] = $action_filter;
+$paginationUrl = function (int $targetPage) use ($filter_params): string {
+    return 'audit.php?' . http_build_query(array_merge($filter_params, ['page' => $targetPage]));
+};
+
+$countStmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM audit_logs a $where_sql");
+if (!empty($bind_params)) {
+    mysqli_stmt_bind_param($countStmt, $types, ...$bind_params);
+}
+mysqli_stmt_execute($countStmt);
+$totalRows = (int)mysqli_fetch_assoc(mysqli_stmt_get_result($countStmt))['total'];
 $totalPages = max(1, ceil($totalRows / $perPage));
 
 $stmt = mysqli_prepare($conn,
@@ -20,9 +77,13 @@ $stmt = mysqli_prepare($conn,
      FROM audit_logs a
      LEFT JOIN users ua ON a.admin_id = ua.user_id
      LEFT JOIN users uc ON a.customer_id = uc.user_id
+     $where_sql
      ORDER BY a.created_at DESC
      LIMIT ? OFFSET ?");
-mysqli_stmt_bind_param($stmt, 'ii', $perPage, $offset);
+$query_params = $bind_params;
+$query_params[] = $perPage;
+$query_params[] = $offset;
+mysqli_stmt_bind_param($stmt, $types . 'ii', ...$query_params);
 mysqli_stmt_execute($stmt);
 $logs = mysqli_stmt_get_result($stmt);
 ?>
@@ -35,7 +96,8 @@ $logs = mysqli_stmt_get_result($stmt);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="audit.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="audit.css?v=2">
 </head>
 <body>
 
@@ -73,13 +135,27 @@ $logs = mysqli_stmt_get_result($stmt);
                 </div>
             </div>
             <div class="top-bar-right">
+                <form method="GET" class="filter-row" id="filter-form">
+                    <input type="text" id="date-range" class="date-range-input" placeholder="Record date range" value="<?= htmlspecialchars($date_range_value, ENT_QUOTES, 'UTF-8') ?>" autocomplete="off">
+                    <button type="button" id="clear-date" class="clear-date-btn <?= $date_range_value === '' ? 'is-hidden' : '' ?>">Clear</button>
+                    <input type="hidden" name="date_from" id="date-from" value="<?= htmlspecialchars($date_from, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="date_to" id="date-to" value="<?= htmlspecialchars($date_to, ENT_QUOTES, 'UTF-8') ?>">
+                    <select name="action_filter" onchange="this.form.submit()">
+                        <option value="">All Actions</option>
+                        <?php foreach ($action_filters as $value => $config): ?>
+                            <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= $action_filter === $value ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($config['label'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
                 <div class="pagination">
                     <?php if ($page > 1): ?>
-                        <a href="audit.php?page=<?= $page - 1 ?>" class="btn btn-gray">Previous</a>
+                        <a href="<?= htmlspecialchars($paginationUrl($page - 1), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-gray">Previous</a>
                     <?php endif; ?>
                     <span class="page-indicator">Page <?= $page ?> / <?= $totalPages ?></span>
                     <?php if ($page < $totalPages): ?>
-                        <a href="audit.php?page=<?= $page + 1 ?>" class="btn btn-primary">Next</a>
+                        <a href="<?= htmlspecialchars($paginationUrl($page + 1), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-primary">Next</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -141,11 +217,11 @@ $logs = mysqli_stmt_get_result($stmt);
         <div class="card" style="display:flex;justify-content:flex-end;">
             <div class="pagination">
                 <?php if ($page > 1): ?>
-                    <a href="audit.php?page=<?= $page - 1 ?>" class="btn btn-gray">Previous</a>
+                    <a href="<?= htmlspecialchars($paginationUrl($page - 1), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-gray">Previous</a>
                 <?php endif; ?>
                 <span class="page-indicator">Page <?= $page ?> / <?= $totalPages ?></span>
                 <?php if ($page < $totalPages): ?>
-                    <a href="audit.php?page=<?= $page + 1 ?>" class="btn btn-primary">Next</a>
+                    <a href="<?= htmlspecialchars($paginationUrl($page + 1), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-primary">Next</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -153,6 +229,44 @@ $logs = mysqli_stmt_get_result($stmt);
 
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+flatpickr('#date-range', {
+    mode: 'range',
+    dateFormat: 'Y-m-d',
+    allowInput: true,
+    defaultDate: [
+        <?= $date_from !== '' ? "'" . htmlspecialchars($date_from, ENT_QUOTES, 'UTF-8') . "'" : 'null' ?>,
+        <?= $date_to !== '' ? "'" . htmlspecialchars($date_to, ENT_QUOTES, 'UTF-8') . "'" : 'null' ?>
+    ].filter(Boolean),
+    onChange: function(selectedDates, dateStr, instance) {
+        var from = document.getElementById('date-from');
+        var to = document.getElementById('date-to');
+        from.value = selectedDates[0] ? instance.formatDate(selectedDates[0], 'Y-m-d') : '';
+        to.value = selectedDates[1] ? instance.formatDate(selectedDates[1], 'Y-m-d') : '';
+        document.getElementById('clear-date').classList.toggle('is-hidden', selectedDates.length === 0);
+        if (selectedDates.length === 2) {
+            instance.element.form.submit();
+        }
+    }
+});
+
+document.getElementById('date-range').addEventListener('input', function() {
+    if (this.value.trim() === '') {
+        document.getElementById('date-from').value = '';
+        document.getElementById('date-to').value = '';
+        document.getElementById('clear-date').classList.add('is-hidden');
+    }
+});
+
+document.getElementById('clear-date').addEventListener('click', function() {
+    document.getElementById('date-range').value = '';
+    document.getElementById('date-from').value = '';
+    document.getElementById('date-to').value = '';
+    document.getElementById('filter-form').submit();
+});
+</script>
 
 </body>
 </html>

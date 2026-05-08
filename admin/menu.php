@@ -45,20 +45,29 @@ if (isset($_GET['delete_category']) && ctype_digit((string)$_GET['delete_categor
     $name_result = mysqli_fetch_assoc(mysqli_stmt_get_result($get_name));
     $cat_name = $name_result['name'] ?? 'Unknown';
 
-    $delete = mysqli_prepare($conn, "DELETE FROM categories WHERE category_id = ?");
-    mysqli_stmt_bind_param($delete, 'i', $delete_category_id);
-    mysqli_stmt_execute($delete);
+    $count_stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM products WHERE category_id = ?");
+    mysqli_stmt_bind_param($count_stmt, 'i', $delete_category_id);
+    mysqli_stmt_execute($count_stmt);
+    $product_total = (int)(mysqli_fetch_assoc(mysqli_stmt_get_result($count_stmt))['total'] ?? 0);
 
-    $admin_id   = $_SESSION['user_id'] ?? null;
-    $audit_stmt = mysqli_prepare($conn,
-        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, category_id, details)
-         VALUES (?, 'category_delete', 'category', ?, ?, ?)");
-    $details = "Deleted category: $cat_name";
-    mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $delete_category_id, $delete_category_id, $details);
-    mysqli_stmt_execute($audit_stmt);
+    if ($product_total > 0) {
+        $error = "Cannot delete category \"$cat_name\" because it still has $product_total menu item" . ($product_total === 1 ? '' : 's') . ". Remove or move the menu items first.";
+    } else {
+        $delete = mysqli_prepare($conn, "DELETE FROM categories WHERE category_id = ?");
+        mysqli_stmt_bind_param($delete, 'i', $delete_category_id);
+        mysqli_stmt_execute($delete);
 
-    header('Location: menu.php');
-    exit();
+        $admin_id   = $_SESSION['user_id'] ?? null;
+        $audit_stmt = mysqli_prepare($conn,
+            "INSERT INTO audit_logs (admin_id, action, target_type, target_id, category_id, details)
+             VALUES (?, 'category_delete', 'category', ?, ?, ?)");
+        $details = "Deleted category: $cat_name";
+        mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $delete_category_id, $delete_category_id, $details);
+        mysqli_stmt_execute($audit_stmt);
+
+        header('Location: menu.php');
+        exit();
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['category_action'])) {
@@ -312,6 +321,7 @@ if ($category_id > 0) {
             <?php else: ?>
                 <div class="folder-grid" id="categoryList">
                     <?php while ($cat = mysqli_fetch_assoc($categories_result)): ?>
+                    <?php $category_item_count = (int)($product_counts[$cat['category_id']] ?? 0); ?>
                     <div class="folder-card">
                         <div class="folder-heading">
                             <div>
@@ -319,7 +329,7 @@ if ($category_id > 0) {
                                     <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
                                 </div>
                                 <div class="folder-meta">
-                                    <?= ($product_counts[$cat['category_id']] ?? 0) ?> menu items
+                                    <?= $category_item_count ?> menu item<?= $category_item_count === 1 ? '' : 's' ?>
                                 </div>
                             </div>
                             <?php if (!empty($cat['image'])): ?>
@@ -335,9 +345,17 @@ if ($category_id > 0) {
                                     onclick='openCategoryModal("edit", <?= $cat['category_id'] ?>, <?= json_encode($cat['name']) ?>)'>
                                 Edit
                             </button>
+                            <?php if ($category_item_count > 0): ?>
+                                <button type="button"
+                                        class="small-btn small-btn-red"
+                                        onclick="alert('This category cannot be deleted because it still has <?= $category_item_count ?> menu item<?= $category_item_count === 1 ? '' : 's' ?>. Remove or move the menu items first.')">
+                                    Delete
+                                </button>
+                            <?php else: ?>
                             <a href="menu.php?delete_category=<?= $cat['category_id'] ?>"
                                class="small-btn small-btn-red"
                                onclick="return confirm('Delete this category?')">Delete</a>
+                            <?php endif; ?>
                         </div>
                         <a class="full-link" href="menu.php?category_id=<?= $cat['category_id'] ?>" aria-label="Open category"></a>
                     </div>

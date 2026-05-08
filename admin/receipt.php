@@ -8,6 +8,9 @@ require_once '../includes/functions.php';
 requireAdmin();
 
 $order_id = (int)$_GET['order_id'];
+$from = $_GET['from'] ?? 'dashboard';
+$back_href = $from === 'orders' ? 'orders.php' : 'index.php';
+$back_label = $from === 'orders' ? 'Back to Orders' : 'Back to Dashboard';
 
 // Fetch order with customer info
 $order_stmt = mysqli_prepare($conn,
@@ -164,7 +167,7 @@ if (mysqli_stmt_num_rows($trans_stmt) > 0) {
 
 <div class="actions">
     <button class="button" onclick="window.print()">🖨️ Print Receipt</button>
-    <a class="button button-outline" href="index.php">← Back to Dashboard</a>
+    <a class="button button-outline" href="<?= $back_href ?>">← <?= $back_label ?></a>
 </div>
 
     </div>

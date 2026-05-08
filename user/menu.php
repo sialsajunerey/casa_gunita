@@ -30,11 +30,11 @@ if (!$selected_category_name && !empty($categories)) {
 $query = "SELECT p.*, c.name AS category_name
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.category_id
-     WHERE p.is_available = 1";
+     WHERE 1=1";
 if ($category_id > 0) {
     $query .= " AND p.category_id = ?";
 }
-$query .= " ORDER BY p.name";
+$query .= " ORDER BY p.is_available DESC, p.name";
 
 $stmt = mysqli_prepare($conn, $query);
 if ($category_id > 0) {
@@ -122,7 +122,8 @@ while ($row = mysqli_fetch_assoc($result)) {
             <div class="empty-msg">No products found for this category.</div>
         <?php else: ?>
             <?php foreach ($products as $item): ?>
-                <div class="item-card">
+                <?php $is_available = (int)($item['is_available'] ?? 1) === 1; ?>
+                <div class="item-card <?= $is_available ? '' : 'item-unavailable' ?>">
                     <?php if (!empty($item['image'])): ?>
                         <div class="item-img-wrap">
                             <img src="../assets/images/<?= htmlspecialchars($item['image']) ?>"
@@ -137,7 +138,11 @@ while ($row = mysqli_fetch_assoc($result)) {
                         <strong class="item-name"><?= htmlspecialchars($item['name']) ?></strong>
                         <span class="item-price"><?= formatPrice($item['price']) ?></span>
                     </div>
-                    <a href="customize.php?product_id=<?= htmlspecialchars($item['product_id']) ?>" class="order-link">Order</a>
+                    <?php if ($is_available): ?>
+                        <a href="customize.php?product_id=<?= htmlspecialchars($item['product_id']) ?>" class="order-link">Order</a>
+                    <?php else: ?>
+                        <span class="order-link unavailable-link">Not Available</span>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>

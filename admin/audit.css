@@ -186,6 +186,74 @@ a { text-decoration: none; color: inherit; }
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-row input[type="text"],
+.filter-row select {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--dark);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 210px;
+}
+
+.filter-row input[type="text"]:focus,
+.filter-row select:focus {
+    border-color: var(--gold);
+}
+
+.filter-row .date-range-input {
+    cursor: pointer;
+}
+
+.filter-row select {
+    width: auto;
+    min-width: 180px;
+    padding-right: 34px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23210303' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+.clear-date-btn {
+    background: rgba(33,3,3,0.07);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    height: 34px;
+    padding: 0 12px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.clear-date-btn:hover {
+    background: var(--dark);
+    border-color: var(--dark);
+    color: var(--gold-light);
+}
+
+.clear-date-btn.is-hidden {
+    display: none;
 }
 
 /* ── PAGINATION ── */

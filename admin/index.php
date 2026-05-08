@@ -9,12 +9,10 @@ requireAdmin();
 
 $search = trim($_GET['search'] ?? '');
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-$filter_date = isset($_GET['date']) ? $_GET['date'] : '';
 
 $where = [];
-if ($search) $where[] = "(o.order_id LIKE '%" . mysqli_real_escape_string($conn, $search) . "%' OR u.full_name LIKE '%" . mysqli_real_escape_string($conn, $search) . "%')";
+if ($search) $where[] = "o.order_id LIKE '%" . mysqli_real_escape_string($conn, $search) . "%'";
 if ($status_filter) $where[] = "o.status = '" . mysqli_real_escape_string($conn, $status_filter) . "'";
-if ($filter_date)   $where[] = "DATE(o.created_at) = '" . mysqli_real_escape_string($conn, $filter_date) . "'";
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $pending = mysqli_fetch_assoc(mysqli_query($conn,
@@ -172,25 +170,13 @@ foreach ($orders as $o) {
                         <div class="search-wrap">
                             <form method="GET" action="" id="search-form">
                                 <span class="search-icon"></span>
-                                <input type="text" name="search" placeholder="Search Order ID or Name"
+                                <input type="text" name="search" placeholder="Search Order ID"
                                     value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="debounceSubmit()">
-                                <?php if ($filter_date): ?>
-                                    <input type="hidden" name="date" value="<?= htmlspecialchars($filter_date, ENT_QUOTES, 'UTF-8') ?>">
-                                <?php endif; ?>
                                 <?php if ($status_filter): ?>
                                     <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8') ?>">
                                 <?php endif; ?>
                             </form>
                         </div>
-                        <form method="GET" class="filter-row" id="date-form">
-                            <input type="date" name="date" value="<?= htmlspecialchars($filter_date ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
-                            <?php if ($search): ?>
-                                <input type="hidden" name="search" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
-                            <?php endif; ?>
-                            <?php if ($status_filter): ?>
-                                <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8') ?>">
-                            <?php endif; ?>
-                        </form>
                     </div>
                 </div>
 
@@ -208,7 +194,6 @@ foreach ($orders as $o) {
                         $active = ($status_filter === $val) ? 'active' : '';
                         $href   = $val ? "?status=$val" : 'index.php';
                         if ($search) $href .= ($val ? "&search=$search" : "?search=$search");
-                        if ($filter_date) $href .= (strpos($href, '?') !== false ? "&date=$filter_date" : "?date=$filter_date");
                     ?>
                     <a href="<?= $href ?>" class="filter-tab <?= $active ?>"><?= $label ?></a>
                     <?php endforeach; ?>
@@ -271,7 +256,7 @@ foreach ($orders as $o) {
                         </div>
                         <div class="detail-actions">
                             <span class="badge" id="d-badge"></span>
-                            <a id="d-receipt-link" href="#" class="btn-receipt" target="_blank">Receipt</a>
+                            <a id="d-receipt-link" href="#" class="btn-receipt">Receipt</a>
                         </div>
                     </div>
 
