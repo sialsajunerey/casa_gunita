@@ -190,10 +190,19 @@ a { color: inherit; text-decoration: none; }
     transition: background 0.2s, color 0.2s;
 }
 
-.secondary-button:hover {
-    background: rgba(220, 30, 30, 0.15);
-    border-color: rgba(220, 30, 30, 0.4);
-    color: #f87171;
+/* Default / Edit button hover (Green) */
+.secondary-button:hover,
+.secondary-button.btn-edit:hover {
+    background: rgba(42, 122, 59, 0.15) !important;
+    border-color: rgba(42, 122, 59, 0.4) !important;
+    color: #2a7a3b !important;
+}
+
+/* Remove button hover (Red) */
+.secondary-button.btn-remove:hover {
+    background: rgba(176, 48, 48, 0.15) !important;
+    border-color: rgba(176, 48, 48, 0.4) !important;
+    color: #f87171 !important;
 }
 
 /* ── Action Row ── */

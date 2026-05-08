@@ -57,6 +57,11 @@ if (!empty($groups)) {
     }
 }
 
+$anyRequired = false;
+foreach($groups as $group) {
+    if($group['is_required']) $anyRequired = true;
+}
+
 function buildOptionLabel($option) {
     $label = htmlspecialchars($option['name']);
     if ((float)$option['additional_price'] > 0) {
@@ -142,6 +147,8 @@ function buildOptionLabel($option) {
                 <div class="product-price">
                     <span>Price: </span>
                     <span id="displayPrice"><?= formatPrice($product['price']) ?></span>
+                    <div id="validation-warning" style="display:none; margin-top:15px; padding:10px; background:rgba(176,48,48,0.1); color:#b03030; border:1px solid rgba(176,48,48,0.2); border-radius:6px; font-size:13px; font-family:'Public Sans', sans-serif;"></div>
+                    <div id="selectionSummary" style="font-size: 13px; color: #8a7060; margin-top: 8px; font-family: 'Public Sans', sans-serif;"></div>
                     <input type="hidden" id="basePrice" value="<?= htmlspecialchars($product['price']) ?>">
                 </div>
                 <?php if (empty($groups)): ?>
@@ -155,10 +162,14 @@ function buildOptionLabel($option) {
             <input type="hidden" name="action" value="add">
             <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['product_id']) ?>">
             <input type="hidden" name="edit_cart_key" value="<?= htmlspecialchars($editCartKey) ?>">
-            <input type="hidden" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>">
+
+            <div class="quantity-selector">
+                <label for="quantity">Quantity</label>
+                <input type="number" id="quantity" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>" min="1" max="99" required oninput="if(this.value < 1) this.value = 1;">
+            </div>
 
             <?php foreach ($groups as $group): ?>
-                <div class="customization-group">
+                <div class="customization-group" data-group-name="<?= htmlspecialchars($group['name']) ?>" data-required="<?= $group['is_required'] ? '1' : '0' ?>">
                     <h3 class="group-title">
                         <?= htmlspecialchars($group['name']) ?>
                         <?= $group['is_required'] ? '<span class="required-star">*</span>' : '' ?>
@@ -174,8 +185,7 @@ function buildOptionLabel($option) {
                                     value="<?= htmlspecialchars($option['option_id']) ?>"
                                     data-price="<?= htmlspecialchars($option['additional_price']) ?>"
                                     data-group-type="<?= htmlspecialchars($group['group_type']) ?>"
-                                    data-pricing="<?= htmlspecialchars($group['pricing_type'] ?? 'set_price') ?>"
-                                    <?= $group['group_type'] !== 'addon' ? 'required' : '' ?>
+                                    data-pricing="<?= htmlspecialchars($group['pricing_type'] ?? 'extra_charge') ?>"
                                     <?= $selected ? 'checked' : '' ?>
                                 >
                                 <div class="option-content">
@@ -206,7 +216,9 @@ function buildOptionLabel($option) {
             <?php endforeach; ?>
 
             <div class="submit-panel">
-                <p class="submit-note"><strong>Note:</strong> Required groups are marked with an asterisk.</p>
+                <?php if($anyRequired): ?>
+                    <p class="submit-note"><strong>Note:</strong> Required groups are marked with an asterisk.</p>
+                <?php endif; ?>
                 <button type="submit" class="btn-add-cart"><?= $editCartItem ? 'Save Changes' : 'Add to Cart' ?></button>
             </div>
         </form>
@@ -231,32 +243,56 @@ function buildOptionLabel($option) {
     const displayPrice = document.getElementById('displayPrice');
     const form = document.querySelector('.customization-section');
 
+    // Validation logic for Required groups
+    form.addEventListener('submit', function(e) {
+        const warningBox = document.getElementById('validation-warning');
+        const requiredGroups = form.querySelectorAll('.customization-group[data-required="1"]');
+        warningBox.style.display = 'none';
+
+        for (let group of requiredGroups) {
+            const selections = group.querySelectorAll('input:checked');
+            if (selections.length === 0) {
+                e.preventDefault();
+                const groupName = group.getAttribute('data-group-name');
+                warningBox.textContent = `Please select an option for: ${groupName}`;
+                warningBox.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return false;
+            }
+        }
+    });
+
     function updatePrice() {
-        let replacementPrice = null;
         let extraChargeTotal = 0;
+        let summaryHtml = '';
+        const currentQuantity = parseInt(document.getElementById('quantity').value, 10) || 1;
 
         // Get all checked inputs
         const checkedInputs = form.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked');
 
         checkedInputs.forEach(input => {
             const price = parseFloat(input.dataset.price) || 0;
+            const optionLabel = input.closest('.option-card').querySelector('.option-name').textContent.trim();
+            const groupContainer = input.closest('.customization-group');
+            const groupName = groupContainer.getAttribute('data-group-name');
             const groupType = input.dataset.groupType;
-            const pricingType = input.dataset.pricing || 'set_price';
-
-            if (groupType === 'addon' || pricingType === 'extra_charge') {
-                extraChargeTotal += price;
-            } else {
-                if (price > 0) {
-                    replacementPrice = replacementPrice === null ? price : Math.max(replacementPrice, price);
-                }
+            
+            extraChargeTotal += price;
+            
+            let priceText = '';
+            if (price > 0) {
+                const formattedPrice = '₱' + price.toFixed(2);
+                priceText = groupType === 'addon' ? ` (+${formattedPrice})` : ` (${formattedPrice})`;
             }
+
+            const displayGroup = groupType === 'addon' ? 'Addon' : groupName;
+            summaryHtml += `<div><strong>${displayGroup}:</strong> ${optionLabel}${priceText}</div>`;
         });
 
-        if (replacementPrice !== null) {
-            totalPrice = replacementPrice + extraChargeTotal;
-        } else {
-            totalPrice = basePrice + extraChargeTotal;
-        }
+        totalPrice = (basePrice + extraChargeTotal) * currentQuantity;
+
+        const selectionSummary = document.getElementById('selectionSummary');
+        selectionSummary.innerHTML = summaryHtml;
 
         // Format and display the price
         const formattedPrice = new Intl.NumberFormat('en-PH', {
@@ -268,9 +304,29 @@ function buildOptionLabel($option) {
         displayPrice.textContent = formattedPrice;
     }
 
+    document.getElementById('quantity').addEventListener('change', updatePrice);
+    document.getElementById('quantity').addEventListener('input', updatePrice);
+
     // Listen to all input changes
     form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
         input.addEventListener('change', updatePrice);
+
+        // Logic to allow deselecting single-choice options in optional groups
+        if (input.type === 'radio') {
+            input.addEventListener('mousedown', function() {
+                this.wasChecked = this.checked;
+            });
+
+            input.addEventListener('click', function() {
+                const group = this.closest('.customization-group');
+                const isRequired = group && group.getAttribute('data-required') === '1';
+
+                if (!isRequired && this.wasChecked) {
+                    this.checked = false;
+                    this.dispatchEvent(new Event('change'));
+                }
+            });
+        }
     });
 
     // Initial price calculation

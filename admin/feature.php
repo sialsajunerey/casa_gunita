@@ -117,7 +117,7 @@ while ($row = mysqli_fetch_assoc($sel)) {
         <li><a href="orders.php">Orders</a></li>
         <li><a href="menu.php">Menu</a></li>
         <li><a href="feature.php" class="active">Feature</a></li>
-        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php">Customers</a></li>
         <li><a href="audit.php">Audit</a></li>
     </ul>
@@ -185,7 +185,17 @@ while ($row = mysqli_fetch_assoc($sel)) {
                             <h3>Featured Dishes</h3>
                             <p class="hint">Select up to 3 dishes.</p>
                         </div>
-                        <input id="productSearch" type="search" placeholder="Search Dishes" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>">
+                        <div style="display:flex; gap:10px;">
+                            <select id="dishCategoryFilter" class="input-group" style="min-width:160px; height:34px; padding:0 10px;">
+                                <option value="all">All Categories</option>
+                                <?php 
+                                mysqli_data_seek($categories, 0);
+                                while($cf = mysqli_fetch_assoc($categories)): ?>
+                                    <option value="<?= (int)$cf['category_id'] ?>"><?= htmlspecialchars($cf['name']) ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                            <input id="productSearch" type="search" placeholder="Search Dishes" value="<?= htmlspecialchars($search_product, ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
                     </div>
                     <div class="grid" id="productGrid">
                         <?php while ($item = mysqli_fetch_assoc($products)): ?>
@@ -196,7 +206,7 @@ while ($row = mysqli_fetch_assoc($sel)) {
                                     $imgFile = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCBmaWxsPSIjZThhMDcyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjwvc3ZnPg==';
                                 }
                             ?>
-                            <label class="feature-card" data-title="<?= htmlspecialchars(strtolower($item['name']), ENT_QUOTES, 'UTF-8') ?>">
+                            <label class="feature-card" data-title="<?= htmlspecialchars(strtolower($item['name']), ENT_QUOTES, 'UTF-8') ?>" data-category-id="<?= (int)$item['category_id'] ?>">
                                 <input type="checkbox" class="feature-checkbox feature-product" name="featured_products[]" value="<?= (int)$item['product_id'] ?>" <?= in_array($item['product_id'], $featured_products, true) ? 'checked' : '' ?> />
                                 <img src="<?= $imgFile ?>" alt="<?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="feature-card-body">
@@ -225,26 +235,32 @@ while ($row = mysqli_fetch_assoc($sel)) {
         update();
     }
 
-    function initLiveSearch(inputId, gridId) {
+    function initLiveSearch(inputId, gridId, filterId = null) {
         const input = document.getElementById(inputId);
         const grid = document.getElementById(gridId);
+        const filter = filterId ? document.getElementById(filterId) : null;
         if (!input || !grid) return;
+        
         const update = () => {
             const query = input.value.trim().toLowerCase();
+            const filterVal = filter ? filter.value : 'all';
             const cards = grid.querySelectorAll('.feature-card');
             cards.forEach(card => {
                 const title = card.dataset.title || '';
-                card.style.display = title.includes(query) ? '' : 'none';
+                const matchesSearch = title.includes(query);
+                const matchesFilter = filterVal === 'all' || card.dataset.categoryId === filterVal;
+                card.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
             });
         };
         input.addEventListener('input', update);
+        if (filter) filter.addEventListener('change', update);
         update();
     }
 
     enforceLimit('.feature-category', 3);
     enforceLimit('.feature-product', 3);
     initLiveSearch('categorySearch', 'categoryGrid');
-    initLiveSearch('productSearch', 'productGrid');
+    initLiveSearch('productSearch', 'productGrid', 'dishCategoryFilter');
 </script>
 
 </body>

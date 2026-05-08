@@ -307,48 +307,6 @@ a { text-decoration: none; color: inherit; }
     white-space: nowrap;
 }
 
-/* ── PASSWORD CELL ── */
-.password-cell {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.password-mask {
-    font-size: 14px;
-    letter-spacing: 2px;
-    color: var(--muted);
-}
-
-.password-text {
-    font-family: monospace;
-    font-size: 11.5px;
-    color: var(--dark);
-    word-break: break-all;
-    max-width: 220px;
-}
-
-.toggle-btn {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11.5px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--muted);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.toggle-btn:hover {
-    background: var(--dark);
-    color: var(--gold-light);
-    border-color: var(--dark);
-}
-
 /* ── RECEIPT/VIEW LINK ── */
 .receipt-link {
     display: inline-flex;

@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $audit_stmt = mysqli_prepare($conn,
                 "INSERT INTO audit_logs (admin_id, action, target_type, details)
                  VALUES (?, 'failed_login', 'admin', ?)");
-            $details = "Failed login attempt from IP: $ip";
+            $details = "Failed log in";
             mysqli_stmt_bind_param($audit_stmt, 'is', $admin_id, $details);
             mysqli_stmt_execute($audit_stmt);
         }

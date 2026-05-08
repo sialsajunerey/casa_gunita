@@ -10,7 +10,7 @@ requireAdmin();
 $search_id = trim($_GET['search_id'] ?? '');
 $view_customer_id = isset($_GET['view_customer_id']) ? (int)$_GET['view_customer_id'] : 0;
 
-$sql = "SELECT user_id, full_name, email, password, created_at FROM users WHERE role = ?";
+$sql = "SELECT user_id, full_name, email, created_at FROM users WHERE role = ?";
 if ($search_id !== '' && ctype_digit($search_id)) {
     $sql .= " AND user_id = ?";
     $stmt = mysqli_prepare($conn, $sql);
@@ -51,7 +51,7 @@ if ($view_customer_id > 0) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="customers.css">
+    <link rel="stylesheet" href="customers.css?v=<?= filemtime('customers.css') ?>">
 </head>
 <body>
 
@@ -62,7 +62,7 @@ if ($view_customer_id > 0) {
         <li><a href="orders.php">Orders</a></li>
         <li><a href="menu.php">Menu</a></li>
         <li><a href="feature.php">Feature</a></li>
-        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php" class="active">Customers</a></li>
         <li><a href="audit.php">Audit</a></li>
     </ul>
@@ -87,7 +87,7 @@ if ($view_customer_id > 0) {
             </div>
             <div class="top-bar-right">
                 <form method="GET" style="display:flex;gap:8px;align-items:center;">
-                    <input class="input-group" type="text" name="search_id" placeholder="Search Customer ID" value="<?= htmlspecialchars($search_id, ENT_QUOTES, 'UTF-8') ?>">
+                    <input class="input-group" type="text" name="search_id" placeholder="Search Customer ID" value="<?= htmlspecialchars($search_id, ENT_QUOTES, 'UTF-8') ?>" oninput="this.value = this.value.replace(/[^0-9-]/g, '')">
                     <?php if ($search_id !== ''): ?>
                         <a href="customers.php" class="btn btn-gray">Clear</a>
                     <?php endif; ?>
@@ -102,7 +102,6 @@ if ($view_customer_id > 0) {
                         <th>Customer ID</th>
                         <th>Full Name</th>
                         <th>Email</th>
-                        <th>Password</th>
                         <th>Created At</th>
                         <th>Actions</th>
                     </tr>
@@ -110,7 +109,7 @@ if ($view_customer_id > 0) {
                 <tbody>
                 <?php if (mysqli_num_rows($customers) === 0): ?>
                     <tr class="empty-row">
-                        <td colspan="6">
+                        <td colspan="5">
                             <div class="empty-inner">
                                 <p>No customers found.</p>
                             </div>
@@ -122,13 +121,6 @@ if ($view_customer_id > 0) {
                             <td><span class="customer-id">#<?= $customer['user_id'] ?></span></td>
                             <td><span class="customer-name"><?= htmlspecialchars($customer['full_name'], ENT_QUOTES, 'UTF-8') ?></span></td>
                             <td><span class="customer-email"><?= htmlspecialchars($customer['email'], ENT_QUOTES, 'UTF-8') ?></span></td>
-                            <td>
-                                <div class="password-cell">
-                                    <span class="password-mask" id="mask-<?= $customer['user_id'] ?>">••••••••</span>
-                                    <span class="password-text" id="pw-<?= $customer['user_id'] ?>" style="display:none;"><?= htmlspecialchars($customer['password'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    <button type="button" class="toggle-btn" onclick="togglePassword(this, <?= $customer['user_id'] ?>)">Show</button>
-                                </div>
-                            </td>
                             <td><span class="date-text"><?= htmlspecialchars($customer['created_at'], ENT_QUOTES, 'UTF-8') ?></span></td>
                             <td>
                                 <a href="customers.php?view_customer_id=<?= $customer['user_id'] ?>" class="receipt-link">View Access Log</a>
@@ -180,22 +172,5 @@ if ($view_customer_id > 0) {
 
     </div>
 </div>
-
-<script>
-function togglePassword(button, id) {
-    const mask = document.getElementById('mask-' + id);
-    const text = document.getElementById('pw-' + id);
-    if (!mask || !text) return;
-    if (text.style.display === 'none') {
-        text.style.display = 'inline';
-        mask.style.display = 'none';
-        button.textContent = 'Hide';
-    } else {
-        text.style.display = 'none';
-        mask.style.display = 'inline';
-        button.textContent = 'Show';
-    }
-}
-</script>
 </body>
 </html>

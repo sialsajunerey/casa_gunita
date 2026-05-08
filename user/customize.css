@@ -172,8 +172,9 @@ body {
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.04);
     cursor: pointer;
-    transition: border-color 0.25s ease, background 0.25s ease;
+    transition: all 0.25s ease;
     min-width: 150px;
+    position: relative;
 }
 
 .option-card:hover {
@@ -181,12 +182,26 @@ body {
     background: rgba(232, 209, 145, 0.07);
 }
 
+/* Selected State for the Box */
+.option-card:has(input:checked) {
+    border-color: #e8c96a;
+    background: rgba(232, 209, 145, 0.12);
+    box-shadow: 0 0 15px rgba(232, 209, 145, 0.1);
+}
+
+.option-card:has(input:checked)::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    color: #e8c96a;
+    font-size: 14px;
+    font-weight: bold;
+}
+
 .option-card input[type="radio"],
 .option-card input[type="checkbox"] {
-    accent-color: #e8c96a;
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
+    display: none; /* Hide the actual circles */
 }
 
 .option-content {
@@ -224,7 +239,7 @@ body {
 .submit-panel {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding-top: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
     flex-wrap: wrap;
@@ -236,6 +251,58 @@ body {
     font-size: 13px;
     color: rgba(212, 196, 160, 0.5);
     margin: 0;
+    margin-right: auto; /* Pushes the button to the far right when the note is present */
+}
+
+/* ── Quantity Selector ── */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(232, 209, 145, 0.15);
+    border-radius: 10px;
+    width: fit-content;
+}
+
+.quantity-selector label {
+    font-family: 'Public Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #e8c96a;
+    opacity: 0.9;
+}
+
+.quantity-selector input[type="number"] {
+    width: 80px;
+    padding: 8px 0;
+    background: rgba(33, 3, 3, 0.5);
+    border: 1px solid rgba(232, 209, 145, 0.3);
+    border-radius: 6px;
+    color: #dce4cf;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    transition: all 0.2s ease;
+    -moz-appearance: textfield; /* Hide spinners Firefox */
+}
+
+.quantity-selector input[type="number"]::-webkit-outer-spin-button,
+.quantity-selector input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none; /* Hide spinners Chrome/Safari */
+    margin: 0;
+}
+
+.quantity-selector input[type="number"]:focus {
+    border-color: #e8c96a;
+    background: rgba(33, 3, 3, 0.8);
+    box-shadow: 0 0 12px rgba(232, 209, 145, 0.15);
 }
 
 /* ── Add to Cart Button — matches .order-link behavior ── */

@@ -12,7 +12,11 @@ $perPage = 20;
 $offset = ($page - 1) * $perPage;
 $date_from = trim($_GET['date_from'] ?? '');
 $date_to = trim($_GET['date_to'] ?? '');
-$action_filter = trim($_GET['action_filter'] ?? '');
+$action_filter = $_GET['action_filter'] ?? [];
+if (!is_array($action_filter)) {
+    $action_filter = trim($action_filter) !== '' ? [trim($action_filter)] : [];
+}
+
 $date_range_value = '';
 if ($date_from !== '' && $date_to !== '') {
     $date_range_value = $date_from . ' to ' . $date_to;
@@ -21,12 +25,18 @@ if ($date_from !== '' && $date_to !== '') {
 }
 
 $action_filters = [
-    'login' => ['label' => 'Login', 'actions' => ['login']],
-    'logout' => ['label' => 'Logout', 'actions' => ['logout']],
-    'menu_add' => ['label' => 'Menu Add', 'actions' => ['menu_add']],
-    'menu_edit' => ['label' => 'Menu Edit', 'actions' => ['menu_edit']],
-    'category_add' => ['label' => 'Category Add', 'actions' => ['category_add']],
-    'category_delete' => ['label' => 'Category Delete', 'actions' => ['category_delete']],
+    'login'               => ['label' => 'Login',               'actions' => ['login']],
+    'failed_login'        => ['label' => 'Failed Log In',       'actions' => ['failed_login']],
+    'logout'              => ['label' => 'Logout',              'actions' => ['logout']],
+    'menu_edit'           => ['label' => 'Menu Edit',           'actions' => ['menu_edit']],
+    'menu_add'            => ['label' => 'Menu Add',            'actions' => ['menu_add']],
+    'menu_delete'         => ['label' => 'Menu Delete',         'actions' => ['menu_delete']],
+    'category_edit'       => ['label' => 'Category Edit',       'actions' => ['category_edit']],
+    'category_add'        => ['label' => 'Category Add',        'actions' => ['category_add']],
+    'category_delete'     => ['label' => 'Category Delete',     'actions' => ['category_delete']],
+    'customization_edit'   => ['label' => 'Customization Edit',   'actions' => ['customization_edit']],
+    'customization_add'    => ['label' => 'Customization Add',    'actions' => ['customization_add']],
+    'customization_delete' => ['label' => 'Customization Delete', 'actions' => ['customization_delete']],
     'order_status_change' => ['label' => 'Order Status Change', 'actions' => ['order_status_change']],
 ];
 
@@ -45,13 +55,21 @@ if ($date_from !== '' && $date_to !== '') {
     $types .= 's';
 }
 
-if (isset($action_filters[$action_filter])) {
-    $actions = $action_filters[$action_filter]['actions'];
-    $placeholders = implode(',', array_fill(0, count($actions), '?'));
-    $where[] = "a.action IN ($placeholders)";
-    foreach ($actions as $action_value) {
-        $bind_params[] = $action_value;
-        $types .= 's';
+if (!empty($action_filter)) {
+    $selected_actions = [];
+    foreach ($action_filter as $filter_key) {
+        if (isset($action_filters[$filter_key])) {
+            $selected_actions = array_merge($selected_actions, $action_filters[$filter_key]['actions']);
+        }
+    }
+    $selected_actions = array_unique($selected_actions);
+    if (!empty($selected_actions)) {
+        $placeholders = implode(',', array_fill(0, count($selected_actions), '?'));
+        $where[] = "a.action IN ($placeholders)";
+        foreach ($selected_actions as $action_value) {
+            $bind_params[] = $action_value;
+            $types .= 's';
+        }
     }
 }
 
@@ -59,7 +77,7 @@ $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 $filter_params = [];
 if ($date_from !== '') $filter_params['date_from'] = $date_from;
 if ($date_to !== '') $filter_params['date_to'] = $date_to;
-if (isset($action_filters[$action_filter])) $filter_params['action_filter'] = $action_filter;
+if (!empty($action_filter)) $filter_params['action_filter'] = $action_filter;
 $paginationUrl = function (int $targetPage) use ($filter_params): string {
     return 'audit.php?' . http_build_query(array_merge($filter_params, ['page' => $targetPage]));
 };
@@ -97,7 +115,7 @@ $logs = mysqli_stmt_get_result($stmt);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="audit.css?v=2">
+    <link rel="stylesheet" href="audit.css?v=<?= filemtime('audit.css') ?>">
 </head>
 <body>
 
@@ -108,7 +126,7 @@ $logs = mysqli_stmt_get_result($stmt);
         <li><a href="orders.php">Orders</a></li>
         <li><a href="menu.php">Menu</a></li>
         <li><a href="feature.php">Feature</a></li>
-        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php">Customers</a></li>
         <li><a href="audit.php" class="active">Audit</a></li>
     </ul>
@@ -140,14 +158,22 @@ $logs = mysqli_stmt_get_result($stmt);
                     <button type="button" id="clear-date" class="clear-date-btn <?= $date_range_value === '' ? 'is-hidden' : '' ?>">Clear</button>
                     <input type="hidden" name="date_from" id="date-from" value="<?= htmlspecialchars($date_from, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="date_to" id="date-to" value="<?= htmlspecialchars($date_to, ENT_QUOTES, 'UTF-8') ?>">
-                    <select name="action_filter" onchange="this.form.submit()">
-                        <option value="">All Actions</option>
-                        <?php foreach ($action_filters as $value => $config): ?>
-                            <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= $action_filter === $value ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($config['label'], ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="custom-multiselect" id="actionMultiselect">
+                        <div class="multiselect-header">
+                            <span class="multiselect-summary">Filter Actions</span>
+                        </div>
+                        <div class="multiselect-dropdown">
+                            <label class="multiselect-item" style="border-bottom: 1px solid var(--border); font-weight: 600; color: var(--muted); cursor: default;">Select Actions</label>
+                            <?php foreach ($action_filters as $value => $config): ?>
+                                <label class="multiselect-item">
+                                    <input type="checkbox" name="action_filter[]" value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= in_array($value, $action_filter) ? 'checked' : '' ?>>
+                                    <span><?= htmlspecialchars($config['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <button type="button" id="clear-actions" class="clear-date-btn <?= empty($action_filter) ? 'is-hidden' : '' ?>">Clear</button>
+                    <button type="submit" class="btn btn-primary <?= (!empty($action_filter) || $date_range_value !== '') ? 'is-hidden' : '' ?>">Filter</button>
                 </form>
                 <div class="pagination">
                     <?php if ($page > 1): ?>
@@ -188,14 +214,17 @@ $logs = mysqli_stmt_get_result($stmt);
                                 elseif ($action === 'logout') $badgeClass = 'badge-logout';
                                 elseif ($action === 'failed_login') $badgeClass = 'badge-failed';
                                 elseif (str_contains($action, 'order')) $badgeClass = 'badge-order';
-                                elseif (str_contains($action, 'menu') || str_contains($action, 'modifier')) $badgeClass = 'badge-menu';
+                                elseif (str_contains($action, 'menu') || str_contains($action, 'customization')) $badgeClass = 'badge-menu';
                                 elseif (str_contains($action, 'featured')) $badgeClass = 'badge-feature';
+                            ?>
+                            <?php 
+                                $displayDetails = ($action === 'failed_login') ? 'Failed log in' : preg_replace('/\s*\(?IP:\s*[\d\.]+\)?/i', '', $log['details'] ?: '—');
                             ?>
                             <tr>
                                 <td><span class="date-text"><?= htmlspecialchars($log['created_at'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                 <td>
                                     <span class="badge <?= $badgeClass ?>">
-                                        <?= htmlspecialchars(str_replace('_', ' ', ucfirst($action)), ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars(ucwords(str_replace('_', ' ', $action)), ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 </td>
                                 <td><span class="user-name"><?= htmlspecialchars($log['admin_name'] ?: $log['customer_name'] ?: 'System', ENT_QUOTES, 'UTF-8') ?></span></td>
@@ -205,7 +234,7 @@ $logs = mysqli_stmt_get_result($stmt);
                                         <?php if ($log['target_id']): ?><span class="target-id">(#<?= $log['target_id'] ?>)</span><?php endif; ?>
                                     </span>
                                 </td>
-                                <td><span class="details-text"><?= nl2br(htmlspecialchars($log['details'] ?: '—', ENT_QUOTES, 'UTF-8')) ?></span></td>
+                                <td><span class="details-text"><?= nl2br(htmlspecialchars($displayDetails, ENT_QUOTES, 'UTF-8')) ?></span></td>
                             </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
@@ -266,6 +295,40 @@ document.getElementById('clear-date').addEventListener('click', function() {
     document.getElementById('date-to').value = '';
     document.getElementById('filter-form').submit();
 });
+
+// Custom Multi-select Dropdown Logic
+(function() {
+    const ms = document.getElementById('actionMultiselect');
+    const header = ms.querySelector('.multiselect-header');
+    const dropdown = ms.querySelector('.multiselect-dropdown');
+    const summary = ms.querySelector('.multiselect-summary');
+    const checkboxes = ms.querySelectorAll('input[type="checkbox"]');
+
+    function updateSummary() {
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        if (checkedCount === 0) {
+            summary.textContent = 'Filter Actions';
+        } else {
+            summary.textContent = checkedCount + (checkedCount === 1 ? ' Action' : ' Actions') + ' Selected';
+        }
+    }
+
+    const clearActionsBtn = document.getElementById('clear-actions');
+
+    header.addEventListener('click', (e) => {
+        ms.classList.toggle('active');
+        e.stopPropagation();
+    });
+
+    document.addEventListener('click', () => ms.classList.remove('active'));
+    clearActionsBtn.addEventListener('click', () => {
+        checkboxes.forEach(cb => cb.checked = false);
+        document.getElementById('filter-form').submit();
+    });
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+    checkboxes.forEach(cb => cb.addEventListener('change', updateSummary));
+    updateSummary();
+})();
 </script>
 
 </body>

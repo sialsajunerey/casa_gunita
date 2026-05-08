@@ -219,7 +219,7 @@ if ($category_id > 0) {
         <li><a href="orders.php">Orders</a></li>
         <li><a href="menu.php" class="active">Menu</a></li>
         <li><a href="feature.php">Feature</a></li>
-        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php">Customers</a></li>
         <li><a href="audit.php">Audit</a></li>
     </ul>

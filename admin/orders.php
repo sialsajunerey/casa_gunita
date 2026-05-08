@@ -110,7 +110,7 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
         <li><a href="orders.php" class="active">Orders</a></li>
         <li><a href="menu.php">Menu</a></li>
         <li><a href="feature.php">Feature</a></li>
-        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php">Customers</a></li>
         <li><a href="audit.php">Audit</a></li>
     </ul>
@@ -152,7 +152,7 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
             <form method="GET" class="filter-row" id="filter-form">
                 <div class="search-wrap">
                     <span class="search-icon"></span>
-                    <input type="search" name="search" placeholder="Search Order ID" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="debounceSubmit()">
+                    <input type="search" name="search" placeholder="Search Order ID" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="this.value = this.value.replace(/[^0-9-]/g, ''); debounceSubmit()">
                 </div>
                 <input type="text" id="date-range" class="date-range-input" placeholder="Record date range" value="<?= htmlspecialchars($date_range_value, ENT_QUOTES, 'UTF-8') ?>" autocomplete="off">
                 <button type="button" id="clear-date" class="clear-date-btn <?= $date_range_value === '' ? 'is-hidden' : '' ?>">Clear</button>
@@ -172,16 +172,6 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                     <option value="delivery" <?= $type_filter === 'delivery' ? 'selected' : '' ?>>Delivery</option>
                 </select>
             </form>
-        </div>
-
-        <!-- Summary Chips -->
-        <div class="summary-chips">
-            <div class="chip">All <span class="chip-count"><?= $counts['all'] ?></span></div>
-            <?php foreach (['pending','preparing','ready','completed','cancelled'] as $s): ?>
-                <?php if ($counts[$s]): ?>
-                <div class="chip"><?= ucfirst($s) ?> <span class="chip-count"><?= $counts[$s] ?></span></div>
-                <?php endif; ?>
-            <?php endforeach; ?>
         </div>
 
         <!-- Orders Table -->

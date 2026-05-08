@@ -118,7 +118,7 @@ foreach ($orders as $o) {
         <li><a href="orders.php">Orders</a></li>
         <li><a href="menu.php">Menu</a></li>
         <li><a href="feature.php">Feature</a></li>
-        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php">Customers</a></li>
         <li><a href="audit.php">Audit</a></li>
     </ul>
@@ -171,7 +171,7 @@ foreach ($orders as $o) {
                             <form method="GET" action="" id="search-form">
                                 <span class="search-icon"></span>
                                 <input type="text" name="search" placeholder="Search Order ID"
-                                    value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="debounceSubmit()">
+                                    value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="this.value = this.value.replace(/[^0-9-]/g, ''); debounceSubmit()">
                                 <?php if ($status_filter): ?>
                                     <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8') ?>">
                                 <?php endif; ?>

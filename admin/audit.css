@@ -207,6 +207,7 @@ a { text-decoration: none; color: inherit; }
     font-size: 13px;
     padding: 8px 12px;
     outline: none;
+    height: 34px;
     transition: border-color 0.2s;
     width: 210px;
 }
@@ -224,7 +225,7 @@ a { text-decoration: none; color: inherit; }
     width: auto;
     min-width: 180px;
     padding-right: 34px;
-    appearance: none;
+    appearance: none !important;
     -webkit-appearance: none;
     cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23210303' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -252,8 +253,91 @@ a { text-decoration: none; color: inherit; }
     color: var(--gold-light);
 }
 
-.clear-date-btn.is-hidden {
+.is-hidden {
     display: none;
+}
+
+/* ── CUSTOM MULTISELECT ── */
+.custom-multiselect {
+    position: relative;
+    width: 210px;
+}
+
+.multiselect-header {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--dark);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 0 34px 0 12px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.multiselect-header::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-30%);
+    width: 11px;
+    height: 7px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23210303' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    transition: transform 0.2s;
+}
+
+.custom-multiselect.active .multiselect-header::after {
+    transform: translateY(-30%) rotate(180deg);
+}
+
+.multiselect-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+    padding: 8px 0;
+}
+
+.custom-multiselect.active .multiselect-dropdown {
+    display: block;
+}
+
+.multiselect-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.multiselect-item:hover {
+    background: var(--bg);
+}
+
+.multiselect-item input {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--dark);
+}
+
+.multiselect-item span {
+    font-size: 13px;
+    color: var(--dark);
 }
 
 /* ── PAGINATION ── */

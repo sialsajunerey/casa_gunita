@@ -27,10 +27,10 @@ if (!$category_id && !empty($categories)) {
     $category_id = (int)$categories[0]['category_id'];
 }
 
-$modifierGroups = [];
-$modifierResult = mysqli_query($conn, "SELECT modifier_group_id, name, pricing_type, select_option FROM modifier_groups ORDER BY name");
-while ($modifier = mysqli_fetch_assoc($modifierResult)) {
-    $modifierGroups[] = $modifier;
+$customizationGroups = [];
+$customizationResult = mysqli_query($conn, "SELECT modifier_group_id, name, pricing_type, select_option FROM modifier_groups ORDER BY name");
+while ($custom = mysqli_fetch_assoc($customizationResult)) {
+    $customizationGroups[] = $custom;
 }
 
 // Handle customization groups and options
@@ -141,8 +141,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($groupName === '') continue;
 
                         $groupType = $posted_group_types[$groupIndex] ?? 'single';
-                        $pricingType = $posted_group_pricing_type[$groupIndex] ?? 'set_price';
-                        $isRequired = isset($posted_group_required[$groupIndex]) ? (int)$posted_group_required[$groupIndex] : 0;
+                        $pricingType = $posted_group_pricing_type[$groupIndex] ?? 'extra_charge';
+                        $isRequired = (isset($posted_group_required[$groupIndex]) && $posted_group_required[$groupIndex] == '1') ? 1 : 0;
 
                         mysqli_stmt_bind_param($groupStmt, 'isssii',
                             $product_id, $groupName, $groupType, $pricingType, $isRequired, $displayOrder);
@@ -194,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     foreach ($posted_group_modifier_ids as $groupIndex => $modifierGroupId) {
                         $modifierGroupId = (int)$modifierGroupId;
                         if ($modifierGroupId <= 0) continue;
-                        $isRequired = isset($posted_group_required[$groupIndex]) ? (int)$posted_group_required[$groupIndex] : 0;
+                        $isRequired = (isset($posted_group_required[$groupIndex]) && $posted_group_required[$groupIndex] == '1') ? 1 : 0;
                         mysqli_stmt_bind_param($linkStmt, 'iiii', $product_id, $modifierGroupId, $isRequired, $linkDisplayOrder);
                         mysqli_stmt_execute($linkStmt);
                         $linkDisplayOrder++;
@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <li><a href="orders.php">Orders</a></li>
         <li><a href="menu.php" class="active">Menu</a></li>
         <li><a href="feature.php">Feature</a></li>
-        <li><a href="modifiers.php">Modifiers</a></li>
+        <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php">Customers</a></li>
         <li><a href="audit.php">Audit</a></li>
     </ul>
@@ -321,21 +321,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="card">
-                    <div class="card-title">Customization Groups</div>
+                    <div class="card-title">Customization Templates</div>
                     <div class="customization-section">
 
-                        <?php if (empty($modifierGroups)): ?>
-                            <p class="no-modifiers-notice">No modifier groups available. Create them first in the <a href="modifiers.php" style="color:var(--dark);font-weight:600;">Modifiers</a> page.</p>
+                        <?php if (empty($customizationGroups)): ?>
+                            <p class="no-modifiers-notice">No customizations available. Create them first in the <a href="customizations.php" style="color:var(--dark);font-weight:600;">Customizations</a> page.</p>
                         <?php else: ?>
                             <div class="modifier-select-row">
                                 <select id="new-modifier-group">
-                                    <option value="">+ Add modifier group…</option>
-                                    <?php foreach ($modifierGroups as $modifier): ?>
-                                        <option value="<?= (int)$modifier['modifier_group_id'] ?>"
-                                                data-name="<?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>"
-                                                data-pricing="<?= htmlspecialchars($modifier['pricing_type'], ENT_QUOTES, 'UTF-8') ?>"
-                                                data-select="<?= htmlspecialchars($modifier['select_option'], ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($modifier['name'], ENT_QUOTES, 'UTF-8') ?>
+                                    <option value="">+ Add customization group…</option>
+                                    <?php foreach ($customizationGroups as $custom): ?>
+                                        <option value="<?= (int)$custom['modifier_group_id'] ?>"
+                                                data-name="<?= htmlspecialchars($custom['name'], ENT_QUOTES, 'UTF-8') ?>"
+                                                data-pricing="<?= htmlspecialchars($custom['pricing_type'], ENT_QUOTES, 'UTF-8') ?>"
+                                                data-select="<?= htmlspecialchars($custom['select_option'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars($custom['name'], ENT_QUOTES, 'UTF-8') ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -347,10 +347,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $renderGroups = !empty($posted_group_names) ? $posted_group_names : [];
                             if (!empty($renderGroups)):
                                 foreach ($renderGroups as $groupIndex => $groupName):
-                                    $groupName = sanitize($groupName);
+                                    $modifierGroupId = $posted_group_modifier_ids[$groupIndex] ?? 0;
+                                    $modifierMeta = ($modifierGroupId > 0 && isset($customizationGroups)) ? array_values(array_filter($customizationGroups, fn($m) => $m['modifier_group_id'] == $modifierGroupId))[0] ?? null : null;
+                                    
+                                    $groupLabel = $modifierMeta ? $modifierMeta['name'] : sanitize($groupName);
                                     $groupTypeValue = $posted_group_types[$groupIndex] ?? 'single';
                                     $groupTypeValue = $groupTypeValue === 'addon' ? 'addon' : 'single';
-                                    $groupRequiredValue = isset($posted_group_required[$groupIndex]) ? (bool)(int)$posted_group_required[$groupIndex] : false;
+                                    $groupRequiredValue = (isset($posted_group_required[$groupIndex]) && $posted_group_required[$groupIndex] == '1');
                                     $optionNames = $posted_option_names[$groupIndex] ?? [];
                                     $optionPrices = $posted_option_prices[$groupIndex] ?? [];
                                     $optionImages = $posted_option_images[$groupIndex] ?? [];
@@ -365,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                     <div class="customization-card-header">
                                         <div class="customization-card-header-left">
-                                            <span class="group-label"><?= htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="group-label"><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                             <span class="group-badge <?= $badgeClass ?>"><?= $badgeLabel ?></span>
                                             <label style="display:flex;align-items:center;gap:6px;margin-left:12px;font-weight:500;font-size:13px;cursor:pointer;">
                                                 <input type="checkbox" class="group-required-checkbox" data-group-index="<?= (int)$groupIndex ?>" <?= $groupRequiredValue ? 'checked' : '' ?>>
@@ -376,7 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
 
                                     <input type="hidden" name="group_modifier_id[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($posted_group_modifier_ids[$groupIndex] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="group_name[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="group_name[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?>">
                                     <input type="hidden" name="group_type[<?= (int)$groupIndex ?>]" value="<?= $groupTypeValue ?>">
                                     <input type="hidden" name="group_required[<?= (int)$groupIndex ?>]" value="<?= $groupRequiredValue ? 1 : 0 ?>">
                                     <input type="hidden" name="group_pricing_type[<?= (int)$groupIndex ?>]" value="<?= htmlspecialchars($pricingType, ENT_QUOTES, 'UTF-8') ?>">
@@ -480,12 +483,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const container      = document.getElementById('customization-groups');
-    const modifierSelect = document.getElementById('new-modifier-group');
-    const availableModifiers = modifierSelect
-        ? Array.from(modifierSelect.querySelectorAll('option[data-name]')).map(o => ({
+    const customizationSelect = document.getElementById('new-modifier-group');
+    const availableCustoms = customizationSelect
+        ? Array.from(customizationSelect.querySelectorAll('option[data-name]')).map(o => ({
             id:          o.value,
             name:        o.dataset.name,
-            pricingType: o.dataset.pricing || 'set_price',
+            pricingType: 'extra_charge',
             selectType:  o.dataset.select  || 'single'
           }))
         : [];
@@ -574,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <span class="group-label">${modifier.name}</span>
                     <span class="group-badge ${badgeClass}">${badge}</span>
                     <label style="display:flex;align-items:center;gap:6px;margin-left:12px;font-weight:500;font-size:13px;cursor:pointer;">
-                        <input type="checkbox" class="group-required-checkbox" data-group-index="${groupIndex}" ${type === 'addon' ? '' : 'checked'}>
+                        <input type="checkbox" class="group-required-checkbox" data-group-index="${groupIndex}">
                         Required
                     </label>
                 </div>
@@ -583,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <input type="hidden" name="group_modifier_id[${groupIndex}]" value="${modifier.id}">
             <input type="hidden" name="group_name[${groupIndex}]" value="${modifier.name}">
             <input type="hidden" name="group_type[${groupIndex}]" value="${type}">
-            <input type="hidden" name="group_required[${groupIndex}]" value="${type === 'addon' ? '0' : '1'}">
+            <input type="hidden" name="group_required[${groupIndex}]" value="0">
             <input type="hidden" name="group_pricing_type[${groupIndex}]" value="${modifier.pricingType}">
             <div class="customization-card-body options-list"></div>
             <div class="customization-card-footer">
@@ -609,12 +612,12 @@ document.addEventListener('DOMContentLoaded', function () {
         return card;
     }
 
-    function updateModifierSelect() {
-        if (!modifierSelect) return;
+    function updateCustomizationSelect() {
+        if (!customizationSelect) return;
         const selectedIds = new Set(
             Array.from(container.querySelectorAll('.customization-card')).map(c => c.dataset.modifierId)
         );
-        modifierSelect.querySelectorAll('option').forEach(opt => {
+        customizationSelect.querySelectorAll('option').forEach(opt => {
             if (!opt.value) return;
             opt.disabled = selectedIds.has(opt.value);
         });
@@ -628,20 +631,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     container.querySelectorAll('.customization-card').forEach(attachCardEvents);
 
-    if (modifierSelect) {
-        modifierSelect.addEventListener('change', function () {
+    if (customizationSelect) {
+        customizationSelect.addEventListener('change', function () {
             const id = this.value;
             if (!id) return;
-            const modifier = availableModifiers.find(m => m.id === id);
-            if (modifier) {
-                container.appendChild(createModifierCard(modifier, getNextGroupIndex()));
-                updateModifierSelect();
+            const custom = availableCustoms.find(m => m.id === id);
+            if (custom) {
+                container.appendChild(createModifierCard(custom, getNextGroupIndex()));
+                updateCustomizationSelect();
                 this.value = '';
             }
         });
     }
 
-    updateModifierSelect();
+    updateCustomizationSelect();
 });
 </script>
 </body>
