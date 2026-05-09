@@ -317,29 +317,33 @@ document.addEventListener('DOMContentLoaded', () => {
 </button>
 
 <script>
-    // Account dropdown
-    const accountBtn = document.getElementById('accountBtn');
-    const accountDropdown = document.getElementById('accountDropdown');
-    if (accountBtn && accountDropdown) {
-        accountBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            accountDropdown.classList.toggle('open');
-        });
-        document.addEventListener('click', function() {
-            accountDropdown.classList.remove('open');
-        });
+// Back to Top
+const backToTop = document.getElementById('backToTop');
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 400) {
+        backToTop.classList.add('visible');
+    } else {
+        backToTop.classList.remove('visible');
     }
+});
+backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
     // Fade in We Offer title on scroll
     const weOfferTitle = document.querySelector('.we-offer-title');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) entry.target.classList.add('visible');
-        });
-    }, { threshold: 0.10 });
-    observer.observe(weOfferTitle);
-
-</script> 
+    if (weOfferTitle) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
+        observer.observe(weOfferTitle);
+    }
+</script>
 
 <script src="search.js"></script>
 

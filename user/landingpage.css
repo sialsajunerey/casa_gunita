@@ -1246,3 +1246,40 @@ a { text-decoration: none; color: inherit; }
   letter-spacing: 0.08em;
   text-align: center;
 }
+
+/* ════════════════════════════
+   BACK TO TOP
+════════════════════════════ */
+.back-to-top {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 999;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: rgba(33, 3, 3, 0.85);
+  border: 1px solid rgba(255, 220, 66, 0.85);
+  background: #e8d191;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease, background 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.back-to-top:hover {
+  background: rgba(232, 209, 145, 0.15);
+  border-color: rgba(232, 209, 145, 0.8);
+}
