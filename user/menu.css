@@ -142,7 +142,11 @@ body {
 }
 
 .item-unavailable .item-img-wrap img {
-    filter: grayscale(1);
+    opacity: 0.45;
+}
+
+.item-unavailable .item-info {
+    opacity: 0.55;
 }
 
 .item-img-wrap.placeholder {
