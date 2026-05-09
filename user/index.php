@@ -286,7 +286,15 @@ $featured = mysqli_query($conn,
     </div>
 </div>
 
+<!-- Back to Top Button -->
+<button class="back-to-top" id="backToTop" aria-label="Back to top">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"/>
+    </svg>
+</button>
+
 <script>
+// Auth Modal
 function openAuthModal(view) {
     document.getElementById('authModal').classList.add('active');
     showAuthView(view);
@@ -307,16 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openAuthModal('<?= htmlspecialchars($_POST['auth_type']) ?>');
 });
 <?php endif; ?>
-</script>
 
-<!-- Back to Top Button -->
-<button class="back-to-top" id="backToTop" aria-label="Back to top">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="18 15 12 9 6 15"/>
-    </svg>
-</button>
-
-<script>
 // Back to Top
 const backToTop = document.getElementById('backToTop');
 window.addEventListener('scroll', () => {
@@ -330,19 +329,32 @@ backToTop.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-    // Fade in We Offer title on scroll
-    const weOfferTitle = document.querySelector('.we-offer-title');
-    if (weOfferTitle) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
-        observer.observe(weOfferTitle);
-    }
+// Fade in We Offer title on scroll
+const weOfferTitle = document.querySelector('.we-offer-title');
+if (weOfferTitle) {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
+    observer.observe(weOfferTitle);
+}
+
+// ✅ FIX: Account Dropdown Toggle
+const accountBtn = document.getElementById('accountBtn');
+const accountDropdown = document.getElementById('accountDropdown');
+if (accountBtn && accountDropdown) {
+    accountBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        accountDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+        accountDropdown.classList.remove('open');
+    });
+}
 </script>
 
 <script src="search.js"></script>
