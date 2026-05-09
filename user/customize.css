@@ -44,6 +44,7 @@ body {
     overflow: hidden;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
 }
+
 /* ── Product Top ── */
 .product-top {
     display: flex;
@@ -182,7 +183,6 @@ body {
     background: rgba(232, 209, 145, 0.07);
 }
 
-/* Selected State for the Box */
 .option-card:has(input:checked) {
     border-color: #e8c96a;
     background: rgba(232, 209, 145, 0.12);
@@ -201,7 +201,7 @@ body {
 
 .option-card input[type="radio"],
 .option-card input[type="checkbox"] {
-    display: none; /* Hide the actual circles */
+    display: none;
 }
 
 .option-content {
@@ -251,61 +251,63 @@ body {
     font-size: 13px;
     color: rgba(212, 196, 160, 0.5);
     margin: 0;
-    margin-right: auto; /* Pushes the button to the far right when the note is present */
+    margin-right: auto;
 }
 
-/* ── Quantity Selector ── */
+/* ── Quantity Selector — Underline Minimal ── */
 .quantity-selector {
     display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 32px;
-    padding: 16px 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(232, 209, 145, 0.15);
-    border-radius: 10px;
-    width: fit-content;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
 }
 
-.quantity-selector label {
+.qty-label {
     font-family: 'Public Sans', sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: #e8c96a;
-    opacity: 0.9;
+    color: rgba(232, 209, 145, 0.55);
 }
 
-.quantity-selector input[type="number"] {
-    width: 80px;
-    padding: 8px 0;
-    background: rgba(33, 3, 3, 0.5);
-    border: 1px solid rgba(232, 209, 145, 0.3);
-    border-radius: 6px;
-    color: #dce4cf;
+.qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid rgba(232, 209, 145, 0.3);
+    padding-bottom: 10px;
+}
+
+.qty-controls button {
+    background: none;
+    border: none;
+    color: rgba(232, 209, 145, 0.65);
+    font-size: 22px;
+    font-weight: 300;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.2s ease;
     font-family: 'Public Sans', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
+}
+
+.qty-controls button:hover {
+    color: #e8d191;
+}
+
+.qty-controls span {
+    font-family: 'Public Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #dce4cf;
+    min-width: 28px;
     text-align: center;
-    outline: none;
-    transition: all 0.2s ease;
-    -moz-appearance: textfield; /* Hide spinners Firefox */
+    user-select: none;
 }
 
-.quantity-selector input[type="number"]::-webkit-outer-spin-button,
-.quantity-selector input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none; /* Hide spinners Chrome/Safari */
-    margin: 0;
-}
-
-.quantity-selector input[type="number"]:focus {
-    border-color: #e8c96a;
-    background: rgba(33, 3, 3, 0.8);
-    box-shadow: 0 0 12px rgba(232, 209, 145, 0.15);
-}
-
-/* ── Add to Cart Button — matches .order-link behavior ── */
+/* ── Add to Cart Button ── */
 .btn-add-cart {
     display: inline-flex;
     align-items: center;

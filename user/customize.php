@@ -150,12 +150,24 @@ function buildOptionLabel($option) {
                 <h1 class="product-name"><?= htmlspecialchars($product['name']) ?></h1>
                 <p class="product-desc"><?= nl2br(htmlspecialchars($product['description'] ?? 'Choose your options before adding to cart.')) ?></p>
                 <div class="product-price">
-                    <span>Price: </span>
+                    <span>Base Price: </span>
                     <span id="displayPrice"><?= formatPrice($product['price']) ?></span>
                     <div id="validation-warning" style="display:none; margin-top:15px; padding:10px; background:rgba(176,48,48,0.1); color:#b03030; border:1px solid rgba(176,48,48,0.2); border-radius:6px; font-size:13px; font-family:'Public Sans', sans-serif;"></div>
                     <div id="selectionSummary" style="font-size: 13px; color: #8a7060; margin-top: 8px; font-family: 'Public Sans', sans-serif;"></div>
                     <input type="hidden" id="basePrice" value="<?= htmlspecialchars($product['price']) ?>">
                 </div>
+
+                <!-- Quantity Selector — below base price -->
+                <div class="quantity-selector">
+                    <p class="qty-label">Quantity</p>
+                    <div class="qty-controls">
+                        <button type="button" onclick="adjQty(-1)" aria-label="Decrease quantity">−</button>
+                        <span id="qtyDisplay"><?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?></span>
+                        <button type="button" onclick="adjQty(1)" aria-label="Increase quantity">+</button>
+                    </div>
+                    <input type="hidden" id="quantity" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>">
+                </div>
+
                 <?php if (empty($groups)): ?>
                     <p class="helper-text">This item has no extra customization options. Click Add to Cart to continue.</p>
                 <?php endif; ?>
@@ -167,11 +179,6 @@ function buildOptionLabel($option) {
             <input type="hidden" name="action" value="add">
             <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['product_id']) ?>">
             <input type="hidden" name="edit_cart_key" value="<?= htmlspecialchars($editCartKey) ?>">
-
-            <div class="quantity-selector">
-                <label for="quantity">Quantity</label>
-                <input type="number" id="quantity" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>" min="1" max="99" required oninput="if(this.value < 1) this.value = 1;">
-            </div>
 
             <?php foreach ($groups as $group): ?>
                 <div class="customization-group" data-group-name="<?= htmlspecialchars($group['name']) ?>" data-required="<?= $group['is_required'] ? '1' : '0' ?>">
@@ -309,6 +316,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Quantity adjuster
+    function adjQty(delta) {
+        const input = document.getElementById('quantity');
+        const display = document.getElementById('qtyDisplay');
+        let val = Math.min(99, Math.max(1, parseInt(input.value) + delta));
+        input.value = val;
+        display.textContent = val;
+        updatePrice();
+    }
+
     // Price update on modifier selection
     const basePrice = parseFloat(document.getElementById('basePrice').value);
     const displayPrice = document.getElementById('displayPrice');
@@ -338,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let summaryHtml = '';
         const currentQuantity = parseInt(document.getElementById('quantity').value, 10) || 1;
 
-        // Get all checked inputs
         const checkedInputs = form.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked');
 
         checkedInputs.forEach(input => {
@@ -347,9 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const groupContainer = input.closest('.customization-group');
             const groupName = groupContainer.getAttribute('data-group-name');
             const groupType = input.dataset.groupType;
-            
+
             extraChargeTotal += price;
-            
+
             let priceText = '';
             if (price > 0) {
                 const formattedPrice = '₱' + price.toFixed(2);
@@ -360,12 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryHtml += `<div><strong>${displayGroup}:</strong> ${optionLabel}${priceText}</div>`;
         });
 
-        totalPrice = (basePrice + extraChargeTotal) * currentQuantity;
+        const totalPrice = (basePrice + extraChargeTotal) * currentQuantity;
 
         const selectionSummary = document.getElementById('selectionSummary');
         selectionSummary.innerHTML = summaryHtml;
 
-        // Format and display the price
         const formattedPrice = new Intl.NumberFormat('en-PH', {
             style: 'currency',
             currency: 'PHP',
@@ -375,14 +390,10 @@ document.addEventListener('DOMContentLoaded', () => {
         displayPrice.textContent = formattedPrice;
     }
 
-    document.getElementById('quantity').addEventListener('change', updatePrice);
-    document.getElementById('quantity').addEventListener('input', updatePrice);
-
     // Listen to all input changes
     form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
         input.addEventListener('change', updatePrice);
 
-        // Logic to allow deselecting single-choice options in optional groups
         if (input.type === 'radio') {
             input.addEventListener('mousedown', function() {
                 this.wasChecked = this.checked;
@@ -400,7 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Initial price calculation
     updatePrice();
 </script>
 
