@@ -28,7 +28,7 @@ if (!$category_id && !empty($categories)) {
 }
 
 $customizationGroups = [];
-$customizationResult = mysqli_query($conn, "SELECT template_id, name, select_option FROM customization_templates ORDER BY name");
+$customizationResult = mysqli_query($conn, "SELECT modifier_group_id, name, pricing_type, select_option FROM modifier_groups ORDER BY name");
 while ($custom = mysqli_fetch_assoc($customizationResult)) {
     $customizationGroups[] = $custom;
 }
@@ -38,6 +38,7 @@ $posted_group_modifier_ids = $_POST['group_modifier_id'] ?? [];
 $posted_group_names = $_POST['group_name'] ?? [];
 $posted_group_types = $_POST['group_type'] ?? [];
 $posted_group_required = $_POST['group_required'] ?? [];
+$posted_group_pricing_type = $_POST['group_pricing_type'] ?? [];
 $posted_option_names = $_POST['option_name'] ?? [];
 $posted_option_prices = $_POST['option_price'] ?? [];
 $posted_option_images = $_POST['option_image_existing'] ?? [];
@@ -115,15 +116,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_execute($inv);
 
             // Log audit: menu_add
+            $admin_id = $_SESSION['user_id'] ?? null;
+            $audit_stmt = mysqli_prepare($conn,
+                "INSERT INTO audit_logs (admin_id, action, target_type, target_id, product_id, details)
+                 VALUES (?, 'menu_add', 'product', ?, ?, ?)");
             $details = "Added product: $name (Price: ₱" . number_format($price, 2) . ")";
-            logAudit($conn, 'menu_add', 'product', $product_id, $details, $product_id);
+            mysqli_stmt_bind_param($audit_stmt, 'iiss', $admin_id, $product_id, $product_id, $details);
+            mysqli_stmt_execute($audit_stmt);
 
             // Save customization groups and options
             if (!empty($posted_group_names) && is_array($posted_group_names)) {
                 $groupStmt = mysqli_prepare($conn,
                     "INSERT INTO product_customization_groups
-                         (product_id, name, group_type, is_required, display_order)
-                         VALUES (?, ?, ?, ?, ?)");
+                         (product_id, name, group_type, pricing_type, is_required, display_order)
+                         VALUES (?, ?, ?, ?, ?, ?)");
                     $optionStmt = mysqli_prepare($conn,
                         "INSERT INTO product_customization_options
                          (group_id, name, additional_price, image, display_order)
@@ -135,11 +141,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($groupName === '') continue;
 
                         $groupType = $posted_group_types[$groupIndex] ?? 'single';
+                        $pricingType = $posted_group_pricing_type[$groupIndex] ?? 'extra_charge';
                         $isRequired = (isset($posted_group_required[$groupIndex]) && $posted_group_required[$groupIndex] == '1') ? 1 : 0;
-                        mysqli_stmt_bind_param($groupStmt, 'issii', $product_id, $groupName, $groupType, $isRequired, $displayOrder);
+
+                        mysqli_stmt_bind_param($groupStmt, 'isssii',
+                            $product_id, $groupName, $groupType, $pricingType, $isRequired, $displayOrder);
                         mysqli_stmt_execute($groupStmt);
                         $groupId = mysqli_insert_id($conn);
-                        logAudit($conn, 'customization_add', 'customization', $groupId, "Added Group: $groupName", $product_id);
+
+                        // Audit log for customization group addition
+                        $cust_audit_stmt = mysqli_prepare($conn,
+                            "INSERT INTO audit_logs (admin_id, action, target_type, target_id, product_id, details)
+                             VALUES (?, 'modifier_add', 'customization', ?, ?, ?)");
+                        $cust_details = "Added Customization Group: $groupName (inline during menu add)";
+                        mysqli_stmt_bind_param($cust_audit_stmt, 'iiis', $admin_id, $groupId, $product_id, $cust_details);
+                        mysqli_stmt_execute($cust_audit_stmt);
 
                     // Save options for this group
                     $optionNames = $posted_option_names[$groupIndex] ?? [];

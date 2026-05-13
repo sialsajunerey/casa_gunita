@@ -30,6 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($error === '') {
+        $columnInfo = mysqli_query($conn, "SHOW COLUMNS FROM orders LIKE 'order_type'");
+    if ($columnInfo && $row = mysqli_fetch_assoc($columnInfo)) {
+        if (strpos($row['Type'], "'delivery'") === false) {
+            mysqli_query($conn, "ALTER TABLE orders MODIFY order_type ENUM('dine-in','takeout','delivery') NOT NULL");
+        }
+    }
+
     $stmt = mysqli_prepare($conn,
         "INSERT INTO orders (user_id, total_amount, status, order_type, notes, house_number, street, barangay, city) 
          VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?)");

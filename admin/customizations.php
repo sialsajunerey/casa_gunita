@@ -13,21 +13,41 @@ $success = '';
 
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $get_name = mysqli_prepare($conn, "SELECT name FROM customization_templates WHERE template_id = ?");
+    $get_name = mysqli_prepare($conn, "SELECT name FROM modifier_groups WHERE modifier_group_id = ?");
     mysqli_stmt_bind_param($get_name, 'i', $id);
     mysqli_stmt_execute($get_name);
     $name_result = mysqli_fetch_assoc(mysqli_stmt_get_result($get_name));
     $mod_name = $name_result['name'] ?? 'Unknown';
 
-    // Remove the links in the intermediate table (renamed to product_template_links)
-    $delete_links = mysqli_prepare($conn, "DELETE FROM product_template_links WHERE template_id = ?");
+    // To ensure the modifier is removed from the user/customize page, we must delete 
+    // the 'snapshot' copies in the customization tables. They are linked via 
+    // product_modifier_groups using product_id and display_order.
+    $cleanup_customs = mysqli_prepare($conn, 
+        "DELETE g, o FROM product_customization_groups g 
+         LEFT JOIN product_customization_options o ON g.group_id = o.group_id
+         JOIN product_modifier_groups pmg ON g.product_id = pmg.product_id AND g.display_order = pmg.display_order
+         WHERE pmg.modifier_group_id = ?");
+    mysqli_stmt_bind_param($cleanup_customs, 'i', $id);
+    mysqli_stmt_execute($cleanup_customs);
+
+    // Remove the links in the intermediate table
+    $delete_links = mysqli_prepare($conn, "DELETE FROM product_modifier_groups WHERE modifier_group_id = ?");
     mysqli_stmt_bind_param($delete_links, 'i', $id);
     mysqli_stmt_execute($delete_links);
 
-    $stmt = mysqli_prepare($conn, "DELETE FROM customization_templates WHERE template_id = ?");
+    $stmt = mysqli_prepare($conn, "DELETE FROM modifier_groups WHERE modifier_group_id = ?");
     mysqli_stmt_bind_param($stmt, 'i', $id);
     mysqli_stmt_execute($stmt);
-    logAudit($conn, 'customization_delete', 'customization', $id, "Deleted customization: $mod_name");
+
+    $admin_id = $_SESSION['user_id'] ?? null;
+    $audit_stmt = mysqli_prepare($conn,
+        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
+         VALUES (?, ?, ?, ?, ?)");
+    $action_name = 'modifier_delete';
+    $target_type = 'customization';
+    $details = "Deleted customization: $mod_name";
+    mysqli_stmt_bind_param($audit_stmt, 'issis', $admin_id, $action_name, $target_type, $id, $details);
+    mysqli_stmt_execute($audit_stmt);
 
     header('Location: customizations.php');
     exit();
@@ -36,42 +56,64 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'add';
     $name = sanitize(trim($_POST['name'] ?? ''));
+    $pricing_type = 'extra_charge'; // Forced to extra charge
     $select_option = $_POST['select_option'] === 'multiple' ? 'multiple' : 'single';
 
     if ($name === '') {
         $error = 'Modifier name is required.';
     } else {
         if ($action === 'add') {
-            $stmt = mysqli_prepare($conn, "SELECT template_id FROM customization_templates WHERE name = ?");
+            $stmt = mysqli_prepare($conn, "SELECT modifier_group_id FROM modifier_groups WHERE name = ?");
             mysqli_stmt_bind_param($stmt, 's', $name);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_store_result($stmt);
             if (mysqli_stmt_num_rows($stmt) > 0) {
                 $error = 'A modifier with that name already exists.';
             } else {
-                $insert = mysqli_prepare($conn, "INSERT INTO customization_templates (name, select_option) VALUES (?, ?)");
-                mysqli_stmt_bind_param($insert, 'ss', $name, $select_option);
+                $insert = mysqli_prepare($conn,
+                    "INSERT INTO modifier_groups (name, pricing_type, select_option) VALUES (?, ?, ?)");
+                mysqli_stmt_bind_param($insert, 'sss', $name, $pricing_type, $select_option);
                 if (mysqli_stmt_execute($insert)) {
-                    $id = mysqli_insert_id($conn);
-                    logAudit($conn, 'customization_add', 'customization', $id, "Added Customization: $name ($select_option)");
+                    $modifier_id = mysqli_insert_id($conn);
+
+                    $admin_id = $_SESSION['user_id'] ?? null;
+                    $audit_stmt = mysqli_prepare($conn,
+                        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
+                         VALUES (?, ?, ?, ?, ?)");
+                    $action_name = 'modifier_add';
+                    $target_type = 'customization';
+                    $details = "Added Customization: $name ($pricing_type, $select_option)";
+                    mysqli_stmt_bind_param($audit_stmt, 'issis', $admin_id, $action_name, $target_type, $modifier_id, $details);
+                    mysqli_stmt_execute($audit_stmt);
+
                     $success = 'Customization created successfully.';
                 } else {
                     $error = 'Unable to save customization.';
                 }
             }
-        } elseif ($action === 'edit' && isset($_POST['template_id'])) {
-            $template_id = (int)$_POST['template_id'];
-            $stmt = mysqli_prepare($conn, "SELECT template_id FROM customization_templates WHERE name = ? AND template_id != ?");
-            mysqli_stmt_bind_param($stmt, 'si', $name, $template_id);
+        } elseif ($action === 'edit' && isset($_POST['modifier_group_id'])) {
+            $modifier_group_id = (int)$_POST['modifier_group_id'];
+            $stmt = mysqli_prepare($conn, "SELECT modifier_group_id FROM modifier_groups WHERE name = ? AND modifier_group_id != ?");
+            mysqli_stmt_bind_param($stmt, 'si', $name, $modifier_group_id);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_store_result($stmt);
             if (mysqli_stmt_num_rows($stmt) > 0) {
                 $error = 'A customization with that name already exists.';
             } else {
-                $update = mysqli_prepare($conn, "UPDATE customization_templates SET name = ?, select_option = ? WHERE template_id = ?");
-                mysqli_stmt_bind_param($update, 'ssi', $name, $select_option, $template_id);
+                $update = mysqli_prepare($conn,
+                    "UPDATE modifier_groups SET name = ?, pricing_type = ?, select_option = ? WHERE modifier_group_id = ?");
+                mysqli_stmt_bind_param($update, 'sssi', $name, $pricing_type, $select_option, $modifier_group_id);
                 if (mysqli_stmt_execute($update)) {
-                    logAudit($conn, 'customization_edit', 'customization', $template_id, "Updated Customization: $name ($select_option)");
+                    $admin_id = $_SESSION['user_id'] ?? null;
+                    $audit_stmt = mysqli_prepare($conn,
+                        "INSERT INTO audit_logs (admin_id, action, target_type, target_id, details)
+                         VALUES (?, ?, ?, ?, ?)");
+                    $action_name = 'modifier_edit';
+                    $target_type = 'customization';
+                    $details = "Updated Customization: $name ($pricing_type, $select_option)";
+                    mysqli_stmt_bind_param($audit_stmt, 'issis', $admin_id, $action_name, $target_type, $modifier_group_id, $details);
+                    mysqli_stmt_execute($audit_stmt);
+
                     $success = 'Customization updated successfully.';
                 } else {
                     $error = 'Unable to update customization.';
@@ -81,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$query = "SELECT * FROM customization_templates";
+$query = "SELECT * FROM modifier_groups";
 $params = [];
 if ($search !== '') {
     $query .= " WHERE name LIKE ?";

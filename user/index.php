@@ -162,9 +162,7 @@ $featured = mysqli_query($conn,
         <h2 class="featured-title">Featured Dishes</h2>
 
         <?php if (mysqli_num_rows($featured) === 0): ?>
-            <div class="offer-card" style="grid-column:1/-1;text-align:center;color:#777;padding:60px 0;width:100%;">
-                No dishes are currently featured. Please check back later.
-            </div>
+            <p class="empty-msg">Menu coming soon. Check back later!</p>
         <?php else: ?>
             <div class="featured-grid">
                 <?php
