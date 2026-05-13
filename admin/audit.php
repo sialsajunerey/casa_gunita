@@ -34,12 +34,9 @@ $action_filters = [
     'category_edit'       => ['label' => 'Category Edit',       'actions' => ['category_edit']],
     'category_add'        => ['label' => 'Category Add',        'actions' => ['category_add']],
     'category_delete'     => ['label' => 'Category Delete',     'actions' => ['category_delete']],
-    'customization_edit'   => ['label' => 'Customization Edit',   'actions' => ['modifier_edit'], 'type' => 'global'],
-    'customization_add'    => ['label' => 'Customization Add',    'actions' => ['modifier_add'], 'type' => 'global'],
-    'customization_delete' => ['label' => 'Customization Delete', 'actions' => ['modifier_delete'], 'type' => 'global'],
-    'menu_customization_edit' => ['label' => 'Menu Customization Edit', 'actions' => ['modifier_edit'], 'type' => 'menu'],
-    'menu_customization_add'  => ['label' => 'Menu Customization Add',  'actions' => ['modifier_add'], 'type' => 'menu'],
-    'menu_customization_del'  => ['label' => 'Menu Customization Delete', 'actions' => ['modifier_delete'], 'type' => 'menu'],
+    'customization_edit'   => ['label' => 'Customization Edit',   'actions' => ['customization_edit']],
+    'customization_add'    => ['label' => 'Customization Add',    'actions' => ['customization_add']],
+    'customization_delete' => ['label' => 'Customization Delete', 'actions' => ['customization_delete']],
     'order_status_change' => ['label' => 'Order Status Change', 'actions' => ['order_status_change']],
 ];
 
