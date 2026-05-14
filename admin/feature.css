@@ -265,9 +265,15 @@ input[type="text"]::placeholder { color: var(--muted); }
 /* ── FEATURE GRID ── */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* fixed 4 cols palagi */
     gap: 14px;
     margin-top: 4px;
+}
+
+@media (max-width: 765px) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 0.5fr));
+    }
 }
 
 /* ── FEATURE CARD ── */
@@ -282,6 +288,8 @@ input[type="text"]::placeholder { color: var(--muted); }
     display: flex;
     flex-direction: column;
     user-select: none;
+    height: 200px;
+    width: 100%; 
 }
 
 .feature-card:hover {
