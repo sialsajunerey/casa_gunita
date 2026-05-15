@@ -331,25 +331,79 @@ body {
     color: #120000;
 }
 
-/* ── Responsive ── */
-@media (max-width: 600px) {
+/* ═══════════════════════════════════════════════
+   CUSTOMIZE PAGE — RESPONSIVE ADDITIONS
+   Add these rules at the bottom of customizepage.css
+════════════════════════════════════════════════ */
+
+/* ── 1024px ── */
+@media (max-width: 1024px) {
+    .customize-content { padding: 50px 24px 60px; }
+
+    .product-top { padding: 36px 28px; gap: 24px; }
+    .product-image { width: 260px; min-width: 260px; height: 340px; }
+    .product-name { font-size: 46px; }
+
+    .customization-section { padding: 22px 24px 28px; gap: 22px; }
+}
+
+/* ── 768px ── */
+@media (max-width: 768px) {
+    .customize-content { padding: 36px 16px 50px; }
+
     .product-top {
         flex-direction: column;
-        align-items: flex-start;
-        padding: 20px;
+        align-items: center;
+        padding: 24px 20px;
+        gap: 20px;
+        text-align: center;
     }
 
     .product-image {
         width: 100%;
+        max-width: 320px;
         min-width: unset;
-        height: 200px;
+        height: 260px;
     }
 
-    .customization-section {
-        padding: 20px;
-    }
+    .product-meta { align-items: center; }
+    .product-name { font-size: 40px; text-align: center; }
+    .product-desc { text-align: center; }
+    .helper-text { text-align: center; }
 
-    .customize-content {
-        padding: 40px 12px 60px;
+    .customization-section { padding: 18px 16px 24px; gap: 20px; }
+
+    .option-list { gap: 8px; }
+    .option-card { min-width: 130px; padding: 10px 14px; }
+
+    .submit-panel {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
     }
+    .submit-note { margin-right: 0; text-align: center; }
+
+    /* Quantity: center it */
+    .quantity-selector { align-items: center; }
+
+    .btn-add-cart { width: 100%; padding: 13px 20px; }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+    .product-name { font-size: 30px; }
+    .product-price { font-size: 1rem; }
+    .product-desc { font-size: 0.95rem; }
+
+    .product-image { max-width: 100%; height: 220px; }
+
+    .option-card { min-width: 110px; padding: 8px 12px; gap: 8px; }
+    .option-name { font-size: 0.9rem; }
+    .option-price { font-size: 0.72rem; }
+    .option-image img { width: 38px; height: 38px; }
+
+    .group-title { font-size: 0.72rem; letter-spacing: 0.18em; }
+
+    .qty-controls span { font-size: 1.2rem; }
+    .qty-controls button { font-size: 18px; }
 }

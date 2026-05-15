@@ -257,21 +257,54 @@ body {
     color: #120000;
 }
 
-/* ── Responsive ── */
+/* ═══════════════════════════════════════════════
+   CHECKOUT PAGE — RESPONSIVE ADDITIONS
+   Add these rules at the bottom of checkoutpage.css
+════════════════════════════════════════════════ */
+
+/* ── 1024px ── */
+@media (max-width: 1024px) {
+    .checkout-grid { grid-template-columns: 1fr 360px; gap: 18px; }
+    .container { padding: 50px 24px 60px; }
+    .page-title { font-size: 48px; }
+}
+
+/* ── 768px (extends existing block) ── */
 @media (max-width: 768px) {
+    .page-title { font-size: 36px; letter-spacing: 0.1em; }
+    .panel { padding: 24px 20px; }
+    .panel h2 { font-size: 1.3rem; margin-bottom: 18px; }
+
+    /* Reorder: summary goes above form on mobile */
     .checkout-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 20px;
     }
 
-    .form-row {
-        grid-template-columns: 1fr;
-    }
+    /* Summary table: tighten */
+    .summary-table td,
+    .summary-table th { padding: 10px 0; font-size: 0.88rem; }
 
-    .container {
-        padding: 40px 16px 60px;
-    }
+    .btn-primary { padding: 13px 24px; }
+    .btn-secondary { padding: 10px 20px; }
+}
 
-    .panel {
-        padding: 24px 20px;
-    }
+/* ── 480px ── */
+@media (max-width: 480px) {
+    .container { padding: 28px 12px 48px; }
+    .page-title { font-size: 26px; margin-bottom: 20px; }
+    .panel { padding: 18px 14px; border-radius: 10px; }
+    .panel h2 { font-size: 1.15rem; }
+
+    /* Form fields: single column (form-row already switches in 768 block) */
+    .form-field label { font-size: 0.65rem; letter-spacing: 0.15em; }
+    .form-field select,
+    .form-field textarea { font-size: 0.9rem; padding: 10px 36px 10px 12px; }
+
+    /* Error box */
+    .error-box { font-size: 0.82rem; padding: 10px 14px; }
+
+    /* Summary totals */
+    .summary-table .total-row td { font-size: 0.88rem; }
 }

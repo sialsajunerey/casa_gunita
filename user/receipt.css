@@ -112,3 +112,85 @@ p b { color: #120000; }
         border: 1px solid #ccc;
     }
 }
+
+/* ═══════════════════════════════════════════════
+   ORDERS PAGE — RESPONSIVE ADDITIONS
+   Add these rules at the bottom of orderspage.css
+════════════════════════════════════════════════ */
+
+/* ── 1024px ── */
+@media (max-width: 1024px) {
+    .container { padding: 50px 24px 60px; }
+    .page-title { font-size: 48px; }
+}
+
+/* ── 768px (extends existing block) ── */
+@media (max-width: 768px) {
+    .page-title { font-size: 36px; letter-spacing: 0.1em; }
+
+    /* Hide less essential columns */
+    .order-table th:nth-child(3),
+    .order-table td:nth-child(3) { display: none; } /* Items column */
+
+    .badge { padding: 5px 10px; font-size: 0.68rem; }
+    .view-receipt { padding: 6px 10px; font-size: 10px; }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+    .container { padding: 28px 10px 48px; }
+    .page-title { font-size: 26px; margin-bottom: 20px; }
+
+    /* Collapse to 3 columns: Date | Status | Action */
+    .order-table th:nth-child(2),
+    .order-table td:nth-child(2) { display: none; } /* Total column */
+
+    .order-table th,
+    .order-table td { padding: 10px 8px; font-size: 0.8rem; }
+
+    .badge { padding: 4px 8px; font-size: 0.62rem; letter-spacing: 0.05em; }
+    .view-receipt { padding: 5px 8px; font-size: 9px; letter-spacing: 0.12em; }
+
+    .empty-msg { padding: 40px 16px; font-size: 0.9rem; }
+}
+
+
+/* ═══════════════════════════════════════════════
+   RECEIPT PAGE — RESPONSIVE ADDITIONS
+   Add these rules at the bottom of your receipt CSS
+════════════════════════════════════════════════ */
+
+/* ── 768px ── */
+@media (max-width: 768px) {
+    .page-wrapper {
+        max-width: 100%;
+        margin: 20px auto;
+        padding: 12px 16px;
+    }
+
+    .receipt-card { padding: 28px 24px; border-radius: 10px; }
+
+    .receipt-header h2 { font-size: 1.8rem; }
+    .receipt-header p { font-size: 0.82rem; }
+
+    .row { flex-direction: row; gap: 8px; }
+
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .button { width: 100%; justify-content: center; }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+    .page-wrapper { padding: 8px 10px; margin: 10px auto; }
+    .receipt-card { padding: 20px 16px; }
+
+    .receipt-header h2 { font-size: 1.5rem; }
+
+    .row { font-size: 0.88rem; }
+
+    .button { padding: 11px 16px; font-size: 11px; letter-spacing: 0.14em; }
+}

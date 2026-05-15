@@ -26,7 +26,6 @@ $total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
      FROM orders o 
      LEFT JOIN transactions t ON o.order_id = t.order_id"))['total'];
 
-
 $orders_result = mysqli_query($conn,
     "SELECT o.*, u.full_name, u.email
      FROM orders o
@@ -106,10 +105,108 @@ foreach ($orders as $o) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="index.css">
+<style>
+/* ══════════════════════════════════════
+   HAMBURGER + COLLAPSIBLE SIDEBAR
+   Works on ALL screen sizes
+══════════════════════════════════════ */
+
+/* Always-visible hamburger in topbar */
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.hamburger:hover { background: rgba(33,3,3,0.08); }
+
+.hamburger span {
+    display: block;
+    height: 2px;
+    background: #210303;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+    width: 100%;
+}
+
+.hamburger span:nth-child(2) { width: 70%; }
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Overlay — used on mobile */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 49;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Sidebar smooth slide transition */
+.sidebar {
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+
+/* Desktop collapsed: slide sidebar off-screen, main fills space */
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+.main {
+    transition: margin-left 0.3s ease;
+}
+
+.main.expanded {
+    margin-left: 0 !important;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    /* On mobile sidebar is always off-screen unless .open */
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 50;
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    /* On mobile .main never has left margin */
+    .main,
+    .main.expanded {
+        margin-left: 0 !important;
+    }
+    .topbar { padding: 0 16px; gap: 12px; }
+    .topbar-title { font-size: 0.95rem; }
+    .orders-area  { grid-template-columns: 1fr !important; }
+    .detail-panel { position: static !important; }
+    .stats-row    { grid-template-columns: 1fr !important; }
+}
+</style>
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
         <div class="brand">Casa Gunita</div>
     </div>
@@ -127,9 +224,14 @@ foreach ($orders as $o) {
     </div>
 </aside>
 
-<div class="main">
+<div class="main" id="main">
 
     <header class="topbar">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
         <div class="topbar-title">Dashboard</div>
         <div class="topbar-spacer"></div>
         <div class="topbar-user">
@@ -171,7 +273,8 @@ foreach ($orders as $o) {
                             <form method="GET" action="" id="search-form">
                                 <span class="search-icon"></span>
                                 <input type="text" name="search" placeholder="Search Order ID"
-                                    value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="this.value = this.value.replace(/[^0-9-]/g, ''); debounceSubmit()">
+                                    value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>"
+                                    oninput="this.value = this.value.replace(/[^0-9-]/g, ''); debounceSubmit()">
                                 <?php if ($status_filter): ?>
                                     <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8') ?>">
                                 <?php endif; ?>
@@ -446,6 +549,99 @@ function toggleExpand(e, idx) {
 function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+/* ══════════════════════════════════════
+   HAMBURGER — all screen sizes
+══════════════════════════════════════ */
+const hamburgerBtn   = document.getElementById('hamburgerBtn');
+const sidebar        = document.getElementById('sidebar');
+const mainEl         = document.getElementById('main');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+const isMobile = () => window.innerWidth <= 768;
+
+function openSidebar() {
+    hamburgerBtn.classList.add('open');
+    if (isMobile()) {
+        sidebar.classList.add('open');
+        sidebar.classList.remove('collapsed');
+        sidebarOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '1');
+}
+
+function closeSidebar() {
+    hamburgerBtn.classList.remove('open');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('collapsed');
+        mainEl.classList.add('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '0');
+}
+
+function toggleSidebar() {
+    const desktopOpen = !isMobile() && !sidebar.classList.contains('collapsed');
+    const mobileOpen  = isMobile()  && sidebar.classList.contains('open');
+    (desktopOpen || mobileOpen) ? closeSidebar() : openSidebar();
+}
+
+/* Restore saved state on page load */
+(function init() {
+    const saved = localStorage.getItem('sidebarOpen');
+    if (isMobile()) {
+        /* Mobile always starts closed */
+        sidebar.classList.remove('open');
+        mainEl.classList.remove('expanded');
+    } else {
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            /* Default: open on desktop */
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    }
+})();
+
+hamburgerBtn.addEventListener('click', toggleSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
+window.addEventListener('resize', () => {
+    if (!isMobile()) {
+        /* Clean up mobile state */
+        sidebarOverlay.classList.remove('visible');
+        sidebar.classList.remove('open');
+        document.body.style.overflow = '';
+        /* Reapply desktop saved state */
+        const saved = localStorage.getItem('sidebarOpen');
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    } else {
+        /* Clean up desktop state */
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+        mainEl.style.marginLeft = '';
+    }
+});
 </script>
 
 </body>

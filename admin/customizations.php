@@ -19,9 +19,6 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $name_result = mysqli_fetch_assoc(mysqli_stmt_get_result($get_name));
     $mod_name = $name_result['name'] ?? 'Unknown';
 
-    // To ensure the modifier is removed from the user/customize page, we must delete 
-    // the 'snapshot' copies in the customization tables. They are linked via 
-    // product_modifier_groups using product_id and display_order.
     $cleanup_customs = mysqli_prepare($conn, 
         "DELETE g, o FROM product_customization_groups g 
          LEFT JOIN product_customization_options o ON g.group_id = o.group_id
@@ -30,7 +27,6 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     mysqli_stmt_bind_param($cleanup_customs, 'i', $id);
     mysqli_stmt_execute($cleanup_customs);
 
-    // Remove the links in the intermediate table
     $delete_links = mysqli_prepare($conn, "DELETE FROM product_modifier_groups WHERE modifier_group_id = ?");
     mysqli_stmt_bind_param($delete_links, 'i', $id);
     mysqli_stmt_execute($delete_links);
@@ -56,7 +52,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'add';
     $name = sanitize(trim($_POST['name'] ?? ''));
-    $pricing_type = 'extra_charge'; // Forced to extra charge
+    $pricing_type = 'extra_charge';
     $select_option = $_POST['select_option'] === 'multiple' ? 'multiple' : 'single';
 
     if ($name === '') {
@@ -155,10 +151,84 @@ while ($row = mysqli_fetch_assoc($result)) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="customizations.css">
+    <style>
+/* ══════════════════════════════════════
+   HAMBURGER + COLLAPSIBLE SIDEBAR
+══════════════════════════════════════ */
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.hamburger:hover { background: rgba(33,3,3,0.08); }
+.hamburger span {
+    display: block;
+    height: 2px;
+    background: #210303;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+    width: 100%;
+}
+.hamburger span:nth-child(2) { width: 70%; }
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 49;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sidebar {
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+.sidebar.collapsed { transform: translateX(-100%); }
+.main { transition: margin-left 0.3s ease; }
+.main.expanded { margin-left: 0 !important; }
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 50;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main,
+    .main.expanded { margin-left: 0 !important; }
+    .topbar { padding: 0 16px; gap: 12px; }
+    .topbar-title { font-size: 0.95rem; }
+    .content { padding: 16px; }
+    .top-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .top-bar-right { flex-wrap: wrap; }
+    .folder-grid { grid-template-columns: 1fr !important; }
+}
+    </style>
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
         <div class="brand">Casa Gunita</div>
     </div>
@@ -176,8 +246,13 @@ while ($row = mysqli_fetch_assoc($result)) {
     </div>
 </aside>
 
-<div class="main">
+<div class="main" id="main">
     <header class="topbar">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
         <div class="topbar-title">Customizations</div>
         <div class="topbar-spacer"></div>
         <div class="topbar-user">
@@ -237,7 +312,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         <?php endif; ?>
 
     </div>
-</div>
+</div><!-- .main -->
 
 <!-- MODAL -->
 <div class="modal-overlay" id="customizationModal">
@@ -272,6 +347,7 @@ while ($row = mysqli_fetch_assoc($result)) {
 </div>
 
 <script>
+/* ── Customization Modal ── */
 function openCustomizationModal(action, id = 0, name = '', pricing = 'extra_charge', selectOption = 'single') {
     document.getElementById('customizationModal').classList.add('active');
     document.getElementById('customAction').value = action;
@@ -283,9 +359,100 @@ function openCustomizationModal(action, id = 0, name = '', pricing = 'extra_char
 function closeCustomizationModal() {
     document.getElementById('customizationModal').classList.remove('active');
 }
-window.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeCustomizationModal();
+
+/* ══════════════════════════════════════
+   HAMBURGER — all screen sizes
+══════════════════════════════════════ */
+const hamburgerBtn   = document.getElementById('hamburgerBtn');
+const sidebar        = document.getElementById('sidebar');
+const mainEl         = document.getElementById('main');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+const isMobile = () => window.innerWidth <= 768;
+
+function openSidebar() {
+    hamburgerBtn.classList.add('open');
+    if (isMobile()) {
+        sidebar.classList.add('open');
+        sidebar.classList.remove('collapsed');
+        sidebarOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '1');
+}
+
+function closeSidebar() {
+    hamburgerBtn.classList.remove('open');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('collapsed');
+        mainEl.classList.add('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '0');
+}
+
+function toggleSidebar() {
+    const desktopOpen = !isMobile() && !sidebar.classList.contains('collapsed');
+    const mobileOpen  =  isMobile() &&  sidebar.classList.contains('open');
+    (desktopOpen || mobileOpen) ? closeSidebar() : openSidebar();
+}
+
+(function init() {
+    const saved = localStorage.getItem('sidebarOpen');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        mainEl.classList.remove('expanded');
+    } else {
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    }
+})();
+
+hamburgerBtn.addEventListener('click', toggleSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeSidebar();
+        closeCustomizationModal();
+    }
+});
+
+window.addEventListener('resize', () => {
+    if (!isMobile()) {
+        sidebarOverlay.classList.remove('visible');
+        sidebar.classList.remove('open');
+        document.body.style.overflow = '';
+        const saved = localStorage.getItem('sidebarOpen');
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+        mainEl.style.marginLeft = '';
+    }
 });
 </script>
+
 </body>
 </html>
