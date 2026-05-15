@@ -46,4 +46,9 @@ $pricingTypeColumn = mysqli_query($conn, "SHOW COLUMNS FROM product_customizatio
 if ($pricingTypeColumn && mysqli_num_rows($pricingTypeColumn) === 0) {
     mysqli_query($conn, "ALTER TABLE product_customization_groups ADD COLUMN pricing_type ENUM('set_price','extra_charge') NOT NULL DEFAULT 'set_price' AFTER group_type");
 }
+
+$googleIdColumn = mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'google_id'");
+if ($googleIdColumn && mysqli_num_rows($googleIdColumn) === 0) {
+    mysqli_query($conn, "ALTER TABLE users ADD COLUMN google_id VARCHAR(255) NULL AFTER password, ADD UNIQUE (google_id)");
+}
 }

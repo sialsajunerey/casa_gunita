@@ -10,7 +10,7 @@ $user_id  = $_SESSION['user_id'];
 
 // Fetch order — make sure it belongs to this customer
 $order_stmt = mysqli_prepare($conn,
-    "SELECT o.*, u.full_name, u.email 
+    "SELECT o.*, CONCAT_WS(' ', u.first_name, u.last_name) AS full_name, u.email 
      FROM orders o 
      JOIN users u ON o.user_id = u.user_id
      WHERE o.order_id = ? AND o.user_id = ?");

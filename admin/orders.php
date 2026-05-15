@@ -51,7 +51,7 @@ if (in_array($type_filter, $valid_types, true)) {
 }
 
 // Fetch all orders with customer name
-$query = "SELECT o.*, u.full_name 
+$query = "SELECT o.*, CONCAT_WS(' ', u.first_name, u.last_name) AS customer_name 
           FROM orders o 
           JOIN users u ON o.user_id = u.user_id 
           WHERE 1=1 $where_clause
@@ -208,7 +208,7 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                         </td>
                         <td>
                             <span class="customer-name">
-                                <?= htmlspecialchars($order['full_name'], ENT_QUOTES, 'UTF-8') ?>
+                                <?= htmlspecialchars($order['customer_name'], ENT_QUOTES, 'UTF-8') ?>
                             </span>
                         </td>
                         <td>

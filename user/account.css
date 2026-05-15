@@ -559,6 +559,124 @@ body::before {
     align-items: center;
 }
 
+.acct-notice {
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.acct-notice.success {
+    background: rgba(76, 175, 80, 0.12);
+    border: 1px solid rgba(76, 175, 80, 0.25);
+    color: #d1f0d0;
+}
+
+.acct-notice.error {
+    background: rgba(176, 48, 48, 0.12);
+    border: 1px solid rgba(176, 48, 48, 0.25);
+    color: #f6c6c6;
+}
+
+.acct-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7, 5, 5, 0.78);
+    padding: 24px;
+}
+
+.acct-overlay.open {
+    display: flex;
+}
+
+.acct-overlay-panel {
+    position: relative;
+    width: min(620px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: rgba(27, 8, 6, 0.98);
+    border: 1px solid rgba(232, 209, 145, 0.16);
+    border-radius: 22px;
+    padding: 28px 30px;
+    box-shadow: 0 48px 120px rgba(0, 0, 0, 0.28);
+}
+
+.acct-overlay-form input,
+.acct-overlay-form .acct-pw-wrap input {
+    width: 100%;
+}
+
+.acct-field-group.acct-pw-wrap .acct-pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.acct-field-group.acct-pw-wrap .acct-pw-wrap input {
+    padding-right: 46px;
+}
+
+.acct-pw-toggle {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #e8d191;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.acct-pw-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.acct-overlay-panel h2 {
+    margin: 0 0 12px;
+    font-family: 'The Seasons', serif;
+    font-size: 1.4rem;
+    color: #e8d191;
+}
+
+.acct-overlay-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(232, 209, 145, 0.18);
+    border-radius: 50%;
+    background: transparent;
+    color: #e8d191;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.acct-overlay-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.overlay-subtext {
+    margin: 0 0 14px;
+    color: rgba(220, 228, 207, 0.7);
+    font-size: 0.93rem;
+}
+
 /* ════════════════════════════
    RESPONSIVE
 ════════════════════════════ */

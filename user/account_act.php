@@ -6,12 +6,12 @@ require_once '../includes/functions.php';
 requireCustomer();
 
 $user_id    = $_SESSION['user_id'];
-$stmt       = mysqli_prepare($conn, "SELECT full_name FROM users WHERE user_id = ?");
+$stmt       = mysqli_prepare($conn, "SELECT first_name, last_name FROM users WHERE user_id = ?");
 mysqli_stmt_bind_param($stmt, 'i', $user_id);
 mysqli_stmt_execute($stmt);
 $user       = mysqli_stmt_get_result($stmt)->fetch_assoc();
-$first_name = htmlspecialchars(explode(' ', trim($user['full_name'] ?? 'User'))[0], ENT_QUOTES, 'UTF-8');
-$initial    = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
+$first_name = htmlspecialchars($user['first_name'] ?? 'User', ENT_QUOTES, 'UTF-8');
+$initial    = strtoupper(substr($user['first_name'] ?? 'U', 0, 1));
 
 /* ── Fetch activity logs ── */
 $logs_result = null;

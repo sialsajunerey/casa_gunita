@@ -248,8 +248,11 @@ $featured = mysqli_query($conn,
                 <div class="auth-modal-field">
                     <input type="email" name="email" placeholder="Email" required>
                 </div>
-                <div class="auth-modal-field">
+                <div class="auth-modal-field password-field">
                     <input type="password" name="password" placeholder="Password" required>
+                    <button type="button" class="password-toggle" aria-label="Show password">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
                 </div>
                 <button type="submit" class="auth-modal-btn">Login</button>
             </form>
@@ -268,16 +271,25 @@ $featured = mysqli_query($conn,
             <form action="" method="POST" class="auth-modal-form">
                 <input type="hidden" name="auth_type" value="register">
                 <div class="auth-modal-field">
-                    <input type="text" name="full_name" placeholder="Full Name" required>
+                    <input type="text" name="first_name" placeholder="First Name" required pattern="[A-Za-z.\-]+" title="Only letters, dots, and hyphens allowed">
+                </div>
+                <div class="auth-modal-field">
+                    <input type="text" name="last_name" placeholder="Last Name" required pattern="[A-Za-z.\-]+" title="Only letters, dots, and hyphens allowed">
                 </div>
                 <div class="auth-modal-field">
                     <input type="email" name="email" placeholder="Email" required>
                 </div>
-                <div class="auth-modal-field">
+                <div class="auth-modal-field password-field">
                     <input type="password" name="password" placeholder="Password" required>
+                    <button type="button" class="password-toggle" aria-label="Show password">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
                 </div>
-                <div class="auth-modal-field">
+                <div class="auth-modal-field password-field">
                     <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+                    <button type="button" class="password-toggle" aria-label="Show password">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
                 </div>
                 <button type="submit" class="auth-modal-btn">Register</button>
             </form>
@@ -306,6 +318,26 @@ function showAuthView(view) {
     document.getElementById('loginView').style.display = (view === 'login') ? 'block' : 'none';
     document.getElementById('registerView').style.display = (view === 'register') ? 'block' : 'none';
 }
+function initAuthPasswordToggles() {
+    document.querySelectorAll('.auth-modal-field.password-field .password-toggle').forEach(button => {
+        const field = button.closest('.auth-modal-field.password-field');
+        const input = field ? field.querySelector('input') : null;
+        if (!input) return;
+
+        const eyeOpen = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        const eyeClosed = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>';
+
+        button.innerHTML = input.type === 'password' ? eyeOpen : eyeClosed;
+
+        button.addEventListener('click', () => {
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            button.innerHTML = show ? eyeClosed : eyeOpen;
+            button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        });
+    });
+}
+initAuthPasswordToggles();
 window.onclick = function(event) {
     if (event.target == document.getElementById('authModal')) closeAuthModal();
 }

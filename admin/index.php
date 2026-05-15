@@ -28,7 +28,7 @@ $total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
 
 
 $orders_result = mysqli_query($conn,
-    "SELECT o.*, u.full_name, u.email
+    "SELECT o.*, CONCAT_WS(' ', u.first_name, u.last_name) AS full_name, u.email
      FROM orders o
      JOIN users u ON o.user_id = u.user_id
      $where_sql

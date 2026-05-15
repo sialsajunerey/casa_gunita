@@ -6,19 +6,71 @@ require_once '../includes/functions.php';
 requireCustomer();
 
 $user_id = $_SESSION['user_id'];
+$password_error = '';
+$password_success = '';
+$page_success = '';
+
+if (isset($_SESSION['password_success'])) {
+    $page_success = $_SESSION['password_success'];
+    unset($_SESSION['password_success']);
+}
 
 /* ── Fetch user info ── */
 $stmt = mysqli_prepare($conn,
-    "SELECT full_name, email, password FROM users WHERE user_id = ?");
+    "SELECT first_name, last_name, email, password FROM users WHERE user_id = ?");
 mysqli_stmt_bind_param($stmt, 'i', $user_id);
 mysqli_stmt_execute($stmt);
 $user = mysqli_stmt_get_result($stmt)->fetch_assoc();
 
-$full_name  = htmlspecialchars($user['full_name'] ?? 'User',     ENT_QUOTES, 'UTF-8');
-$email      = htmlspecialchars($user['email']     ?? '',          ENT_QUOTES, 'UTF-8');
-$password   = htmlspecialchars($user['password']  ?? '',          ENT_QUOTES, 'UTF-8');
-$first_name = htmlspecialchars(explode(' ', trim($user['full_name'] ?? 'User'))[0], ENT_QUOTES, 'UTF-8');
-$initial    = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    $current   = $_POST['current_password'] ?? '';
+    $new       = $_POST['new_password'] ?? '';
+    $confirm   = $_POST['confirm_new_password'] ?? '';
+    $policy    = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w]).{8,64}$/';
+
+    if (!$user || !password_verify($current, $user['password'])) {
+        $password_error = 'Current password is incorrect.';
+        $logStmt = mysqli_prepare($conn, "INSERT INTO user_access_logs (user_id, event_type, event_time) VALUES (?, 'password_change_failed', NOW())");
+        mysqli_stmt_bind_param($logStmt, 'i', $user_id);
+        mysqli_stmt_execute($logStmt);
+    } elseif ($new !== $confirm) {
+        $password_error = 'New passwords do not match.';
+        $logStmt = mysqli_prepare($conn, "INSERT INTO user_access_logs (user_id, event_type, event_time) VALUES (?, 'password_change_failed', NOW())");
+        mysqli_stmt_bind_param($logStmt, 'i', $user_id);
+        mysqli_stmt_execute($logStmt);
+    } elseif (!preg_match($policy, $new)) {
+        $password_error = 'New password must be 8-64 characters and include uppercase, lowercase, number, and symbol.';
+        $logStmt = mysqli_prepare($conn, "INSERT INTO user_access_logs (user_id, event_type, event_time) VALUES (?, 'password_change_failed', NOW())");
+        mysqli_stmt_bind_param($logStmt, 'i', $user_id);
+        mysqli_stmt_execute($logStmt);
+    } else {
+        $hash = password_hash($new, PASSWORD_DEFAULT);
+        $updateStmt = mysqli_prepare($conn, "UPDATE users SET password = ? WHERE user_id = ?");
+        mysqli_stmt_bind_param($updateStmt, 'si', $hash, $user_id);
+        if (mysqli_stmt_execute($updateStmt)) {
+            // Log successful password change
+            $logStmt = mysqli_prepare($conn, "INSERT INTO user_access_logs (user_id, event_type, event_time) VALUES (?, 'password_change_success', NOW())");
+            mysqli_stmt_bind_param($logStmt, 'i', $user_id);
+            mysqli_stmt_execute($logStmt);
+
+            $_SESSION['password_success'] = 'You\'ve successfully changed your password.';
+            header('Location: account.php');
+            exit();
+        } else {
+            // Log failed password change
+            $logStmt = mysqli_prepare($conn, "INSERT INTO user_access_logs (user_id, event_type, event_time) VALUES (?, 'password_change_failed', NOW())");
+            mysqli_stmt_bind_param($logStmt, 'i', $user_id);
+            mysqli_stmt_execute($logStmt);
+
+            $password_error = 'Unable to update password. Please try again.';
+        }
+    }
+}
+
+$first_name = htmlspecialchars($user['first_name'] ?? 'User', ENT_QUOTES, 'UTF-8');
+$last_name  = htmlspecialchars($user['last_name']  ?? '', ENT_QUOTES, 'UTF-8');
+$email      = htmlspecialchars($user['email']      ?? '', ENT_QUOTES, 'UTF-8');
+$initial    = strtoupper(substr($first_name ?: 'U', 0, 1));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -124,6 +176,12 @@ $initial    = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
                 <p>Your personal details are shown below.</p>
             </div>
 
+            <?php if ($page_success): ?>
+                <div class="acct-notice success">
+                    <?= htmlspecialchars($page_success, ENT_QUOTES, 'UTF-8') ?>
+                </div>
+            <?php endif; ?>
+
             <!-- Personal Info Card -->
             <div class="acct-card">
                 <div class="acct-card-head">
@@ -131,15 +189,20 @@ $initial    = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
                 </div>
                 <div class="acct-card-body">
 
-                    <!-- Full Name (read-only) -->
                     <div class="acct-field-group">
-                        <label>Full Name</label>
-                        <input type="text" value="<?= $full_name ?>" readonly>
+                        <label>First Name</label>
+                        <input type="text" value="<?= $first_name ?>" readonly>
                     </div>
 
                     <div class="acct-field-divider"></div>
 
-                    <!-- Email (read-only) -->
+                    <div class="acct-field-group">
+                        <label>Last Name</label>
+                        <input type="text" value="<?= $last_name ?>" readonly>
+                    </div>
+
+                    <div class="acct-field-divider"></div>
+
                     <div class="acct-field-group">
                         <label>Email Address</label>
                         <input type="email" value="<?= $email ?>" readonly>
@@ -147,112 +210,11 @@ $initial    = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
 
                     <div class="acct-field-divider"></div>
 
-                    <!-- Current Password with show/hide -->
-                    <div class="acct-field-group">
-                        <label>Password</label>
-                        <div class="acct-pw-wrap">
-                            <input type="password" id="pwField"
-                                   value="<?= $password ?>" readonly
-                                   autocomplete="off">
-                            <button type="button" class="acct-pw-toggle"
-                                    id="pwToggle" aria-label="Toggle password visibility">
-                                <svg id="eyeOpen" viewBox="0 0 24 24">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                                <svg id="eyeClosed" viewBox="0 0 24 24" style="display:none;">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
-                                             a18.45 18.45 0 0 1 5.06-5.94"/>
-                                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8
-                                             a18.5 18.5 0 0 1-2.16 3.19"/>
-                                    <line x1="1" y1="1" x2="23" y2="23"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Change Password Button -->
-                    <div class="acct-field-divider"></div>
                     <div class="acct-field-group">
                         <button type="button" class="acct-change-pw-btn" id="changePwBtn">
                             Change Password
                         </button>
                     </div>
-
-                    <!-- ── Hidden: New + Retype fields ── -->
-                    <!-- FIX: Added display:flex + flex-direction:column + gap:18px -->
-                    <!-- so inner field-groups and dividers space out correctly,     -->
-                    <!-- matching the same rhythm as the rest of acct-card-body.     -->
-                    <div id="changePwSection"
-                         style="display:none; flex-direction:column; gap:18px;">
-
-                        <div class="acct-field-divider"></div>
-
-                        <!-- New Password -->
-                        <div class="acct-field-group">
-                            <label>New Password</label>
-                            <div class="acct-pw-wrap">
-                                <input type="password" id="newPwField"
-                                       placeholder="Enter new password"
-                                       autocomplete="new-password">
-                                <button type="button" class="acct-pw-toggle"
-                                        id="newPwToggle" aria-label="Toggle">
-                                    <svg id="eyeOpenNew" viewBox="0 0 24 24">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                    <svg id="eyeClosedNew" viewBox="0 0 24 24" style="display:none;">
-                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
-                                                 a18.45 18.45 0 0 1 5.06-5.94"/>
-                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8
-                                                 a18.5 18.5 0 0 1-2.16 3.19"/>
-                                        <line x1="1" y1="1" x2="23" y2="23"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="acct-field-divider"></div>
-
-                        <!-- Retype New Password -->
-                        <div class="acct-field-group">
-                            <label>Retype New Password</label>
-                            <div class="acct-pw-wrap">
-                                <input type="password" id="retypePwField"
-                                       placeholder="Retype new password"
-                                       autocomplete="new-password">
-                                <button type="button" class="acct-pw-toggle"
-                                        id="retypePwToggle" aria-label="Toggle">
-                                    <svg id="eyeOpenRetype" viewBox="0 0 24 24">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                    <svg id="eyeClosedRetype" viewBox="0 0 24 24" style="display:none;">
-                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
-                                                 a18.45 18.45 0 0 1 5.06-5.94"/>
-                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8
-                                                 a18.5 18.5 0 0 1-2.16 3.19"/>
-                                        <line x1="1" y1="1" x2="23" y2="23"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <span id="pwMatchMsg"
-                                  style="font-size:0.8rem; margin-top:4px; display:none;"></span>
-                        </div>
-
-                        <div class="acct-field-divider"></div>
-
-                        <!-- Save / Cancel -->
-                        <div class="acct-pw-actions">
-                            <button type="button" class="acct-save-pw-btn" id="savePwBtn">
-                                Save Password
-                            </button>
-                            <button type="button" class="acct-cancel-pw-btn" id="cancelPwBtn">
-                                Cancel
-                            </button>
-                        </div>
-
-                    </div><!-- /changePwSection -->
 
                 </div>
             </div>
@@ -260,6 +222,65 @@ $initial    = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
         </section>
     </div>
 </main>
+
+<div id="changePasswordOverlay" class="acct-overlay" aria-hidden="true">
+    <div class="acct-overlay-panel">
+        <button type="button" class="acct-overlay-close" id="closeChangePwOverlay" aria-label="Close">×</button>
+        <h2>Change Password</h2>
+        <p class="overlay-subtext">Enter your current password and choose a new one with uppercase, lowercase, number, and symbol.</p>
+        <?php if ($password_error || $password_success): ?>
+            <div class="acct-notice <?= $password_error ? 'error' : 'success' ?>">
+                <?= htmlspecialchars($password_error ?: $password_success, ENT_QUOTES, 'UTF-8') ?>
+            </div>
+        <?php endif; ?>
+        <form method="POST" class="acct-overlay-form">
+            <input type="hidden" name="change_password" value="1">
+            <div class="acct-field-group acct-pw-wrap">
+                <label>Current Password</label>
+                <div class="acct-pw-wrap">
+                    <input type="password" name="current_password" required autocomplete="current-password">
+                    <button type="button" class="acct-pw-toggle" aria-label="Show password">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="acct-field-divider"></div>
+            <div class="acct-field-group acct-pw-wrap">
+                <label>New Password</label>
+                <div class="acct-pw-wrap">
+                    <input type="password" name="new_password" required autocomplete="new-password" placeholder="New password">
+                    <button type="button" class="acct-pw-toggle" aria-label="Show password">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="acct-field-divider"></div>
+            <div class="acct-field-group acct-pw-wrap">
+                <label>Confirm New Password</label>
+                <div class="acct-pw-wrap">
+                    <input type="password" name="confirm_new_password" required autocomplete="new-password" placeholder="Confirm new password">
+                    <button type="button" class="acct-pw-toggle" aria-label="Show password">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="acct-field-divider"></div>
+            <div class="acct-pw-actions">
+                <button type="submit" class="acct-save-pw-btn">Confirm</button>
+                <button type="button" class="acct-cancel-pw-btn" id="cancelChangePw">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script src="search.js"></script>
 <script>
@@ -274,106 +295,80 @@ if (accountBtn && accountDropdown) {
     document.addEventListener('click', () => accountDropdown.classList.remove('open'));
 }
 
-/* ── Current password show/hide ── */
-const pwField   = document.getElementById('pwField');
-const pwToggle  = document.getElementById('pwToggle');
-const eyeOpen   = document.getElementById('eyeOpen');
-const eyeClosed = document.getElementById('eyeClosed');
+/* ── Change Password overlay ── */
+const changePwBtn = document.getElementById('changePwBtn');
+const overlay = document.getElementById('changePasswordOverlay');
+const closeOverlay = document.getElementById('closeChangePwOverlay');
+const cancelChangePw = document.getElementById('cancelChangePw');
 
-if (pwToggle) {
-    pwToggle.addEventListener('click', () => {
-        const isHidden = pwField.type === 'password';
-        pwField.type    = isHidden ? 'text' : 'password';
-        eyeOpen.style.display   = isHidden ? 'none' : '';
-        eyeClosed.style.display = isHidden ? '' : 'none';
-    });
+function openChangeOverlay() {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+}
+function closeChangeOverlay() {
+    const notice = overlay.querySelector('.acct-notice');
+    if (notice) {
+        notice.remove();
+    }
+    const form = overlay.querySelector('form');
+    if (form) {
+        form.reset();
+    }
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
 }
 
-/* ── Change Password section ── */
-const changePwBtn     = document.getElementById('changePwBtn');
-const changePwSection = document.getElementById('changePwSection');
-const cancelPwBtn     = document.getElementById('cancelPwBtn');
-const savePwBtn       = document.getElementById('savePwBtn');
-const newPwField      = document.getElementById('newPwField');
-const retypePwField   = document.getElementById('retypePwField');
-const pwMatchMsg      = document.getElementById('pwMatchMsg');
+if (changePwBtn) {
+    changePwBtn.addEventListener('click', openChangeOverlay);
+}
+if (closeOverlay) {
+    closeOverlay.addEventListener('click', closeChangeOverlay);
+}
+if (cancelChangePw) {
+    cancelChangePw.addEventListener('click', closeChangeOverlay);
+}
 
-// Show change section — use 'flex' so gap applies correctly
-changePwBtn.addEventListener('click', () => {
-    changePwSection.style.display = 'flex';
-    changePwBtn.style.display     = 'none';
-    newPwField.focus();
+const passwordToggleButtons = document.querySelectorAll('.acct-pw-toggle');
+passwordToggleButtons.forEach(button => {
+    const eyeOpen = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    const eyeClosed = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>';
+    button.innerHTML = eyeOpen;
+    button.addEventListener('click', () => {
+        const input = button.closest('.acct-pw-wrap').querySelector('input');
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        button.innerHTML = isPassword ? eyeClosed : eyeOpen;
+        button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
 });
 
-// Cancel — reset everything
-cancelPwBtn.addEventListener('click', () => {
-    changePwSection.style.display = 'none';
-    changePwBtn.style.display     = '';
-    newPwField.value              = '';
-    retypePwField.value           = '';
-    pwMatchMsg.style.display      = 'none';
-});
+const shouldOpenChangePwOverlay = <?= $password_error ? 'true' : 'false' ?>;
+if (shouldOpenChangePwOverlay) {
+    openChangeOverlay();
+}
 
-// Live match check
-retypePwField.addEventListener('input', () => {
-    if (retypePwField.value === '') {
-        pwMatchMsg.style.display = 'none';
-        return;
+overlay.addEventListener('click', e => {
+    if (e.target === overlay) {
+        closeChangeOverlay();
     }
-    if (newPwField.value === retypePwField.value) {
-        pwMatchMsg.textContent = '✓ Passwords match';
-        pwMatchMsg.style.color = '#4caf70';
-    } else {
-        pwMatchMsg.textContent = '✗ Passwords do not match';
-        pwMatchMsg.style.color = '#e05c5c';
-    }
-    pwMatchMsg.style.display = 'block';
 });
 
-// Save password via AJAX
-savePwBtn.addEventListener('click', () => {
-    if (!newPwField.value) {
-        alert('Please enter a new password.');
-        return;
-    }
-    if (newPwField.value !== retypePwField.value) {
-        alert('Passwords do not match. Please try again.');
-        return;
-    }
+/* ── Auto-hide success message ── */
+const successNotice = document.querySelector('.acct-notice.success');
+if (successNotice) {
+    setTimeout(() => {
+        successNotice.style.display = 'none';
+    }, 10000); // 10 seconds
+}
 
-    fetch('update_password.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_password: newPwField.value })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('Password updated successfully!');
-            pwField.value = newPwField.value;
-            cancelPwBtn.click();
-        } else {
-            alert(data.message || 'Something went wrong.');
-        }
-    })
-    .catch(() => alert('Error connecting to server.'));
-});
-
-// New password show/hide
-document.getElementById('newPwToggle').addEventListener('click', () => {
-    const isHidden = newPwField.type === 'password';
-    newPwField.type = isHidden ? 'text' : 'password';
-    document.getElementById('eyeOpenNew').style.display   = isHidden ? 'none' : '';
-    document.getElementById('eyeClosedNew').style.display = isHidden ? '' : 'none';
-});
-
-// Retype password show/hide
-document.getElementById('retypePwToggle').addEventListener('click', () => {
-    const isHidden = retypePwField.type === 'password';
-    retypePwField.type = isHidden ? 'text' : 'password';
-    document.getElementById('eyeOpenRetype').style.display   = isHidden ? 'none' : '';
-    document.getElementById('eyeClosedRetype').style.display = isHidden ? '' : 'none';
-});
+/* ── Auto-hide error notice in overlay ── */
+const errorNotice = document.querySelector('.acct-overlay .acct-notice.error');
+if (errorNotice) {
+    setTimeout(() => {
+        errorNotice.style.display = 'none';
+    }, 10000); // 10 seconds
+}
 </script>
 
 </body>

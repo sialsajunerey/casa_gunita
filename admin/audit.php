@@ -112,7 +112,7 @@ $totalRows = (int)mysqli_fetch_assoc(mysqli_stmt_get_result($countStmt))['total'
 $totalPages = max(1, ceil($totalRows / $perPage));
 
 $stmt = mysqli_prepare($conn,
-    "SELECT a.*, ua.full_name AS admin_name, uc.full_name AS customer_name
+    "SELECT a.*, CONCAT_WS(' ', ua.first_name, ua.last_name) AS admin_name, CONCAT_WS(' ', uc.first_name, uc.last_name) AS customer_name
      FROM audit_logs a
      LEFT JOIN users ua ON a.admin_id = ua.user_id
      LEFT JOIN users uc ON a.customer_id = uc.user_id
