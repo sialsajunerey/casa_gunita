@@ -372,6 +372,142 @@
         max-width: calc(100% - 40px);
     }
 }
+
+/* ═══════════════════════════════════════
+   CASA GUNITA DIALOG SYSTEM
+   ═══════════════════════════════════════ */
+
+.cg-dialog {
+  background: #1a0404;
+  border: 2px solid #6b3a2a;
+  border-radius: 6px;
+  width: 320px;
+  overflow: hidden;
+  position: relative;
+  font-family: 'DM Sans', sans-serif;
+  text-align: center;
+}
+
+/* Colored top border accent based on status */
+.cg-dialog.cancelled {
+  border-top-color: #b03030;
+  border-top-width: 4px;
+}
+
+.cg-dialog.completed {
+  border-top-color: #2a7a3b;
+  border-top-width: 4px;
+}
+
+/* Header with icon */
+.cg-dialog-header {
+  padding: 20px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.cg-status-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border: 2px solid;
+  font-weight: 700;
+}
+
+/* Cancelled variant - red */
+.cg-dialog.cancelled .cg-status-icon {
+  background: rgba(176, 48, 48, 0.2);
+  border-color: #b03030;
+  color: #e8a09a;
+}
+
+/* Completed variant - green */
+.cg-dialog.completed .cg-status-icon {
+  background: rgba(42, 122, 59, 0.2);
+  border-color: #2a7a3b;
+  color: #7ec99a;
+}
+
+.cg-header-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cg-dialog.cancelled .cg-header-text {
+  color: #e8a09a;
+}
+
+.cg-dialog.completed .cg-header-text {
+  color: #7ec99a;
+}
+
+/* Message section */
+.cg-message-section {
+  padding: 20px 24px;
+}
+
+/* Ornament divider */
+.cg-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.cg-ornament-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #8a7060;
+}
+
+/* Message text */
+.cg-message {
+  color: #c4a882;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Button section */
+.cg-button-section {
+  padding: 16px 24px 20px;
+}
+
+/* Confirm button */
+.cg-btn {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 36px;
+  border-radius: 3px;
+  border: 1px solid #6b3a2a;
+  cursor: pointer;
+  background: transparent;
+  color: #c4a882;
+  transition: all 0.2s ease;
+}
+
+.cg-btn:hover {
+  background: #6b3a2a;
+  color: #f0d9b5;
+  border-color: #8a4a3a;
+}
+
+}
 }
 
 .btn-confirm:hover {

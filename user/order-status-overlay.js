@@ -77,12 +77,29 @@ class OrderStatusOverlay {
             </div>
 
             <div id="orderStatusConfirmation" class="order-status-confirmation">
-                <div class="order-status-confirmation-content">
-                    <h3 id="confirmationTitle">Confirm Status</h3>
-                    <p id="confirmationMessage">Are you sure?</p>
-                    <div class="order-status-confirmation-actions">
-                        <button class="btn-cancel" onclick="orderStatusOverlay.cancelConfirmation()">Cancel</button>
-                        <button class="btn-confirm" onclick="orderStatusOverlay.confirmAction()">Confirm</button>
+                <div class="cg-dialog" id="cgDialog">
+                    <div class="cg-dialog-header">
+                        <span class="cg-status-icon" id="cgStatusIcon">✓</span>
+                        <span class="cg-header-text" id="cgHeaderText">Order Delivered</span>
+                    </div>
+                    <div class="cg-icon-section">
+                        <div class="cg-large-icon" id="cgLargeIcon">✓</div>
+                    </div>
+                    <div class="cg-message-section">
+                        <div class="cg-ornament">
+                            <span class="cg-ornament-dot"></span>
+                            <span class="cg-ornament-dot"></span>
+                            <span class="cg-ornament-dot"></span>
+                        </div>
+                        <p class="cg-message" id="cgMessage">Your order has been delivered. Salamat for dining with Casa Gunita!</p>
+                        <div class="cg-ornament">
+                            <span class="cg-ornament-dot"></span>
+                            <span class="cg-ornament-dot"></span>
+                            <span class="cg-ornament-dot"></span>
+                        </div>
+                    </div>
+                    <div class="cg-button-section">
+                        <button class="cg-btn" onclick="orderStatusOverlay.cancelConfirmation()">Confirm</button>
                     </div>
                 </div>
             </div>
@@ -167,16 +184,12 @@ class OrderStatusOverlay {
 
     // Confirm completion
     confirmCompletion() {
-        document.getElementById('confirmationTitle').textContent = 'Confirm Delivery';
-        document.getElementById('confirmationMessage').textContent = 'Have you received your order?';
         document.getElementById('orderStatusConfirmation').classList.add('active');
         this.pendingAction = () => this.updateOrderStatus('completed', 'Thank you! Your order has been marked as received.');
     }
 
     // Confirm cancellation
     confirmCancellation() {
-        document.getElementById('confirmationTitle').textContent = 'Cancel Order';
-        document.getElementById('confirmationMessage').textContent = 'Are you sure you want to cancel this order? Your payment will be returned to your account.';
         document.getElementById('orderStatusConfirmation').classList.add('active');
         this.pendingAction = () => this.updateOrderStatus('cancelled', 'Your order has been cancelled. Your payment will be returned to your account.');
     }
@@ -205,13 +218,28 @@ class OrderStatusOverlay {
                 this.currentOrder.status = newStatus;
                 this.renderOverlay();
                 
-                // Show confirmation message
-                alert(message);
-
-                // Close overlay if completed or cancelled
-                if (newStatus === 'completed' || newStatus === 'cancelled') {
-                    setTimeout(() => this.close(), 1500);
+                // Show Casa Gunita dialog with appropriate styling and message
+                const cgDialog = document.getElementById('cgDialog');
+                const cgHeaderText = document.getElementById('cgHeaderText');
+                const cgStatusIcon = document.getElementById('cgStatusIcon');
+                const cgMessage = document.getElementById('cgMessage');
+                
+                cgDialog.className = 'cg-dialog ' + newStatus;
+                
+                if (newStatus === 'completed') {
+                    cgHeaderText.textContent = 'Order Delivered';
+                    cgStatusIcon.textContent = '✓';
+                    cgMessage.textContent = message || 'Your order has been delivered. Salamat for dining with Casa Gunita!';
+                } else if (newStatus === 'cancelled') {
+                    cgHeaderText.textContent = 'Order Cancelled';
+                    cgStatusIcon.textContent = '✕';
+                    cgMessage.textContent = message || 'Admin has cancelled your order. Your payment will be returned via e-transaction.';
                 }
+                
+                document.getElementById('orderStatusConfirmation').classList.add('active');
+                
+                // Close overlay after showing message
+                setTimeout(() => this.close(), 3000);
             } else {
                 alert('Failed to update order status. Please try again.');
             }
@@ -240,7 +268,7 @@ class OrderStatusOverlay {
             if (document.querySelector('.order-status-overlay-wrapper:not([style*="display: none"])')) {
                 this.loadLatestOrder();
             }
-        }, 5000); // Refresh every 5 seconds
+        }, 1500); // Refresh every 1.5 seconds for real-time updates
     }
 
     // Stop auto-refresh

@@ -625,7 +625,7 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Auto-refresh orders every 10 seconds
+// Auto-refresh orders every 2 seconds for real-time updates
 setInterval(function() {
     fetch('get_orders_list.php')
         .then(response => response.json())
@@ -674,7 +674,7 @@ setInterval(function() {
             }
         })
         .catch(err => console.log('Orders refresh error:', err));
-}, 10000);
+}, 2000);
 </script>
 
 </body>
