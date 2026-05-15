@@ -33,82 +33,7 @@ $customers = mysqli_stmt_get_result($stmt);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="customers.css?v=<?= filemtime('customers.css') ?>">
-<<<<<<< HEAD
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-=======
-    <style>
-/* ══════════════════════════════════════
-   HAMBURGER + COLLAPSIBLE SIDEBAR
-══════════════════════════════════════ */
-.hamburger {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    width: 36px;
-    height: 36px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    transition: background 0.2s;
-    flex-shrink: 0;
-}
-.hamburger:hover { background: rgba(33,3,3,0.08); }
-.hamburger span {
-    display: block;
-    height: 2px;
-    background: #210303;
-    border-radius: 2px;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    transform-origin: center;
-    width: 100%;
-}
-.hamburger span:nth-child(2) { width: 70%; }
-.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.hamburger.open span:nth-child(2) { opacity: 0; }
-.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-.sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    z-index: 49;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-}
-.sidebar-overlay.visible {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.sidebar {
-    transition: transform 0.3s ease;
-    will-change: transform;
-}
-.sidebar.collapsed { transform: translateX(-100%); }
-.main { transition: margin-left 0.3s ease; }
-.main.expanded { margin-left: 0 !important; }
-
-@media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        z-index: 50;
-    }
-    .sidebar.open { transform: translateX(0); }
-    .main,
-    .main.expanded { margin-left: 0 !important; }
-    .topbar { padding: 0 16px; gap: 12px; }
-    .topbar-title { font-size: 0.95rem; }
-    .content { padding: 16px; }
-    .top-bar { flex-direction: column; align-items: stretch; gap: 10px; }
-    .customers-table th:nth-child(3),
-    .customers-table td:nth-child(3) { display: none; }
-}
-    </style>
->>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
 </head>
 <body>
 
@@ -199,8 +124,6 @@ $customers = mysqli_stmt_get_result($stmt);
         </div>
 
     </div>
-<<<<<<< HEAD
-</div>
 
 <div id="accessLogOverlay" class="access-log-overlay" aria-hidden="true">
     <div class="access-log-modal">
@@ -210,6 +133,34 @@ $customers = mysqli_stmt_get_result($stmt);
                 <div id="accessLogCustomerMeta" class="access-log-meta">Loading…</div>
             </div>
             <div class="access-log-header-right">
+                <div class="custom-multiselect" id="accessLogActionMultiselect">
+                    <div class="multiselect-header">
+                        <span class="multiselect-summary">Filter Actions</span>
+                    </div>
+                    <div class="multiselect-dropdown">
+                        <label class="multiselect-item">
+                            <input type="checkbox" value="login">
+                            <span>Login</span>
+                        </label>
+                        <label class="multiselect-item">
+                            <input type="checkbox" value="logout">
+                            <span>Logout</span>
+                        </label>
+                        <label class="multiselect-item">
+                            <input type="checkbox" value="failed_login">
+                            <span>Failed Login</span>
+                        </label>
+                        <label class="multiselect-item">
+                            <input type="checkbox" value="password_change_success">
+                            <span>Password Change Success</span>
+                        </label>
+                        <label class="multiselect-item">
+                            <input type="checkbox" value="password_change_failed">
+                            <span>Password Change Failed</span>
+                        </label>
+                    </div>
+                </div>
+                <button type="button" id="clearAccessLogActions" class="clear-date-btn is-hidden">Clear</button>
                 <input type="text" id="accessLogDateRange" class="date-range-input flatpickr-input" placeholder="Record date range" autocomplete="off">
                 <button type="button" id="clearAccessLogDate" class="clear-date-btn is-hidden">Clear</button>
                 <input type="hidden" id="accessLogDateFrom">
@@ -234,11 +185,70 @@ const accessLogCustomerName = document.getElementById('accessLogCustomerName');
 const accessLogCustomerMeta = document.getElementById('accessLogCustomerMeta');
 const accessLogDateFrom = document.getElementById('accessLogDateFrom');
 const accessLogDateTo = document.getElementById('accessLogDateTo');
+const accessLogActionMultiselect = document.getElementById('accessLogActionMultiselect');
+const accessLogActionCheckboxes = accessLogActionMultiselect ? accessLogActionMultiselect.querySelectorAll('input[type="checkbox"]') : [];
+const clearAccessLogActions = document.getElementById('clearAccessLogActions');
 const applyAccessLogFilter = document.getElementById('applyAccessLogFilter');
 const resetAccessLogFilter = document.getElementById('resetAccessLogFilter');
 let currentAccessLogUserId = null;
 
-async function fetchAccessLog(userId, dateFrom = '', dateTo = '') {
+function getAccessLogActionFilter() {
+    return Array.from(accessLogActionCheckboxes || [])
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+}
+
+function updateAccessLogActionSummary() {
+    if (!accessLogActionMultiselect) return;
+    const checked = getAccessLogActionFilter();
+    const summary = accessLogActionMultiselect.querySelector('.multiselect-summary');
+    if (summary) {
+        summary.textContent = checked.length === 0
+            ? 'Filter Actions'
+            : checked.length + (checked.length === 1 ? ' Action' : ' Actions') + ' Selected';
+    }
+    if (clearAccessLogActions) {
+        clearAccessLogActions.classList.toggle('is-hidden', checked.length === 0);
+    }
+}
+
+if (accessLogActionCheckboxes.length > 0) {
+    accessLogActionCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            updateAccessLogActionSummary();
+            if (currentAccessLogUserId) {
+                fetchAccessLog(currentAccessLogUserId, accessLogDateFrom.value, accessLogDateTo.value, getAccessLogActionFilter());
+            }
+        });
+    });
+}
+
+if (clearAccessLogActions) {
+    clearAccessLogActions.addEventListener('click', () => {
+        accessLogActionCheckboxes.forEach(cb => cb.checked = false);
+        updateAccessLogActionSummary();
+        if (currentAccessLogUserId) {
+            fetchAccessLog(currentAccessLogUserId, accessLogDateFrom.value, accessLogDateTo.value, []);
+        }
+    });
+}
+
+updateAccessLogActionSummary();
+
+if (accessLogActionMultiselect) {
+    const accessLogActionHeader = accessLogActionMultiselect.querySelector('.multiselect-header');
+    const accessLogActionDropdown = accessLogActionMultiselect.querySelector('.multiselect-dropdown');
+    accessLogActionHeader?.addEventListener('click', e => {
+        accessLogActionMultiselect.classList.toggle('active');
+        e.stopPropagation();
+    });
+    accessLogActionDropdown?.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', () => {
+        accessLogActionMultiselect.classList.remove('active');
+    });
+}
+
+async function fetchAccessLog(userId, dateFrom = '', dateTo = '', actionFilter = []) {
     accessLogCustomerName.textContent = 'Loading user log...';
     accessLogCustomerMeta.textContent = '';
     accessLogBody.innerHTML = '<div class="empty-inner" style="padding: 40px 24px;"><p>Loading logs…</p></div>';
@@ -251,6 +261,11 @@ async function fetchAccessLog(userId, dateFrom = '', dateTo = '') {
     let url = `customer_logs.php?user_id=${encodeURIComponent(userId)}`;
     if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
     if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+    if (actionFilter && actionFilter.length > 0) {
+        actionFilter.forEach(action => {
+            url += `&action_filter[]=${encodeURIComponent(action)}`;
+        });
+    }
 
     try {
         const response = await fetch(url);
@@ -317,7 +332,8 @@ async function fetchAccessLog(userId, dateFrom = '', dateTo = '') {
 
 openAccessLogButtons.forEach(button => {
     button.addEventListener('click', () => {
-        fetchAccessLog(button.dataset.userId);
+        updateAccessLogActionSummary();
+        fetchAccessLog(button.dataset.userId, '', '', getAccessLogActionFilter());
     });
 });
 
@@ -357,7 +373,7 @@ flatpickr('#accessLogDateRange', {
         to.value = selectedDates[1] ? instance.formatDate(selectedDates[1], 'Y-m-d') : '';
         document.getElementById('clearAccessLogDate').classList.toggle('is-hidden', selectedDates.length === 0);
         if (selectedDates.length === 2 && currentAccessLogUserId) {
-            fetchAccessLog(currentAccessLogUserId, from.value, to.value);
+            fetchAccessLog(currentAccessLogUserId, from.value, to.value, getAccessLogActionFilter());
         }
     }
 });
@@ -376,96 +392,7 @@ document.getElementById('clearAccessLogDate').addEventListener('click', function
     document.getElementById('accessLogDateTo').value = '';
     document.getElementById('clearAccessLogDate').classList.add('is-hidden');
     if (currentAccessLogUserId) {
-        fetchAccessLog(currentAccessLogUserId, '', '');
-=======
-</div><!-- .main -->
-
-<script>
-/* ══════════════════════════════════════
-   HAMBURGER — all screen sizes
-══════════════════════════════════════ */
-const hamburgerBtn   = document.getElementById('hamburgerBtn');
-const sidebar        = document.getElementById('sidebar');
-const mainEl         = document.getElementById('main');
-const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-const isMobile = () => window.innerWidth <= 768;
-
-function openSidebar() {
-    hamburgerBtn.classList.add('open');
-    if (isMobile()) {
-        sidebar.classList.add('open');
-        sidebar.classList.remove('collapsed');
-        sidebarOverlay.classList.add('visible');
-        document.body.style.overflow = 'hidden';
-    } else {
-        sidebar.classList.remove('collapsed');
-        mainEl.classList.remove('expanded');
-    }
-    localStorage.setItem('sidebarOpen', '1');
-}
-
-function closeSidebar() {
-    hamburgerBtn.classList.remove('open');
-    if (isMobile()) {
-        sidebar.classList.remove('open');
-        sidebarOverlay.classList.remove('visible');
-        document.body.style.overflow = '';
-    } else {
-        sidebar.classList.add('collapsed');
-        mainEl.classList.add('expanded');
-    }
-    localStorage.setItem('sidebarOpen', '0');
-}
-
-function toggleSidebar() {
-    const desktopOpen = !isMobile() && !sidebar.classList.contains('collapsed');
-    const mobileOpen  =  isMobile() &&  sidebar.classList.contains('open');
-    (desktopOpen || mobileOpen) ? closeSidebar() : openSidebar();
-}
-
-(function init() {
-    const saved = localStorage.getItem('sidebarOpen');
-    if (isMobile()) {
-        sidebar.classList.remove('open');
-        mainEl.classList.remove('expanded');
-    } else {
-        if (saved === '0') {
-            sidebar.classList.add('collapsed');
-            mainEl.classList.add('expanded');
-            hamburgerBtn.classList.remove('open');
-        } else {
-            sidebar.classList.remove('collapsed');
-            mainEl.classList.remove('expanded');
-            hamburgerBtn.classList.add('open');
-        }
-    }
-})();
-
-hamburgerBtn.addEventListener('click', toggleSidebar);
-sidebarOverlay.addEventListener('click', closeSidebar);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
-
-window.addEventListener('resize', () => {
-    if (!isMobile()) {
-        sidebarOverlay.classList.remove('visible');
-        sidebar.classList.remove('open');
-        document.body.style.overflow = '';
-        const saved = localStorage.getItem('sidebarOpen');
-        if (saved === '0') {
-            sidebar.classList.add('collapsed');
-            mainEl.classList.add('expanded');
-            hamburgerBtn.classList.remove('open');
-        } else {
-            sidebar.classList.remove('collapsed');
-            mainEl.classList.remove('expanded');
-            hamburgerBtn.classList.add('open');
-        }
-    } else {
-        sidebar.classList.remove('collapsed');
-        mainEl.classList.remove('expanded');
-        mainEl.style.marginLeft = '';
->>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
+        fetchAccessLog(currentAccessLogUserId, '', '', getAccessLogActionFilter());
     }
 });
 </script>

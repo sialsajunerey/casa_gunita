@@ -27,6 +27,13 @@ if (!$user) {
 
 $date_from = trim($_GET['date_from'] ?? '');
 $date_to = trim($_GET['date_to'] ?? '');
+$action_filter = $_GET['action_filter'] ?? [];
+if (!is_array($action_filter)) {
+    $action_filter = trim($action_filter) !== '' ? [trim($action_filter)] : [];
+}
+$valid_actions = ['login', 'logout', 'failed_login', 'password_change_success', 'password_change_failed'];
+$action_filter = array_values(array_intersect($action_filter, $valid_actions));
+
 $whereClauses = ["user_id = ?"];
 $types = 'i';
 $bindValues = [$user_id];
@@ -40,6 +47,15 @@ if ($date_to !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to)) {
     $whereClauses[] = "event_time <= ?";
     $types .= 's';
     $bindValues[] = $date_to . ' 23:59:59';
+}
+
+if (!empty($action_filter)) {
+    $placeholders = implode(',', array_fill(0, count($action_filter), '?'));
+    $whereClauses[] = "event_type IN ($placeholders)";
+    $types .= str_repeat('s', count($action_filter));
+    foreach ($action_filter as $event_type) {
+        $bindValues[] = $event_type;
+    }
 }
 
 $sql = "SELECT IFNULL(NULLIF(event_type, ''), 'log_entry') AS event_type, event_time

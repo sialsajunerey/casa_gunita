@@ -11,6 +11,15 @@ if (empty($_SESSION['cart'])) {
     exit();
 }
 
+// Check if user has an active order (pending, preparing, or ready)
+$user_id = (int)$_SESSION['user_id'];
+$activeOrderStmt = mysqli_prepare($conn, "SELECT order_id, status, total_amount FROM orders WHERE user_id = ? AND status IN ('pending', 'preparing', 'ready') ORDER BY created_at DESC LIMIT 1");
+mysqli_stmt_bind_param($activeOrderStmt, 'i', $user_id);
+mysqli_stmt_execute($activeOrderStmt);
+$activeOrderResult = mysqli_stmt_get_result($activeOrderStmt);
+$activeOrder = mysqli_fetch_assoc($activeOrderResult);
+$hasActiveOrder = !empty($activeOrder);
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -89,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="landingpage.css">
     <link rel="stylesheet" href="checkout.css">
+    <link rel="stylesheet" href="order-status-overlay.css">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -153,7 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <tr>
                         <th>Item</th>
                         <th>Qty</th>
-                        <th>Price</th>
                         <th>Subtotal</th>
                     </tr>
                 </thead>
@@ -171,11 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             $label = htmlspecialchars($opt['name'] ?? '', ENT_QUOTES, 'UTF-8');
                                             $price = '';
                                             if (isset($opt['additional_price']) && $opt['additional_price'] > 0) {
-                                                if (isset($opt['group_type']) && $opt['group_type'] === 'addon') {
-                                                    $price = ' (+' . formatPrice($opt['additional_price']) . ')';
-                                                } else {
-                                                    $price = ' (' . formatPrice($opt['additional_price']) . ')';
-                                                }
+                                                $price = ' (+' . formatPrice($opt['additional_price']) . ')';
                                             }
                                             $grouped[$group][] = $label . $price;
                                         }
@@ -187,17 +192,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endif; ?>
                             </td>
                             <td><?= htmlspecialchars($item['quantity']) ?></td>
-                            <td><?= formatPrice($item['price']) ?></td>
                             <td><?= formatPrice($item['price'] * $item['quantity']) ?></td>
                         </tr>
                     <?php endforeach; ?>
-                    <tr class="total-row">
-                        <td colspan="3">Total</td>
-                        <td><?= formatPrice(getCartTotal($_SESSION['cart'])) ?></td>
-                    </tr>
                 </tbody>
             </table>
-            <a class="btn btn-secondary" href="cart.php">← Back to Cart</a>
+            <div style="margin-top: 20px; text-align: right; font-size: 16px; font-weight: bold;">
+                Total: <?= formatPrice(getCartTotal($_SESSION['cart'])) ?>
+            </div>
+            <a class="btn btn-secondary" href="cart.php" style="margin-top: 15px;">← Back to Cart</a>
         </div>
 
         <!-- Order Details -->
@@ -283,8 +286,247 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     orderTypeSelect.addEventListener('change', updateAddressFields);
     updateAddressFields();
+
+    // Handle active order modal
+    const hasActiveOrder = <?= json_encode($hasActiveOrder) ?>;
+    const activeOrder = <?= $hasActiveOrder ? json_encode($activeOrder) : 'null' ?>;
+    
+    if (hasActiveOrder && activeOrder) {
+        document.addEventListener('DOMContentLoaded', function() {
+            showActiveOrderModal(activeOrder);
+        });
+        
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (hasActiveOrder) {
+                e.preventDefault();
+                showActiveOrderModal(activeOrder);
+                return false;
+            }
+        });
+    }
+    
+    function showActiveOrderModal(order) {
+        const modal = document.getElementById('activeOrderModal');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    function closeActiveOrderModal() {
+        const modal = document.getElementById('activeOrderModal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeActiveOrderModal();
+    });
 </script>
 
+<!-- Active Order Modal -->
+<?php if ($hasActiveOrder && $activeOrder): ?>
+<div class="active-order-modal-overlay" id="activeOrderModal">
+    <div class="active-order-modal">
+        <div class="modal-header">
+            <h2>Active Order in Progress</h2>
+        </div>
+        <div class="modal-body">
+            <div class="modal-icon warning-icon">⚠️</div>
+            <p class="modal-message">You have an active order that needs to be completed before placing a new one.</p>
+            <div class="order-details">
+                <div class="detail-row">
+                    <span class="detail-label">Order #</span>
+                    <span class="detail-value"><?= htmlspecialchars($activeOrder['order_id']) ?></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value status-<?= htmlspecialchars($activeOrder['status']) ?>">
+                        <?= ucfirst(htmlspecialchars($activeOrder['status'])) ?>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount</span>
+                    <span class="detail-value">₱<?= number_format((float)$activeOrder['total_amount'], 2) ?></span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeActiveOrderModal()">Continue Browsing</button>
+            <a href="order_status.php" class="btn btn-primary">View Order Status →</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.active-order-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.active-order-modal-overlay.active {
+    display: flex;
+}
+
+.active-order-modal {
+    background: rgba(33, 3, 3, 0.98);
+    border: 1px solid rgba(232, 209, 145, 0.2);
+    border-radius: 12px;
+    max-width: 420px;
+    width: 90%;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: modalSlideUp 0.3s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, rgba(139, 111, 71, 0.3), rgba(232, 209, 145, 0.1));
+    border-bottom: 1px solid rgba(232, 209, 145, 0.2);
+    padding: 24px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #e8d191;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.modal-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.modal-message {
+    color: #dce4cf;
+    font-size: 1rem;
+    margin: 0 0 24px;
+    line-height: 1.6;
+}
+
+.order-details {
+    background: rgba(232, 209, 145, 0.05);
+    border: 1px solid rgba(232, 209, 145, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(232, 209, 145, 0.08);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: rgba(220, 228, 207, 0.6);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #dce4cf;
+    font-weight: 600;
+}
+
+.detail-value.status-pending {
+    color: #ff9999;
+}
+
+.detail-value.status-preparing {
+    color: #e8d191;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 24px;
+    border-top: 1px solid rgba(232, 209, 145, 0.1);
+    justify-content: flex-end;
+}
+
+.modal-footer .btn {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(232, 209, 145, 0.3);
+    color: #e8d191;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(232, 209, 145, 0.1);
+}
+
+.btn-primary {
+    background: #8B6F47;
+    border: none;
+    color: #dce4cf;
+    cursor: pointer;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #9d8359;
+}
+
+@media (max-width: 480px) {
+    .active-order-modal {
+        max-width: 95%;
+    }
+    .modal-footer {
+        flex-direction: column;
+    }
+    .modal-footer .btn {
+        width: 100%;
+    }
+}
+</style>
+<?php endif; ?>
+
+<script src="order-status-overlay.js"></script>
 <script src="search.js"></script>
 
 </body>

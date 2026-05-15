@@ -151,26 +151,29 @@ function buildOptionLabel($option) {
                 <p class="product-desc"><?= nl2br(htmlspecialchars($product['description'] ?? 'Choose your options before adding to cart.')) ?></p>
                 <div class="product-price">
                     <span>Base Price: </span>
-                    <span id="displayPrice"><?= formatPrice($product['price']) ?></span>
+                    <span id="baseDisplayPrice"><?= formatPrice($product['price']) ?></span>
                     <div id="validation-warning" style="display:none; margin-top:15px; padding:10px; background:rgba(176,48,48,0.1); color:#b03030; border:1px solid rgba(176,48,48,0.2); border-radius:6px; font-size:13px; font-family:'Public Sans', sans-serif;"></div>
-                    <div id="selectionSummary" style="font-size: 13px; color: #8a7060; margin-top: 8px; font-family: 'Public Sans', sans-serif;"></div>
                     <input type="hidden" id="basePrice" value="<?= htmlspecialchars($product['price']) ?>">
                 </div>
 
                 <!-- Quantity Selector — below base price -->
                 <div class="quantity-selector">
                     <p class="qty-label">Quantity</p>
-                    <div class="qty-controls">
+                    <div class="qty-controls qty-box">
                         <button type="button" onclick="adjQty(-1)" aria-label="Decrease quantity">−</button>
                         <span id="qtyDisplay"><?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?></span>
                         <button type="button" onclick="adjQty(1)" aria-label="Increase quantity">+</button>
                     </div>
-                    <input type="hidden" id="quantity" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>">
                 </div>
 
-                <?php if (empty($groups)): ?>
-                    <p class="helper-text">This item has no extra customization options. Click Add to Cart to continue.</p>
-                <?php endif; ?>
+                <!-- Customization Summary -->
+                <div id="customizationSummary" style="font-size: 13px; color: #8a7060; margin-top: 12px; font-family: 'Public Sans', sans-serif; display: none;"></div>
+
+                <!-- Total Price -->
+                <div class="total-price-box">
+                    <span>Total: </span>
+                    <span id="displayPrice"><?= formatPrice($product['price']) ?></span>
+                </div>
             </div>
         </div>
 
@@ -179,6 +182,7 @@ function buildOptionLabel($option) {
             <input type="hidden" name="action" value="add">
             <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['product_id']) ?>">
             <input type="hidden" name="edit_cart_key" value="<?= htmlspecialchars($editCartKey) ?>">
+            <input type="hidden" id="quantity" name="quantity" value="<?= htmlspecialchars($editCartItem['quantity'] ?? 1) ?>">
 
             <?php foreach ($groups as $group): ?>
                 <div class="customization-group" data-group-name="<?= htmlspecialchars($group['name']) ?>" data-required="<?= $group['is_required'] ? '1' : '0' ?>">
@@ -383,24 +387,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const optionLabel = input.closest('.option-card').querySelector('.option-name').textContent.trim();
             const groupContainer = input.closest('.customization-group');
             const groupName = groupContainer.getAttribute('data-group-name');
-            const groupType = input.dataset.groupType;
 
             extraChargeTotal += price;
 
             let priceText = '';
             if (price > 0) {
-                const formattedPrice = '₱' + price.toFixed(2);
-                priceText = groupType === 'addon' ? ` (+${formattedPrice})` : ` (${formattedPrice})`;
+                const formattedPrice = '+₱' + price.toFixed(2);
+                priceText = ` (${formattedPrice})`;
             }
 
-            const displayGroup = groupType === 'addon' ? 'Addon' : groupName;
-            summaryHtml += `<div><strong>${displayGroup}:</strong> ${optionLabel}${priceText}</div>`;
+            summaryHtml += `<div><strong>${groupName}:</strong> ${optionLabel}${priceText}</div>`;
         });
 
         const totalPrice = (basePrice + extraChargeTotal) * currentQuantity;
 
-        const selectionSummary = document.getElementById('selectionSummary');
-        selectionSummary.innerHTML = summaryHtml;
+        const customizationSummary = document.getElementById('customizationSummary');
+        if (summaryHtml) {
+            customizationSummary.innerHTML = summaryHtml;
+            customizationSummary.style.display = 'block';
+        } else {
+            customizationSummary.style.display = 'none';
+        }
 
         const formattedPrice = new Intl.NumberFormat('en-PH', {
             style: 'currency',
@@ -436,6 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script src="search.js"></script>
+
+<?php include_once '../includes/order_status_overlay.php'; ?>
 
 </body>
 </html>

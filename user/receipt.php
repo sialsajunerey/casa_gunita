@@ -48,6 +48,7 @@ $items = mysqli_stmt_get_result($items_stmt);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="receipt.css">
+    <link rel="stylesheet" href="order-status-overlay.css">
 </head>
 <body>
 
@@ -101,11 +102,7 @@ $items = mysqli_stmt_get_result($items_stmt);
                 $label = htmlspecialchars($opt['name'] ?? '', ENT_QUOTES, 'UTF-8');
                 $price = '';
                 if (isset($opt['additional_price']) && $opt['additional_price'] > 0) {
-                    if (isset($opt['group_type']) && $opt['group_type'] === 'addon') {
-                        $price = ' (+' . formatPrice($opt['additional_price']) . ')';
-                    } else {
-                        $price = ' (' . formatPrice($opt['additional_price']) . ')';
-                    }
+                    $price = ' (+' . formatPrice($opt['additional_price']) . ')';
                 }
                 $grouped[$group][] = $label . $price;
             }
@@ -138,6 +135,14 @@ $items = mysqli_stmt_get_result($items_stmt);
 
     </div>
 </div>
+
+<script src="order-status-overlay.js"></script>
+<script>
+    // Initialize order status overlay when page loads
+    document.addEventListener('DOMContentLoaded', async () => {
+        await orderStatusOverlay.init(true);
+    });
+</script>
 
 </body>
 </html>

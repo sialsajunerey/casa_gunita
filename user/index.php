@@ -162,7 +162,9 @@ $featured = mysqli_query($conn,
         <h2 class="featured-title">Featured Dishes</h2>
 
         <?php if (mysqli_num_rows($featured) === 0): ?>
-            <p class="empty-msg">Menu coming soon. Check back later!</p>
+            <div class="offer-card" style="grid-column:1/-1;text-align:center;color:#777;padding:60px 0;">
+                No categories are currently featured. Please check back later.
+            </div>
         <?php else: ?>
             <div class="featured-grid">
                 <?php
@@ -390,6 +392,8 @@ if (accountBtn && accountDropdown) {
 </script>
 
 <script src="search.js"></script>
+
+<?php include_once '../includes/order_status_overlay.php'; ?>
 
 </body>
 </html>

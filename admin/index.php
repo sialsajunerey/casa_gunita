@@ -8,11 +8,8 @@ require_once '../includes/functions.php';
 requireAdmin();
 
 $search = trim($_GET['search'] ?? '');
-$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-
 $where = [];
 if ($search) $where[] = "o.order_id LIKE '%" . mysqli_real_escape_string($conn, $search) . "%'";
-if ($status_filter) $where[] = "o.status = '" . mysqli_real_escape_string($conn, $status_filter) . "'";
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $pending = mysqli_fetch_assoc(mysqli_query($conn,
@@ -24,7 +21,8 @@ $total_orders = mysqli_fetch_assoc(mysqli_query($conn,
 $total_revenue = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COALESCE(SUM(t.amount_paid), 0) AS total 
      FROM orders o 
-     LEFT JOIN transactions t ON o.order_id = t.order_id"))['total'];
+     LEFT JOIN transactions t ON o.order_id = t.order_id
+     WHERE o.status <> 'cancelled'"))['total'];
 
 $orders_result = mysqli_query($conn,
     "SELECT o.*, CONCAT_WS(' ', u.first_name, u.last_name) AS full_name, u.email
@@ -275,32 +273,13 @@ foreach ($orders as $o) {
                                 <input type="text" name="search" placeholder="Search Order ID"
                                     value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>"
                                     oninput="this.value = this.value.replace(/[^0-9-]/g, ''); debounceSubmit()">
-                                <?php if ($status_filter): ?>
-                                    <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8') ?>">
-                                <?php endif; ?>
+                                
                             </form>
                         </div>
                     </div>
                 </div>
 
-                <div class="filter-tabs">
-                    <?php
-                    $tabs = [
-                        ''          => 'All',
-                        'pending'   => 'Pending',
-                        'preparing' => 'Preparing',
-                        'ready'     => 'Ready',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                    ];
-                    foreach ($tabs as $val => $label):
-                        $active = ($status_filter === $val) ? 'active' : '';
-                        $href   = $val ? "?status=$val" : 'index.php';
-                        if ($search) $href .= ($val ? "&search=$search" : "?search=$search");
-                    ?>
-                    <a href="<?= $href ?>" class="filter-tab <?= $active ?>"><?= $label ?></a>
-                    <?php endforeach; ?>
-                </div>
+                <!-- Status filter is now handled by the custom status multiselect above -->
 
                 <div class="orders-list" id="ordersList">
                     <?php if (empty($orders)): ?>
@@ -371,6 +350,7 @@ foreach ($orders as $o) {
                             <select name="status" id="d-status-select">
                                 <option value="pending">Pending</option>
                                 <option value="preparing">Preparing</option>
+                                <option value="ready">Ready</option>
                                 <option value="completed">Completed</option>
                                 <option value="cancelled">Cancelled</option>
                             </select>
@@ -403,6 +383,8 @@ function debounceSubmit() {
         if (searchForm) searchForm.submit();
     }, 500);
 }
+
+
 
 const ORDERS = <?= json_encode($orders_js, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 
@@ -642,6 +624,57 @@ window.addEventListener('resize', () => {
         mainEl.style.marginLeft = '';
     }
 });
+
+// Auto-refresh orders every 10 seconds
+setInterval(function() {
+    fetch('get_orders_list.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.orders) {
+                // If number of orders changed (new order added/removed) reload to re-render safely
+                const existingCards = document.querySelectorAll('.order-card');
+                if (existingCards.length !== data.orders.length) {
+                    location.reload();
+                    return;
+                }
+
+                // Update ORDERS in place and update only dynamic parts to preserve handlers
+                const oldOrders = ORDERS.slice();
+                ORDERS.length = 0;
+                data.orders.forEach(o => ORDERS.push(o));
+
+                data.orders.forEach((newOrder, idx) => {
+                    const card = document.querySelector(`.order-card[data-idx="${idx}"]`);
+                    if (card) {
+                        // update badge
+                        const badgeEl = card.querySelector('.badge');
+                        if (badgeEl && badgeEl.textContent.toLowerCase() !== newOrder.status) {
+                            badgeEl.textContent = newOrder.status.charAt(0).toUpperCase() + newOrder.status.slice(1);
+                            badgeEl.className = 'badge badge-' + newOrder.status;
+                        }
+
+                        // update summary
+                        const summaryEl = card.querySelector('.order-card-summary');
+                        if (summaryEl && summaryEl.textContent !== newOrder.summary) {
+                            summaryEl.textContent = newOrder.summary;
+                        }
+                    }
+
+                    // If this order is currently selected, update the detail pane
+                    if (typeof selectedOrderIndex !== 'undefined' && selectedOrderIndex === idx) {
+                        if (oldOrders[idx] && oldOrders[idx].status !== newOrder.status) {
+                            const badge = document.getElementById('d-badge');
+                            if (badge) {
+                                badge.textContent = newOrder.status.charAt(0).toUpperCase() + newOrder.status.slice(1);
+                                badge.className = 'badge badge-' + newOrder.status;
+                            }
+                        }
+                    }
+                });
+            }
+        })
+        .catch(err => console.log('Orders refresh error:', err));
+}, 10000);
 </script>
 
 </body>

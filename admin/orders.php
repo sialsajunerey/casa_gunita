@@ -7,12 +7,39 @@ require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
 requireAdmin();
 
+// Handle AJAX status update request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id']) && isset($_POST['status'])) {
+    $order_id = (int)$_POST['order_id'];
+    $new_status = trim($_POST['status']);
+    $valid_statuses = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
+    
+    if (in_array($new_status, $valid_statuses, true)) {
+        // Try to update with updated_at, but fall back if column doesn't exist
+        $update_stmt = mysqli_prepare($conn, "UPDATE orders SET status = ? WHERE order_id = ?");
+        mysqli_stmt_bind_param($update_stmt, 'si', $new_status, $order_id);
+        
+        if (mysqli_stmt_execute($update_stmt)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'status' => $new_status]);
+            exit();
+        }
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false]);
+    exit();
+}
+
 $date_from     = trim($_GET['date_from'] ?? '');
 $date_to       = trim($_GET['date_to'] ?? '');
 $search        = trim($_GET['search'] ?? '');
-$status_filter = trim($_GET['status'] ?? '');
-$type_filter   = trim($_GET['type'] ?? '');
+$raw_status_filter = $_GET['status'] ?? [];
+if (!is_array($raw_status_filter)) {
+    $raw_status_filter = trim($raw_status_filter) !== '' ? [trim($raw_status_filter)] : [];
+}
 $valid_statuses = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
+$status_filter = array_values(array_intersect($raw_status_filter, $valid_statuses));
+$type_filter   = trim($_GET['type'] ?? '');
+$status_open = isset($_GET['status_open']) && $_GET['status_open'] === '1';
 $valid_types = ['takeout', 'delivery'];
 $date_range_value = '';
 if ($date_from !== '' && $date_to !== '') {
@@ -39,10 +66,10 @@ if ($search) {
     $bind_params[] = '%' . $search . '%';
     $types .= 's';
 }
-if (in_array($status_filter, $valid_statuses, true)) {
-    $where_clause .= " AND o.status = ?";
-    $bind_params[] = $status_filter;
-    $types .= 's';
+if (!empty($status_filter)) {
+    $placeholders = implode(',', array_fill(0, count($status_filter), '?'));
+    $where_clause .= " AND o.status IN ($placeholders)";
+    foreach ($status_filter as $s) { $bind_params[] = $s; $types .= 's'; }
 }
 if (in_array($type_filter, $valid_types, true)) {
     $where_clause .= " AND o.order_type = ?";
@@ -50,12 +77,8 @@ if (in_array($type_filter, $valid_types, true)) {
     $types .= 's';
 }
 
-<<<<<<< HEAD
 // Fetch all orders with customer name
 $query = "SELECT o.*, CONCAT_WS(' ', u.first_name, u.last_name) AS customer_name 
-=======
-$query = "SELECT o.*, u.full_name 
->>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
           FROM orders o 
           JOIN users u ON o.user_id = u.user_id 
           WHERE 1=1 $where_clause
@@ -72,17 +95,17 @@ $counts = ['all' => 0, 'pending' => 0, 'preparing' => 0, 'ready' => 0, 'complete
 if ($orders && mysqli_num_rows($orders) > 0) {
     while ($row = mysqli_fetch_assoc($orders)) {
         $all_orders[] = $row;
-        $counts['all']++;
-        if (isset($counts[$row['status']])) $counts[$row['status']]++;
+                $counts['all']++;
+                if (isset($counts[$row['status']])) $counts[$row['status']]++;
     }
 }
 
 $filtered_total_orders = count($all_orders);
-$revenue_query = "SELECT COALESCE(SUM(t.amount_paid), 0) AS total
-                  FROM orders o
-                  JOIN users u ON o.user_id = u.user_id
-                  LEFT JOIN transactions t ON o.order_id = t.order_id
-                  WHERE 1=1 $where_clause";
+        $revenue_query = "SELECT COALESCE(SUM(t.amount_paid), 0) AS total
+                          FROM orders o
+                          JOIN users u ON o.user_id = u.user_id
+                          LEFT JOIN transactions t ON o.order_id = t.order_id
+                          WHERE o.status <> 'cancelled' $where_clause";
 $revenue_stmt = mysqli_prepare($conn, $revenue_query);
 if (!empty($bind_params)) {
     mysqli_stmt_bind_param($revenue_stmt, $types, ...$bind_params);
@@ -101,6 +124,7 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="orders.css?v=3">
+<link rel="stylesheet" href="customers.css">
 <style>
 /* ══════════════════════════════════════
    HAMBURGER + COLLAPSIBLE SIDEBAR
@@ -271,16 +295,24 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                 <button type="button" id="clear-date" class="clear-date-btn <?= $date_range_value === '' ? 'is-hidden' : '' ?>">Clear</button>
                 <input type="hidden" name="date_from" id="date-from" value="<?= htmlspecialchars($date_from, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="date_to" id="date-to" value="<?= htmlspecialchars($date_to, ENT_QUOTES, 'UTF-8') ?>">
-                <select name="status" onchange="this.form.submit()">
-                    <option value="">All</option>
-                    <option value="pending"   <?= $status_filter === 'pending'   ? 'selected' : '' ?>>Pending</option>
-                    <option value="preparing" <?= $status_filter === 'preparing' ? 'selected' : '' ?>>Preparing</option>
-                    <option value="ready"     <?= $status_filter === 'ready'     ? 'selected' : '' ?>>Ready</option>
-                    <option value="completed" <?= $status_filter === 'completed' ? 'selected' : '' ?>>Completed</option>
-                    <option value="cancelled" <?= $status_filter === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
-                </select>
+                <div class="custom-multiselect<?= $status_open ? ' active' : '' ?>" id="statusMultiselect">
+                    <div class="multiselect-header">
+                        <span class="multiselect-summary">Status</span>
+                    </div>
+                    <div class="multiselect-dropdown">
+                        <?php foreach (['pending' => 'Pending', 'preparing' => 'Preparing', 'ready' => 'Ready', 'completed' => 'Completed', 'cancelled' => 'Cancelled'] as $value => $label): ?>
+                        <label class="multiselect-item">
+                            <input type="checkbox" name="status[]" value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>"
+                                <?= in_array($value, $status_filter, true) ? 'checked' : '' ?>>
+                            <span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <button type="button" id="clearStatusFilters" class="btn btn-gray <?= empty($status_filter) ? 'is-hidden' : '' ?>">Clear</button>
+                <input type="hidden" name="status_open" id="status-open" value="<?= $status_open ? '1' : '' ?>">
                 <select name="type" onchange="this.form.submit()">
-                    <option value="">All Types</option>
+                    <option value="">Order Type</option>
                     <option value="takeout"  <?= $type_filter === 'takeout'  ? 'selected' : '' ?>>Pick-Up</option>
                     <option value="delivery" <?= $type_filter === 'delivery' ? 'selected' : '' ?>>Delivery</option>
                 </select>
@@ -313,7 +345,6 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                 <?php else: ?>
                     <?php foreach ($all_orders as $order): ?>
                     <tr>
-<<<<<<< HEAD
                         <td>
                             <span class="order-num">
                                 #<?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?>
@@ -324,10 +355,6 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                                 <?= htmlspecialchars($order['customer_name'], ENT_QUOTES, 'UTF-8') ?>
                             </span>
                         </td>
-=======
-                        <td><span class="order-num">#<?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?></span></td>
-                        <td><span class="customer-name"><?= htmlspecialchars($order['full_name'], ENT_QUOTES, 'UTF-8') ?></span></td>
->>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
                         <td>
                             <span class="type-pill">
                                 <?= $order['order_type'] === 'takeout' ? 'Pick-Up' : ucfirst($order['order_type']) ?>
@@ -406,6 +433,54 @@ document.getElementById('clear-date').addEventListener('click', function() {
     document.getElementById('date-to').value    = '';
     document.getElementById('filter-form').submit();
 });
+
+// Status multiselect behavior (uses styles from customers.css)
+const statusMultiselect = document.getElementById('statusMultiselect');
+const statusCheckboxes = statusMultiselect ? Array.from(statusMultiselect.querySelectorAll('input[type="checkbox"]')) : [];
+const clearStatusFilters = document.getElementById('clearStatusFilters');
+
+function updateStatusSummary() {
+    if (!statusMultiselect) return;
+    const checked = statusCheckboxes.filter(cb => cb.checked);
+    const summary = statusMultiselect.querySelector('.multiselect-summary');
+    if (!summary) return;
+    summary.textContent = checked.length === 0
+        ? 'Status'
+        : (checked.length + (checked.length === 1 ? ' Status' : ' Statuses') + ' Selected');
+    clearStatusFilters?.classList.toggle('is-hidden', checked.length === 0);
+}
+
+if (statusMultiselect) {
+    const header = statusMultiselect.querySelector('.multiselect-header');
+    const dropdown = statusMultiselect.querySelector('.multiselect-dropdown');
+    header?.addEventListener('click', e => {
+        statusMultiselect.classList.toggle('active');
+        e.stopPropagation();
+    });
+    dropdown?.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', () => statusMultiselect.classList.remove('active'));
+}
+
+statusCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+        updateStatusSummary();
+        const statusOpenInput = document.getElementById('status-open');
+        if (statusOpenInput) statusOpenInput.value = '1';
+        debounceSubmit();
+    });
+});
+
+if (clearStatusFilters) {
+    clearStatusFilters.addEventListener('click', () => {
+        statusCheckboxes.forEach(cb => cb.checked = false);
+        updateStatusSummary();
+        const statusOpenInput = document.getElementById('status-open');
+        if (statusOpenInput) statusOpenInput.value = '1';
+        debounceSubmit();
+    });
+}
+
+updateStatusSummary();
 
 /* ══════════════════════════════════════
    HAMBURGER — all screen sizes

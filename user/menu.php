@@ -270,5 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script src="search.js"></script>
 
+<?php include_once '../includes/order_status_overlay.php'; ?>
+
 </body>
 </html>

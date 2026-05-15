@@ -19,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isAjax      = isset($_POST['ajax']) && $_POST['ajax'] == '1';
 
         if ($editCartKey !== '' && isset($_SESSION['cart'][$editCartKey])) {
-            $quantity = $_SESSION['cart'][$editCartKey]['quantity'];
             unset($_SESSION['cart'][$editCartKey]);
         }
 
@@ -225,7 +224,7 @@ function getCartTotalAmount($cart) {
             <p><strong id="cart-item-count"><?= getCartItemCount($_SESSION['cart']) ?></strong></p>
         </div>
         <div class="panel">
-            <h3>Estimated Total</h3>
+            <h3>Total price</h3>
             <p><strong id="cart-total-value"><?= formatPrice(getCartTotalAmount($_SESSION['cart'])) ?></strong></p>
         </div>
     </div>
@@ -241,9 +240,8 @@ function getCartTotalAmount($cart) {
             <thead>
                 <tr>
                     <th>Item</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
                     <th>Subtotal</th>
+                    <th>Quantity</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -258,32 +256,31 @@ function getCartTotalAmount($cart) {
                                     <div>
                                         <?= htmlspecialchars($option['group_name'] . ': ' . $option['name']) ?>
                                         <?php if (!empty($option['additional_price'])): ?>
-                                            <?php if (isset($option['group_type']) && $option['group_type'] === 'addon'): ?>
-                                                (+<?= formatPrice($option['additional_price']) ?>)
-                                            <?php else: ?>
-                                                (<?= formatPrice($option['additional_price']) ?>)
-                                            <?php endif; ?>
+                                            (+<?= formatPrice($option['additional_price']) ?>)
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
                     </td>
-                    <td><?= formatPrice($item['price']) ?></td>
+                    <td class="subtotal-cell" data-row="<?= htmlspecialchars($key) ?>">
+                        <?= formatPrice($item['price'] * $item['quantity']) ?>
+                    </td>
                     <td>
                         <form method="POST" class="form-inline">
                             <input type="hidden" name="action" value="update">
                             <input type="hidden" name="cart_key" value="<?= htmlspecialchars($key) ?>">
                             <input type="hidden" name="product_id" value="<?= htmlspecialchars($item['product_id'] ?? $key) ?>">
-                            <input class="quantity-input" type="number" name="quantity"
-                                   value="<?= htmlspecialchars($item['quantity']) ?>"
-                                   min="1" max="99"
-                                   data-price="<?= htmlspecialchars($item['price']) ?>"
-                                   data-row="<?= htmlspecialchars($key) ?>">
+                            <div class="quantity-box">
+                                <button type="button" class="qty-btn qty-minus" onclick="decreaseQty(this)">−</button>
+                                <input class="quantity-input" type="number" name="quantity"
+                                       value="<?= htmlspecialchars($item['quantity']) ?>"
+                                       min="1" max="99"
+                                       data-price="<?= htmlspecialchars($item['price']) ?>"
+                                       data-row="<?= htmlspecialchars($key) ?>">
+                                <button type="button" class="qty-btn qty-plus" onclick="increaseQty(this)">+</button>
+                            </div>
                         </form>
-                    </td>
-                    <td class="subtotal-cell" data-row="<?= htmlspecialchars($key) ?>">
-                        <?= formatPrice($item['price'] * $item['quantity']) ?>
                     </td>
                     <td>
                         <div class="cart-actions">
@@ -422,6 +419,20 @@ function getCartTotalAmount($cart) {
         return '₱' + value.toFixed(2);
     }
 
+    function decreaseQty(btn) {
+        const input = btn.nextElementSibling;
+        const val = Math.max(1, parseInt(input.value) - 1);
+        input.value = val;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function increaseQty(btn) {
+        const input = btn.previousElementSibling;
+        const val = Math.min(99, parseInt(input.value) + 1);
+        input.value = val;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     function updateCartTotals() {
         let total = 0;
         let itemCount = 0;
@@ -457,6 +468,8 @@ function getCartTotalAmount($cart) {
 </script>
 
 <script src="search.js"></script>
+
+<?php include_once '../includes/order_status_overlay.php'; ?>
 
 </body>
 </html>

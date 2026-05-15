@@ -130,5 +130,7 @@ $result = mysqli_stmt_get_result($orders);
 
 <script src="search.js"></script>
 
+<?php include_once '../includes/order_status_overlay.php'; ?>
+
 </body>
 </html>

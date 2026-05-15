@@ -13,16 +13,16 @@ if (strlen($search) < 1) {
     exit;
 }
 
-// Search for products matching the query
+// Search for products matching the query - only by name
 $searchTerm = '%' . mysqli_real_escape_string($conn, $search) . '%';
 $stmt = mysqli_prepare($conn,
     "SELECT product_id, name, image, price, category_id
      FROM products
-     WHERE is_available = 1 AND (name LIKE ? OR description LIKE ?)
+     WHERE is_available = 1 AND name LIKE ?
      ORDER BY name
      LIMIT 8");
 
-mysqli_stmt_bind_param($stmt, 'ss', $searchTerm, $searchTerm);
+mysqli_stmt_bind_param($stmt, 's', $searchTerm);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 
