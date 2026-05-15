@@ -50,8 +50,12 @@ if (in_array($type_filter, $valid_types, true)) {
     $types .= 's';
 }
 
+<<<<<<< HEAD
 // Fetch all orders with customer name
 $query = "SELECT o.*, CONCAT_WS(' ', u.first_name, u.last_name) AS customer_name 
+=======
+$query = "SELECT o.*, u.full_name 
+>>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
           FROM orders o 
           JOIN users u ON o.user_id = u.user_id 
           WHERE 1=1 $where_clause
@@ -63,7 +67,6 @@ if (!empty($bind_params)) {
 mysqli_stmt_execute($stmt);
 $orders = mysqli_stmt_get_result($stmt);
 
-// Build orders array + status counts
 $all_orders = [];
 $counts = ['all' => 0, 'pending' => 0, 'preparing' => 0, 'ready' => 0, 'completed' => 0, 'cancelled' => 0];
 if ($orders && mysqli_num_rows($orders) > 0) {
@@ -98,10 +101,113 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="orders.css?v=3">
+<style>
+/* ══════════════════════════════════════
+   HAMBURGER + COLLAPSIBLE SIDEBAR
+   Works on ALL screen sizes
+══════════════════════════════════════ */
+
+/* Always-visible hamburger in topbar */
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.hamburger:hover { background: rgba(33,3,3,0.08); }
+
+.hamburger span {
+    display: block;
+    height: 2px;
+    background: #210303;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+    width: 100%;
+}
+
+.hamburger span:nth-child(2) { width: 70%; }
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Overlay — used on mobile */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 49;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Sidebar smooth slide */
+.sidebar {
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+.main {
+    transition: margin-left 0.3s ease;
+}
+
+.main.expanded {
+    margin-left: 0 !important;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 50;
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .main,
+    .main.expanded {
+        margin-left: 0 !important;
+    }
+    .topbar { padding: 0 16px; gap: 12px; }
+    .topbar-title { font-size: 0.95rem; }
+    .content { padding: 16px; }
+    .stats-row,
+    .orders-stats { grid-template-columns: 1fr !important; }
+    .header-card { flex-direction: column; align-items: stretch; gap: 12px; }
+    .filter-row { flex-direction: column; align-items: stretch; }
+    .filter-row .search-wrap,
+    .filter-row input[type="text"],
+    .filter-row select { width: 100% !important; }
+    .filter-row .date-range-input { width: 100% !important; }
+    .orders-table th:nth-child(4),
+    .orders-table td:nth-child(4) { display: none; }
+}
+</style>
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
         <div class="brand">Casa Gunita</div>
     </div>
@@ -119,8 +225,13 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
     </div>
 </aside>
 
-<div class="main">
+<div class="main" id="main">
     <header class="topbar">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
         <div class="topbar-title">Orders</div>
         <div class="topbar-spacer"></div>
         <div class="topbar-user">
@@ -146,35 +257,36 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
             </div>
         </div>
 
-        <!-- Header + Filter -->
         <div class="header-card">
             <h2>Orders</h2>
             <form method="GET" class="filter-row" id="filter-form">
                 <div class="search-wrap">
                     <span class="search-icon"></span>
-                    <input type="search" name="search" placeholder="Search Order ID" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" oninput="this.value = this.value.replace(/[^0-9-]/g, ''); debounceSubmit()">
+                    <input type="search" name="search" placeholder="Search Order ID"
+                        value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>"
+                        oninput="this.value = this.value.replace(/[^0-9-]/g, ''); debounceSubmit()">
                 </div>
-                <input type="text" id="date-range" class="date-range-input" placeholder="Record date range" value="<?= htmlspecialchars($date_range_value, ENT_QUOTES, 'UTF-8') ?>" autocomplete="off">
+                <input type="text" id="date-range" class="date-range-input" placeholder="Record date range"
+                    value="<?= htmlspecialchars($date_range_value, ENT_QUOTES, 'UTF-8') ?>" autocomplete="off">
                 <button type="button" id="clear-date" class="clear-date-btn <?= $date_range_value === '' ? 'is-hidden' : '' ?>">Clear</button>
                 <input type="hidden" name="date_from" id="date-from" value="<?= htmlspecialchars($date_from, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="date_to" id="date-to" value="<?= htmlspecialchars($date_to, ENT_QUOTES, 'UTF-8') ?>">
                 <select name="status" onchange="this.form.submit()">
                     <option value="">All</option>
-                    <option value="pending" <?= $status_filter === 'pending' ? 'selected' : '' ?>>Pending</option>
+                    <option value="pending"   <?= $status_filter === 'pending'   ? 'selected' : '' ?>>Pending</option>
                     <option value="preparing" <?= $status_filter === 'preparing' ? 'selected' : '' ?>>Preparing</option>
-                    <option value="ready" <?= $status_filter === 'ready' ? 'selected' : '' ?>>Ready</option>
+                    <option value="ready"     <?= $status_filter === 'ready'     ? 'selected' : '' ?>>Ready</option>
                     <option value="completed" <?= $status_filter === 'completed' ? 'selected' : '' ?>>Completed</option>
                     <option value="cancelled" <?= $status_filter === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
                 </select>
                 <select name="type" onchange="this.form.submit()">
                     <option value="">All Types</option>
-                    <option value="takeout" <?= $type_filter === 'takeout' ? 'selected' : '' ?>>Pick-Up</option>
+                    <option value="takeout"  <?= $type_filter === 'takeout'  ? 'selected' : '' ?>>Pick-Up</option>
                     <option value="delivery" <?= $type_filter === 'delivery' ? 'selected' : '' ?>>Delivery</option>
                 </select>
             </form>
         </div>
 
-        <!-- Orders Table -->
         <div class="table-card">
             <table class="orders-table">
                 <thead>
@@ -201,6 +313,7 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                 <?php else: ?>
                     <?php foreach ($all_orders as $order): ?>
                     <tr>
+<<<<<<< HEAD
                         <td>
                             <span class="order-num">
                                 #<?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?>
@@ -211,6 +324,10 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                                 <?= htmlspecialchars($order['customer_name'], ENT_QUOTES, 'UTF-8') ?>
                             </span>
                         </td>
+=======
+                        <td><span class="order-num">#<?= str_pad($order['order_id'], 5, '0', STR_PAD_LEFT) ?></span></td>
+                        <td><span class="customer-name"><?= htmlspecialchars($order['full_name'], ENT_QUOTES, 'UTF-8') ?></span></td>
+>>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
                         <td>
                             <span class="type-pill">
                                 <?= $order['order_type'] === 'takeout' ? 'Pick-Up' : ucfirst($order['order_type']) ?>
@@ -231,26 +348,11 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
                                     : '<span style="color:#bbb;">N/A</span>' ?>
                             </span>
                         </td>
+                        <td><span class="total-amount"><?= formatPrice($order['total_amount']) ?></span></td>
+                        <td><span class="badge <?= $order['status'] ?>"><?= strtoupper($order['status']) ?></span></td>
+                        <td><span class="date-text"><?= date('M d, Y h:i A', strtotime($order['created_at'])) ?></span></td>
                         <td>
-                            <span class="total-amount">
-                                <?= formatPrice($order['total_amount']) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge <?= $order['status'] ?>">
-                                <?= strtoupper($order['status']) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="date-text">
-                                <?= date('M d, Y h:i A', strtotime($order['created_at'])) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <a class="receipt-link"
-                               href="receipt.php?order_id=<?= $order['order_id'] ?>&from=orders">
-                                View
-                            </a>
+                            <a class="receipt-link" href="receipt.php?order_id=<?= $order['order_id'] ?>&from=orders">View</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -259,8 +361,8 @@ $filtered_total_revenue = mysqli_fetch_assoc(mysqli_stmt_get_result($revenue_stm
             </table>
         </div>
 
-    </div><!-- .content -->
-</div><!-- .main -->
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
@@ -282,29 +384,115 @@ flatpickr('#date-range', {
     ].filter(Boolean),
     onChange: function(selectedDates, dateStr, instance) {
         var from = document.getElementById('date-from');
-        var to = document.getElementById('date-to');
+        var to   = document.getElementById('date-to');
         from.value = selectedDates[0] ? instance.formatDate(selectedDates[0], 'Y-m-d') : '';
-        to.value = selectedDates[1] ? instance.formatDate(selectedDates[1], 'Y-m-d') : '';
+        to.value   = selectedDates[1] ? instance.formatDate(selectedDates[1], 'Y-m-d') : '';
         document.getElementById('clear-date').classList.toggle('is-hidden', selectedDates.length === 0);
-        if (selectedDates.length === 2) {
-            instance.element.form.submit();
-        }
+        if (selectedDates.length === 2) instance.element.form.submit();
     }
 });
 
 document.getElementById('date-range').addEventListener('input', function() {
     if (this.value.trim() === '') {
         document.getElementById('date-from').value = '';
-        document.getElementById('date-to').value = '';
+        document.getElementById('date-to').value   = '';
         document.getElementById('clear-date').classList.add('is-hidden');
     }
 });
 
 document.getElementById('clear-date').addEventListener('click', function() {
     document.getElementById('date-range').value = '';
-    document.getElementById('date-from').value = '';
-    document.getElementById('date-to').value = '';
+    document.getElementById('date-from').value  = '';
+    document.getElementById('date-to').value    = '';
     document.getElementById('filter-form').submit();
+});
+
+/* ══════════════════════════════════════
+   HAMBURGER — all screen sizes
+══════════════════════════════════════ */
+const hamburgerBtn   = document.getElementById('hamburgerBtn');
+const sidebar        = document.getElementById('sidebar');
+const mainEl         = document.getElementById('main');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+const isMobile = () => window.innerWidth <= 768;
+
+function openSidebar() {
+    hamburgerBtn.classList.add('open');
+    if (isMobile()) {
+        sidebar.classList.add('open');
+        sidebar.classList.remove('collapsed');
+        sidebarOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '1');
+}
+
+function closeSidebar() {
+    hamburgerBtn.classList.remove('open');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('collapsed');
+        mainEl.classList.add('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '0');
+}
+
+function toggleSidebar() {
+    const desktopOpen = !isMobile() && !sidebar.classList.contains('collapsed');
+    const mobileOpen  =  isMobile() &&  sidebar.classList.contains('open');
+    (desktopOpen || mobileOpen) ? closeSidebar() : openSidebar();
+}
+
+/* Restore saved state on load */
+(function init() {
+    const saved = localStorage.getItem('sidebarOpen');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        mainEl.classList.remove('expanded');
+    } else {
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    }
+})();
+
+hamburgerBtn.addEventListener('click', toggleSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
+window.addEventListener('resize', () => {
+    if (!isMobile()) {
+        sidebarOverlay.classList.remove('visible');
+        sidebar.classList.remove('open');
+        document.body.style.overflow = '';
+        const saved = localStorage.getItem('sidebarOpen');
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+        mainEl.style.marginLeft = '';
+    }
 });
 </script>
 

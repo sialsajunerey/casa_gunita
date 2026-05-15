@@ -256,9 +256,60 @@ a { color: inherit; text-decoration: none; }
     color: #120000;
 }
 
-/* ── Responsive ── */
+/* ═══════════════════════════════════════════════
+   CART PAGE — RESPONSIVE ADDITIONS
+   Add these rules at the bottom of cartpage.css
+════════════════════════════════════════════════ */
+
+/* ── 1024px ── */
+@media (max-width: 1024px) {
+    .container { padding: 50px 24px 60px; }
+    .page-title { font-size: 48px; }
+}
+
+/* ── 768px (extends existing block) ── */
 @media (max-width: 768px) {
-    .container { padding: 40px 16px 60px; }
+    .page-title { font-size: 36px; letter-spacing: 0.1em; }
+
+    /* Summary panels: 2-col instead of auto */
+    .cart-summary { grid-template-columns: repeat(2, 1fr); }
+
+    /* Table: hide less important columns */
+    .cart-table th:nth-child(3),
+    .cart-table td:nth-child(3) { display: none; }   /* hide Subtotal col */
+
+    /* Tighter quantity input */
+    .quantity-input { width: 64px; padding: 6px 8px; }
+
+    /* Action row: stack full-width */
+    .action-row { justify-content: stretch; flex-direction: column; }
+    .action-row .btn { width: 100%; text-align: center; }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+    .container { padding: 32px 12px 48px; }
+    .page-title { font-size: 26px; margin-bottom: 20px; }
+
+    /* Summary: single column */
+    .cart-summary { grid-template-columns: 1fr; gap: 10px; }
+    .cart-summary .panel { padding: 12px 16px; }
+    .cart-summary .panel p { font-size: 1.2rem; }
+
+    /* Table: make item name only + price, hide qty col too */
+    .cart-table th:nth-child(2),
+    .cart-table td:nth-child(2) { display: none; }  /* hide Quantity col */
+
     .cart-table th,
-    .cart-table td { padding: 12px 14px; font-size: 0.85rem; }
+    .cart-table td { padding: 10px 10px; font-size: 0.82rem; }
+
+    /* Item options text */
+    .item-options { font-size: 0.78rem; }
+
+    /* Buttons: compact */
+    .btn { padding: 11px 16px; font-size: 11px; letter-spacing: 0.14em; }
+    .secondary-button { padding: 6px 10px; font-size: 10px; }
+
+    .empty-cart { padding: 40px 20px; }
+    .empty-cart a { padding: 11px 20px; }
 }

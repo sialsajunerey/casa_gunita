@@ -65,14 +65,13 @@ if (!empty($action_filter)) {
             $cfg = $action_filters[$filter_key];
             $actions = $cfg['actions'];
             $placeholders = implode(',', array_fill(0, count($actions), '?'));
-            
+
             $sub_where = "(a.action IN ($placeholders)";
             foreach ($actions as $act) {
                 $bind_params[] = $act;
                 $types .= 's';
             }
 
-            // Fallback for blank actions if it's a customization filter
             if (str_contains($filter_key, 'customization')) {
                 $term = str_contains($filter_key, 'add') ? 'Added' : (str_contains($filter_key, 'edit') ? 'Updated' : 'Deleted');
                 $sub_where .= " OR (a.action = '' AND a.details LIKE ?)";
@@ -137,10 +136,86 @@ $logs = mysqli_stmt_get_result($stmt);
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="audit.css?v=<?= filemtime('audit.css') ?>">
+    <style>
+/* ══════════════════════════════════════
+   HAMBURGER + COLLAPSIBLE SIDEBAR
+══════════════════════════════════════ */
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.hamburger:hover { background: rgba(33,3,3,0.08); }
+.hamburger span {
+    display: block;
+    height: 2px;
+    background: #210303;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+    width: 100%;
+}
+.hamburger span:nth-child(2) { width: 70%; }
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 49;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sidebar {
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+.sidebar.collapsed { transform: translateX(-100%); }
+.main { transition: margin-left 0.3s ease; }
+.main.expanded { margin-left: 0 !important; }
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 50;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main,
+    .main.expanded { margin-left: 0 !important; }
+    .topbar { padding: 0 16px; gap: 12px; }
+    .topbar-title { font-size: 0.95rem; }
+    .content { padding: 16px; }
+    .top-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .top-bar-right { flex-wrap: wrap; }
+    .filter-row { flex-wrap: wrap; }
+    .audit-table th:nth-child(3),
+    .audit-table td:nth-child(3) { display: none; }
+}
+    </style>
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-logo"><div class="brand">Casa Gunita</div></div>
     <ul class="nav-list">
         <li><a href="index.php">Dashboard</a></li>
@@ -154,8 +229,13 @@ $logs = mysqli_stmt_get_result($stmt);
     <div class="sidebar-footer"><a href="logout.php">Logout</a></div>
 </aside>
 
-<div class="main">
+<div class="main" id="main">
     <header class="topbar">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
         <div class="topbar-title">Audit Log</div>
         <div class="topbar-spacer"></div>
         <div class="topbar-user">
@@ -238,20 +318,18 @@ $logs = mysqli_stmt_get_result($stmt);
                                 elseif (str_contains($action, 'menu') || str_contains($action, 'customization') || str_contains($action, 'modifier') || $log['target_type'] === 'customization') $badgeClass = 'badge-menu';
                                 elseif (str_contains($action, 'featured')) $badgeClass = 'badge-feature';
                             ?>
-                            <?php 
+                            <?php
                                 $details = $log['details'] ?: '';
                                 if (!empty($action)) {
                                     $displayAction = ucwords(str_replace('_', ' ', $action));
                                     $displayAction = str_replace('Modifier', 'Customization', $displayAction);
                                 } else {
-                                    // Fallback if DB action is blank due to ENUM mismatch
                                     if (str_contains($details, 'Added')) $displayAction = 'Customization Add';
                                     elseif (str_contains($details, 'Updated')) $displayAction = 'Customization Edit';
                                     elseif (str_contains($details, 'Deleted')) $displayAction = 'Customization Delete';
                                     else $displayAction = 'Customization';
                                 }
 
-                                // Clarify if it was an inline customization (inside a menu item)
                                 if (!empty($log['product_id']) && str_contains($displayAction, 'Customization')) {
                                     $displayAction = 'Menu ' . $displayAction;
                                 }
@@ -295,10 +373,11 @@ $logs = mysqli_stmt_get_result($stmt);
         <?php endif; ?>
 
     </div>
-</div>
+</div><!-- .main -->
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
+/* ── Flatpickr date range ── */
 flatpickr('#date-range', {
     mode: 'range',
     dateFormat: 'Y-m-d',
@@ -313,9 +392,7 @@ flatpickr('#date-range', {
         from.value = selectedDates[0] ? instance.formatDate(selectedDates[0], 'Y-m-d') : '';
         to.value = selectedDates[1] ? instance.formatDate(selectedDates[1], 'Y-m-d') : '';
         document.getElementById('clear-date').classList.toggle('is-hidden', selectedDates.length === 0);
-        if (selectedDates.length === 2) {
-            instance.element.form.submit();
-        }
+        if (selectedDates.length === 2) instance.element.form.submit();
     }
 });
 
@@ -334,7 +411,7 @@ document.getElementById('clear-date').addEventListener('click', function() {
     document.getElementById('filter-form').submit();
 });
 
-// Custom Multi-select Dropdown Logic
+/* ── Custom Multi-select ── */
 (function() {
     const ms = document.getElementById('actionMultiselect');
     const header = ms.querySelector('.multiselect-header');
@@ -344,20 +421,14 @@ document.getElementById('clear-date').addEventListener('click', function() {
 
     function updateSummary() {
         const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-        if (checkedCount === 0) {
-            summary.textContent = 'Filter Actions';
-        } else {
-            summary.textContent = checkedCount + (checkedCount === 1 ? ' Action' : ' Actions') + ' Selected';
-        }
+        summary.textContent = checkedCount === 0
+            ? 'Filter Actions'
+            : checkedCount + (checkedCount === 1 ? ' Action' : ' Actions') + ' Selected';
     }
 
     const clearActionsBtn = document.getElementById('clear-actions');
 
-    header.addEventListener('click', (e) => {
-        ms.classList.toggle('active');
-        e.stopPropagation();
-    });
-
+    header.addEventListener('click', (e) => { ms.classList.toggle('active'); e.stopPropagation(); });
     document.addEventListener('click', () => ms.classList.remove('active'));
     clearActionsBtn.addEventListener('click', () => {
         checkboxes.forEach(cb => cb.checked = false);
@@ -367,6 +438,93 @@ document.getElementById('clear-date').addEventListener('click', function() {
     checkboxes.forEach(cb => cb.addEventListener('change', updateSummary));
     updateSummary();
 })();
+
+/* ══════════════════════════════════════
+   HAMBURGER — all screen sizes
+══════════════════════════════════════ */
+const hamburgerBtn   = document.getElementById('hamburgerBtn');
+const sidebar        = document.getElementById('sidebar');
+const mainEl         = document.getElementById('main');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+const isMobile = () => window.innerWidth <= 768;
+
+function openSidebar() {
+    hamburgerBtn.classList.add('open');
+    if (isMobile()) {
+        sidebar.classList.add('open');
+        sidebar.classList.remove('collapsed');
+        sidebarOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '1');
+}
+
+function closeSidebar() {
+    hamburgerBtn.classList.remove('open');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('collapsed');
+        mainEl.classList.add('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '0');
+}
+
+function toggleSidebar() {
+    const desktopOpen = !isMobile() && !sidebar.classList.contains('collapsed');
+    const mobileOpen  =  isMobile() &&  sidebar.classList.contains('open');
+    (desktopOpen || mobileOpen) ? closeSidebar() : openSidebar();
+}
+
+(function init() {
+    const saved = localStorage.getItem('sidebarOpen');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        mainEl.classList.remove('expanded');
+    } else {
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    }
+})();
+
+hamburgerBtn.addEventListener('click', toggleSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
+window.addEventListener('resize', () => {
+    if (!isMobile()) {
+        sidebarOverlay.classList.remove('visible');
+        sidebar.classList.remove('open');
+        document.body.style.overflow = '';
+        const saved = localStorage.getItem('sidebarOpen');
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+        mainEl.style.marginLeft = '';
+    }
+});
 </script>
 
 </body>

@@ -515,8 +515,8 @@ body::before {
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #130301;
-    background: #c9a84c;
-    border: 1px solid #c9a84c;
+    background: #e8d191;
+    border: 1px solid #e8d191;
     border-radius: 8px;
     padding: 10px 22px;
     cursor: pointer;
@@ -559,6 +559,7 @@ body::before {
     align-items: center;
 }
 
+<<<<<<< HEAD
 .acct-notice {
     padding: 14px 16px;
     border-radius: 12px;
@@ -680,32 +681,82 @@ body::before {
 /* ════════════════════════════
    RESPONSIVE
 ════════════════════════════ */
+=======
+/* ═══════════════════════════════════════════════
+   ACCOUNT PAGE — RESPONSIVE ADDITIONS
+   Add these rules at the bottom of accountpage.css
+   (some rules already exist; these extend coverage)
+════════════════════════════════════════════════ */
+
+/* ── 1024px ── */
+@media (max-width: 1024px) {
+    .acct-layout { grid-template-columns: 180px 1fr; gap: 20px; }
+    .acct-content-header h1 { font-size: 1.6rem; }
+}
+
+/* ── 768px (extends existing block) ── */
+>>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
 @media (max-width: 768px) {
-    .acct-layout {
-        grid-template-columns: 1fr;
+    /* acct-layout already switched to 1fr — this fills gaps */
+    .acct-page { padding: calc(56px + 20px) 14px 50px; }
+
+    .acct-card-body { padding: 16px 16px; }
+    .acct-card-head { padding: 12px 16px; }
+
+    .acct-log-item { padding: 12px 16px; gap: 10px; }
+    .acct-log-badge { width: 32px; height: 32px; }
+    .acct-log-action { font-size: 13px; }
+
+    .acct-content-header h1 { font-size: 1.4rem; letter-spacing: 0.08em; }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+    .acct-page { padding: calc(56px + 14px) 10px 40px; }
+
+    /* Sidebar: collapse avatar info to just initials */
+    .acct-sidebar-top { padding: 14px 12px; gap: 8px; }
+    .acct-avatar { width: 36px; height: 36px; font-size: 1rem; }
+    .acct-avatar-info strong { font-size: 12px; }
+
+    /* Nav links: horizontal scroll strip instead of list */
+    .acct-sidebar-nav {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 6px 4px;
+    }
+    .acct-sidebar-nav::-webkit-scrollbar { display: none; }
+
+    .acct-nav-link {
+        flex-shrink: 0;
+        padding: 8px 14px;
+        border-left: none;
+        border-bottom: 2.5px solid transparent;
+        font-size: 11px;
+        gap: 6px;
+    }
+    .acct-nav-link:hover,
+    .acct-nav-link.active {
+        border-left-color: transparent;
+        border-bottom-color: #c9a84c;
     }
 
-    .acct-sidebar {
-        position: static;
-    }
+    /* Cards */
+    .acct-card-body { padding: 12px; gap: 12px; }
+    .acct-field-group label { font-size: 9px; letter-spacing: 0.14em; }
+    .acct-field-group input[type="text"],
+    .acct-field-group input[type="email"],
+    .acct-field-group input[type="password"] { padding: 9px 12px; font-size: 13px; }
 
-    .acct-page {
-        padding: calc(56px + 24px) 16px 60px;
-    }
+    /* Log items: stack badge + details vertically for very small screens */
+    .acct-log-item { gap: 8px; }
+    .acct-log-tag { font-size: 9px; padding: 3px 8px; }
 
-    .acct-activity-shortcut {
-        flex-direction: column;
-    }
-
-    .acct-pw-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
+    /* Buttons */
+    .acct-change-pw-btn,
     .acct-save-pw-btn,
-    .acct-cancel-pw-btn,
-    .acct-change-pw-btn {
-        width: 100%;
-        text-align: center;
-    }
+    .acct-cancel-pw-btn { padding: 9px 14px; font-size: 11px; }
 }

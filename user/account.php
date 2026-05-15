@@ -159,12 +159,6 @@ $initial    = strtoupper(substr($first_name ?: 'U', 0, 1));
         </svg>
         Account Information
     </a>
-    <a href="account_activity.php" class="acct-nav-link">
-        <svg viewBox="0 0 24 24">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-        Account Activity
-    </a>
 </nav>
         </aside>
 
