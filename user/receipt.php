@@ -48,7 +48,6 @@ $items = mysqli_stmt_get_result($items_stmt);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="receipt.css">
-    <link rel="stylesheet" href="order-status-overlay.css">
 </head>
 <body>
 
@@ -131,18 +130,9 @@ $items = mysqli_stmt_get_result($items_stmt);
 
 <div class="actions">
     <button class="button" onclick="window.print()">Print Receipt</button>
-        <a class="button button-outline" href="index.php">Home</a>
-
-    </div>
+    <a class="button button-outline" href="index.php">Home</a>
 </div>
-
-<script src="order-status-overlay.js"></script>
-<script>
-    // Initialize order status overlay when page loads
-    document.addEventListener('DOMContentLoaded', async () => {
-        await orderStatusOverlay.init(true);
-    });
-</script>
+</div>
 
 </body>
 </html>
