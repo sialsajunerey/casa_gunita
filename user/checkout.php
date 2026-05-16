@@ -24,7 +24,7 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $order_type     = $_POST['order_type'];
-    $payment_method = isset($_POST['payment_method']) && $_POST['payment_method'] === 'gcash' ? 'gcash' : 'cash';
+    $payment_method = isset($_POST['payment_method']) && $_POST['payment_method'] === 'E-Payment' ? 'E-Payment' : 'COD';
     $notes          = sanitize($_POST['notes']);
     $house_number   = sanitize($_POST['house_number'] ?? '');
     $street         = sanitize($_POST['street'] ?? '');
@@ -40,53 +40,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($error === '') {
         $columnInfo = mysqli_query($conn, "SHOW COLUMNS FROM orders LIKE 'order_type'");
-    if ($columnInfo && $row = mysqli_fetch_assoc($columnInfo)) {
-        if (strpos($row['Type'], "'delivery'") === false) {
-            mysqli_query($conn, "ALTER TABLE orders MODIFY order_type ENUM('dine-in','takeout','delivery') NOT NULL");
-        }
-    }
-
-    $stmt = mysqli_prepare($conn,
-        "INSERT INTO orders (user_id, total_amount, status, order_type, notes, house_number, street, barangay, city) 
-         VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?)");
-    mysqli_stmt_bind_param($stmt, 'idssssss', $user_id, $total, $order_type, $notes, $house_number, $street, $barangay, $city);
-
-    if (mysqli_stmt_execute($stmt)) {
-        $order_id = mysqli_insert_id($conn);
-
-        $columnExists = mysqli_query($conn, "SHOW COLUMNS FROM order_items LIKE 'options'");
-        if ($columnExists && mysqli_num_rows($columnExists) === 0) {
-            mysqli_query($conn, "ALTER TABLE order_items ADD COLUMN options TEXT NULL");
+        if ($columnInfo && $row = mysqli_fetch_assoc($columnInfo)) {
+            if (strpos($row['Type'], "'delivery'") === false) {
+                mysqli_query($conn, "ALTER TABLE orders MODIFY order_type ENUM('takeout','delivery') NOT NULL");
+            }
         }
 
+        $items = [];
         foreach ($cart as $product_id => $item) {
-            $subtotal = $item['price'] * $item['quantity'];
-            $optionsJson = json_encode($item['options'] ?? []);
-
-            $item_stmt = mysqli_prepare($conn,
-                "INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal, options)
-                 VALUES (?, ?, ?, ?, ?, ?)");
-            mysqli_stmt_bind_param($item_stmt, 'iiidds',
-                $order_id, $product_id, $item['quantity'], $item['price'], $subtotal, $optionsJson);
-            mysqli_stmt_execute($item_stmt);
-
-            reduceStock($conn, $product_id, $item['quantity']);
+            $items[] = [
+                'product_id' => (int)$product_id,
+                'quantity' => (int)$item['quantity'],
+                'unit_price' => (float)$item['price'],
+                'options' => $item['options'] ?? []
+            ];
         }
 
-        $tx_stmt = mysqli_prepare($conn,
-            "INSERT INTO transactions (order_id, user_id, amount_paid, payment_method)
-             VALUES (?, ?, ?, ?)");
-        mysqli_stmt_bind_param($tx_stmt, 'iids',
-            $order_id, $user_id, $total, $payment_method);
-        mysqli_stmt_execute($tx_stmt);
+        $itemsJson = json_encode($items);
 
-        $_SESSION['cart'] = [];
-        header('Location: receipt.php?order_id=' . $order_id);
-        exit();
-    } else {
+        $stmt = mysqli_prepare($conn,
+            "CALL sp_create_order(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issssssss',
+            $user_id,
+            $order_type,
+            $payment_method,
+            $notes,
+            $house_number,
+            $street,
+            $barangay,
+            $city,
+            $itemsJson);
+
+        if (mysqli_stmt_execute($stmt)) {
+            $result = mysqli_stmt_get_result($stmt);
+            $row = $result ? mysqli_fetch_assoc($result) : null;
+            if ($row && isset($row['order_id'])) {
+                $order_id = $row['order_id'];
+                $_SESSION['cart'] = [];
+                header('Location: receipt.php?order_id=' . $order_id);
+                exit();
+            }
+        }
+
         $error = 'Order failed. Please try again.';
-    }
-    
     }
 }
 ?>
@@ -220,8 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="payment_method">Payment Method</label>
                         <select name="payment_method" id="payment_method" required>
                             <option value="" disabled <?= empty($payment_method) ? 'selected' : '' ?>>Select</option>
-                            <option value="cash" <?= isset($payment_method) && $payment_method === 'cash' ? 'selected' : '' ?>>COD</option>
-                            <option value="gcash" <?= isset($payment_method) && $payment_method === 'gcash' ? 'selected' : '' ?>>E-Payment</option>
+                            <option value="COD" <?= isset($payment_method) && $payment_method === 'COD' ? 'selected' : '' ?>>COD</option>
+                            <option value="E-Payment" <?= isset($payment_method) && $payment_method === 'E-Payment' ? 'selected' : '' ?>>E-Payment</option>
                         </select>
                     </div>
                 </div>

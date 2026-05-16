@@ -14,9 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id']) && isset(
     $valid_statuses = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
     
     if (in_array($new_status, $valid_statuses, true)) {
-        // Try to update with updated_at, but fall back if column doesn't exist
-        $update_stmt = mysqli_prepare($conn, "UPDATE orders SET status = ? WHERE order_id = ?");
-        mysqli_stmt_bind_param($update_stmt, 'si', $new_status, $order_id);
+        $admin_id = (int)$_SESSION['user_id'];
+        mysqli_query($conn, "SET @audit_admin_id = " . $admin_id);
+
+        $update_stmt = mysqli_prepare($conn, "CALL sp_update_order_status(?, ?)");
+        mysqli_stmt_bind_param($update_stmt, 'is', $order_id, $new_status);
         
         if (mysqli_stmt_execute($update_stmt)) {
             header('Content-Type: application/json');

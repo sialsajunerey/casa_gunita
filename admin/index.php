@@ -470,8 +470,8 @@ function selectOrder(idx) {
     const payDiv  = document.getElementById('d-payment');
     if (o.payment_method) {
         payWrap.style.display = '';
-        const cls   = o.payment_method === 'gcash' ? 'payment-gcash' : 'payment-cash';
-        const label = o.payment_method.toUpperCase();
+        const cls   = o.payment_method === 'E-Payment' ? 'payment-gcash' : 'payment-cash';
+        const label = o.payment_method === 'E-Payment' ? 'E-Payment' : o.payment_method.toUpperCase();
         payDiv.innerHTML = `<span class="payment-chip ${cls}">${label}</span>
             <div style="margin-top:8px;font-size:13.5px;color:#8a7060;">Amount Paid: <strong style="color:#210303;">${formatPrice(o.amount_paid)}</strong></div>`;
     } else {
