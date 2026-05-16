@@ -330,29 +330,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if ($hasActiveOrder && $activeOrder): ?>
 <div class="active-order-modal-overlay" id="activeOrderModal">
     <div class="active-order-modal">
+        
         <div class="modal-header">
-            <h2>Active Order in Progress</h2>
+    <div class="modal-header-icon">⚠</div><br>
+    <h2>Active Order in Progress</h2>
+</div>
+<div class="modal-body">
+    <p class="modal-message">You have an active order that needs to be completed before placing a new one.</p>
+    <div class="order-details">
+        <div class="detail-row">
+            <span class="detail-label">Order #</span>
+            <span class="detail-value"><?= str_pad((int)$activeOrder['order_id'], 5, '0', STR_PAD_LEFT) ?></span>
         </div>
-        <div class="modal-body">
-            <div class="modal-icon warning-icon">⚠️</div>
-            <p class="modal-message">You have an active order that needs to be completed before placing a new one.</p>
-            <div class="order-details">
-                <div class="detail-row">
-                    <span class="detail-label">Order #</span>
-                    <span class="detail-value"><?= htmlspecialchars($activeOrder['order_id']) ?></span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Status</span>
-                    <span class="detail-value status-<?= htmlspecialchars($activeOrder['status']) ?>">
-                        <?= ucfirst(htmlspecialchars($activeOrder['status'])) ?>
-                    </span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Amount</span>
-                    <span class="detail-value">₱<?= number_format((float)$activeOrder['total_amount'], 2) ?></span>
-                </div>
-            </div>
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span class="detail-value status-<?= htmlspecialchars($activeOrder['status'], ENT_QUOTES, 'UTF-8') ?>">
+                <?= ucfirst(htmlspecialchars($activeOrder['status'], ENT_QUOTES, 'UTF-8')) ?>
+            </span>
         </div>
+        <div class="detail-row">
+            <span class="detail-label">Amount</span>
+            <span class="detail-value">₱<?= number_format((float)$activeOrder['total_amount'], 2) ?></span>
+        </div>
+    </div>
+</div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeActiveOrderModal()">Continue Browsing</button>
             <a href="order_status.php" class="btn btn-primary">View Order Status →</a>
@@ -361,14 +362,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <style>
+/* ── Active Order Modal ── */
 .active-order-modal-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     z-index: 1000;
     align-items: center;
     justify-content: center;
+    padding: 20px;
 }
 
 .active-order-modal-overlay.active {
@@ -376,72 +381,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 .active-order-modal {
-    background: rgba(33, 3, 3, 0.98);
-    border: 1px solid rgba(232, 209, 145, 0.2);
-    border-radius: 12px;
-    max-width: 420px;
-    width: 90%;
+    background: rgba(21, 1, 1, 0.97);
+    border-radius: 4px;
+    max-width: 440px;
+    width: 100%;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    animation: modalSlideUp 0.3s ease;
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(232, 209, 145, 0.06) inset;
+    animation: aomSlideUp 0.35s ease;
 }
 
-@keyframes modalSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes aomSlideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Header ── */
 .modal-header {
-    background: linear-gradient(135deg, rgba(139, 111, 71, 0.3), rgba(232, 209, 145, 0.1));
-    border-bottom: 1px solid rgba(232, 209, 145, 0.2);
-    padding: 24px;
+    padding: 28px 32px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.modal-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    background: rgba(232, 209, 145, 0.08);
 }
 
 .modal-header h2 {
     margin: 0;
-    font-size: 1.3rem;
-    color: #e8d191;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
     font-weight: 600;
+    color: #e8d191;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
+/* ── Body ── */
 .modal-body {
-    padding: 32px 24px;
-    text-align: center;
-}
-
-.modal-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    display: block;
+    padding: 28px 32px;
 }
 
 .modal-message {
-    color: #dce4cf;
-    font-size: 1rem;
+    font-family: 'Public Sans', sans-serif;
+    color: rgba(220, 228, 207, 0.75);
+    font-size: 0.9rem;
     margin: 0 0 24px;
-    line-height: 1.6;
+    line-height: 1.7;
+    text-align: center;
 }
 
+/* ── Order Details Card ── */
 .order-details {
-    background: rgba(232, 209, 145, 0.05);
-    border: 1px solid rgba(232, 209, 145, 0.1);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
+    background: rgba(232, 209, 145, 0.04);
+    border: 1px solid rgba(232, 209, 145, 0.12);
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 .detail-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(232, 209, 145, 0.08);
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(232, 209, 145, 0.07);
 }
 
 .detail-row:last-child {
@@ -449,79 +462,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 .detail-label {
-    color: rgba(220, 228, 207, 0.6);
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-family: 'Public Sans', sans-serif;
+    color: rgba(220, 228, 207, 0.5);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .detail-value {
+    font-family: 'EB Garamond', serif;
     color: #dce4cf;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
-.detail-value.status-pending {
-    color: #ff9999;
-}
+.detail-value.status-pending   { color: #e8d191; }
+.detail-value.status-preparing { color: #93c5fd; }
+.detail-value.status-ready     { color: #90d47f; }
 
-.detail-value.status-preparing {
-    color: #e8d191;
-}
-
+/* ── Footer ── */
 .modal-footer {
     display: flex;
     gap: 12px;
-    padding: 24px;
+    padding: 20px 32px 28px;
     border-top: 1px solid rgba(232, 209, 145, 0.1);
-    justify-content: flex-end;
 }
 
 .modal-footer .btn {
     flex: 1;
-    padding: 12px 16px;
-    font-size: 0.9rem;
+    padding: 13px 16px;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
     text-align: center;
-}
-
-.btn-secondary {
-    background: transparent;
-    border: 1px solid rgba(232, 209, 145, 0.3);
-    color: #e8d191;
     cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-    background: rgba(232, 209, 145, 0.1);
-}
-
-.btn-primary {
-    background: #8B6F47;
-    border: none;
-    color: #dce4cf;
-    cursor: pointer;
-    border-radius: 6px;
+    border-radius: 0;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease;
 }
 
-.btn-primary:hover {
-    background: #9d8359;
+.modal-footer .btn-secondary {
+    background: transparent !important;
+    border: 1px solid rgba(232, 209, 145, 0.3);
+    color: rgba(220, 228, 207, 0.7);
+}
+.modal-footer .btn-secondary:hover {
+    background: rgba(232, 209, 145, 0.08) !important;
+    border-color: rgba(232, 209, 145, 0.6);
+    color: #e8d191;
+}
+
+.modal-footer .btn-primary {
+    background: transparent !important;
+    border: 1px solid rgba(232, 209, 145, 0.6);
+    color: #e8d191;
+}
+.modal-footer .btn-primary:hover {
+    background: #e8d191 !important;
+    color: #120000 !important;
 }
 
 @media (max-width: 480px) {
-    .active-order-modal {
-        max-width: 95%;
-    }
-    .modal-footer {
-        flex-direction: column;
-    }
-    .modal-footer .btn {
-        width: 100%;
-    }
+    .active-order-modal { max-width: 100%; border-radius: 4px 4px 0 0; }
+    .active-order-modal-overlay { align-items: flex-end; padding: 0; }
+    .modal-header { padding: 22px 20px 16px; }
+    .modal-body { padding: 20px; }
+    .modal-footer { flex-direction: column; padding: 16px 20px 24px; }
 }
 </style>
 <?php endif; ?>
