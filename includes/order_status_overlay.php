@@ -240,7 +240,7 @@ function showCompletedDialog() {
                 <h2>✓ Order Delivered</h2>
             </div>
             <div class="modal-body">
-                <div class="modal-icon success-icon">📦</div>
+                <div class="modal-icon success-icon"></div>
                 <p class="modal-message">Your order has been delivered. Thank you for your order!</p>
             </div>
             <div class="modal-footer">
@@ -258,10 +258,10 @@ function showCancelledDialog() {
     modal.innerHTML = `
         <div class="order-status-modal">
             <div class="modal-header cancelled">
-                <h2>⚠️ Order Cancelled</h2>
+                <h2>Order Cancelled</h2>
             </div>
             <div class="modal-body">
-                <div class="modal-icon warning-icon">❌</div>
+                <div class="modal-icon warning-icon"></div>
                 <p class="modal-message">Admin has cancelled your order. Your payment will be returned to you through e-transaction.</p>
             </div>
             <div class="modal-footer">

@@ -1,119 +1,129 @@
-// Order Status Overlay JavaScript
-
 class OrderStatusOverlay {
     constructor() {
         this.wrapper = null;
-        this.overlay = null;
-        this.confirmation = null;
         this.autoRefreshInterval = null;
         this.currentOrder = null;
+        this.pendingAction = null;
     }
 
-    // Initialize and show overlay
     async init(autoRefresh = true) {
-        if (!document.getElementById('orderStatusOverlayWrapper')) {
+        if (!document.getElementById('cgOverlayWrapper')) {
             this.createOverlay();
         }
-        
-        this.wrapper = document.getElementById('orderStatusOverlayWrapper');
-        this.overlay = document.getElementById('orderStatusOverlay');
-        this.confirmation = document.getElementById('orderStatusConfirmation');
-
-        // Load latest order
+        this.wrapper = document.getElementById('cgOverlayWrapper');
         await this.loadLatestOrder();
-
-        // Auto-refresh order status
-        if (autoRefresh) {
-            this.startAutoRefresh();
-        }
+        if (autoRefresh) this.startAutoRefresh();
     }
 
-    // Create overlay HTML
     createOverlay() {
         const html = `
-            <div id="orderStatusOverlayWrapper" class="order-status-overlay-wrapper">
-                <div id="orderStatusOverlay" class="order-status-overlay">
-                    <div class="order-status-header">
-                        <h3>Order Status</h3>
-                        <button class="order-status-close" onclick="orderStatusOverlay.close()">&times;</button>
+        <div id="cgOverlayWrapper" class="order-status-overlay-wrapper">
+            <div class="order-status-panel">
+
+                <div class="order-status-header">
+                    <span class="order-status-header-label">My order</span>
+                    <button class="order-status-close" onclick="orderStatusOverlay.close()" aria-label="Close">&times;</button>
+                </div>
+
+                <div class="order-status-identity">
+                    <div>
+                        <p class="order-status-number" id="cgOrderNumber">#00000</p>
+                        <p class="order-status-meta" id="cgOrderMeta">—</p>
                     </div>
-                    <div class="order-status-content">
-                        <div class="order-status-info">
-                            <div class="order-status-info-item">
-                                <span class="order-status-info-label">Order #</span>
-                                <span class="order-status-info-value" id="overlayOrderId">-</span>
-                            </div>
-                            <div class="order-status-info-item">
-                                <span class="order-status-info-label">Status</span>
-                                <span id="overlayOrderStatus" class="order-status-badge pending">Pending</span>
-                            </div>
-                        </div>
-                        
-                        <div class="order-status-info">
-                            <div class="order-status-info-item">
-                                <span class="order-status-info-label">Ordered At</span>
-                                <span class="order-status-info-value" id="overlayOrderTime">-</span>
-                            </div>
-                            <div class="order-status-info-item">
-                                <span class="order-status-info-label">Type</span>
-                                <span class="order-status-info-value" id="overlayOrderType">-</span>
-                            </div>
-                        </div>
+                    <span class="order-status-badge pending" id="cgStatusBadge">
+                        <span class="order-status-badge-dot"></span>
+                        <span id="cgStatusText">Pending</span>
+                    </span>
+                </div>
 
-                        <div class="order-status-items" id="overlayOrderItems">
-                            <div style="text-align: center; color: rgba(220, 228, 207, 0.6);">Loading items...</div>
-                        </div>
+                <div class="order-status-ornament">
+                    <span class="order-status-ornament-dot"></span>
+                    <span class="order-status-ornament-dot"></span>
+                    <span class="order-status-ornament-dot"></span>
+                    <span class="order-status-ornament-line"></span>
+                </div>
 
-                        <div class="order-status-total">
-                            <span class="order-status-total-label">Total</span>
-                            <span class="order-status-total-amount" id="overlayOrderTotal">₱0.00</span>
-                        </div>
+                <div class="order-status-tabs">
+                    <button class="order-status-tab-btn active" onclick="orderStatusOverlay.switchTab(event, 'Items')">Items</button>
+                    <button class="order-status-tab-btn" onclick="orderStatusOverlay.switchTab(event, 'Details')">Details</button>
+                </div>
 
-                        <div class="order-status-actions" id="overlayActions">
-                            <!-- Actions will be populated based on status -->
+                <div id="cgTabItems" class="order-status-tab-pane active">
+                    <div class="order-status-items-list" id="cgItemsList">
+                        <div class="order-status-item-row">
+                            <div><p class="order-status-item-name">Loading...</p></div>
+                        </div>
+                    </div>
+                    <div class="order-status-total-row">
+                        <span class="order-status-total-label">Total</span>
+                        <span class="order-status-total-amount" id="cgTotal">&#8369;0.00</span>
+                    </div>
+                </div>
+
+                <div id="cgTabDetails" class="order-status-tab-pane">
+                    <div class="order-status-details">
+                        <div class="order-status-detail-cell">
+                            <p class="order-status-detail-label">Order #</p>
+                            <p class="order-status-detail-value" id="cgDetailId">—</p>
+                        </div>
+                        <div class="order-status-detail-cell">
+                            <p class="order-status-detail-label">Type</p>
+                            <p class="order-status-detail-value" id="cgDetailType">—</p>
+                        </div>
+                        <div class="order-status-detail-cell">
+                            <p class="order-status-detail-label">Table</p>
+                            <p class="order-status-detail-value" id="cgDetailTable">—</p>
+                        </div>
+                        <div class="order-status-detail-cell">
+                            <p class="order-status-detail-label">Time</p>
+                            <p class="order-status-detail-value" id="cgDetailTime">—</p>
+                        </div>
+                        <div class="order-status-detail-cell full">
+                            <p class="order-status-detail-label">Payment</p>
+                            <p class="order-status-detail-value" id="cgDetailPayment">—</p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="orderStatusConfirmation" class="order-status-confirmation">
-                <div class="cg-dialog" id="cgDialog">
-                    <div class="cg-dialog-header">
-                        <span class="cg-status-icon" id="cgStatusIcon">✓</span>
-                        <span class="cg-header-text" id="cgHeaderText">Order Delivered</span>
+                <div class="order-status-actions" id="cgActions"></div>
+            </div>
+        </div>
+
+        <div id="cgDialogOverlay" class="cg-dialog-overlay">
+            <div class="cg-dialog" id="cgDialog">
+                <div class="cg-dialog-header">
+                    <span class="cg-dialog-header-text" id="cgDialogTitle">Order cancelled</span>
+                    <span class="cg-dialog-header-badge" id="cgDialogBadge">
+                        <span class="cg-dialog-header-badge-dot"></span>
+                        <span id="cgDialogBadgeText">Cancelled</span>
+                    </span>
+                </div>
+                <div class="cg-dialog-icon-wrap">
+                    <div class="cg-dialog-icon" id="cgDialogIcon">&times;</div>
+                </div>
+                <div class="cg-dialog-message-section">
+                    <div class="cg-dialog-ornament">
+                        <span></span><span></span><span></span>
                     </div>
-                    <div class="cg-icon-section">
-                        <div class="cg-large-icon" id="cgLargeIcon">✓</div>
-                    </div>
-                    <div class="cg-message-section">
-                        <div class="cg-ornament">
-                            <span class="cg-ornament-dot"></span>
-                            <span class="cg-ornament-dot"></span>
-                            <span class="cg-ornament-dot"></span>
-                        </div>
-                        <p class="cg-message" id="cgMessage">Your order has been delivered. Salamat for dining with Casa Gunita!</p>
-                        <div class="cg-ornament">
-                            <span class="cg-ornament-dot"></span>
-                            <span class="cg-ornament-dot"></span>
-                            <span class="cg-ornament-dot"></span>
-                        </div>
-                    </div>
-                    <div class="cg-button-section">
-                        <button class="cg-btn" onclick="orderStatusOverlay.cancelConfirmation()">Confirm</button>
+                    <p class="cg-dialog-message" id="cgDialogMessage">Your order has been cancelled.</p>
+                    <div class="cg-dialog-order-info" id="cgDialogOrderInfo"></div>
+                    <div class="cg-dialog-ornament" style="margin-top:14px;margin-bottom:0;">
+                        <span></span><span></span><span></span>
                     </div>
                 </div>
+                <div class="cg-dialog-btn-section">
+                    <button class="cg-dialog-btn" onclick="orderStatusOverlay.closeDialog()">Confirm</button>
+                </div>
             </div>
-        `;
+        </div>`;
 
         document.body.insertAdjacentHTML('beforeend', html);
     }
 
-    // Load latest order
     async loadLatestOrder() {
         try {
             const response = await fetch('order-status-api.php?action=get_latest');
             const data = await response.json();
-
             if (data.success && data.order) {
                 this.currentOrder = data.order;
                 this.renderOverlay();
@@ -123,123 +133,87 @@ class OrderStatusOverlay {
         }
     }
 
-    // Render overlay with order data
     renderOverlay() {
         if (!this.currentOrder) return;
-
         const order = this.currentOrder;
 
-        // Update basic info
-        document.getElementById('overlayOrderId').textContent = '#' + String(order.order_id).padStart(5, '0');
-        document.getElementById('overlayOrderTime').textContent = order.formatted_time || '-';
-        document.getElementById('overlayOrderType').textContent = order.order_type === 'takeout' ? 'Pick-Up' : order.order_type.charAt(0).toUpperCase() + order.order_type.slice(1);
-        document.getElementById('overlayOrderTotal').textContent = order.formatted_total || '₱0.00';
+        const typeLabel = order.order_type === 'takeout'
+            ? 'Pick-up'
+            : order.order_type.charAt(0).toUpperCase() + order.order_type.slice(1);
 
-        // Update status badge
-        const statusBadge = document.getElementById('overlayOrderStatus');
-        statusBadge.textContent = order.status.toUpperCase();
-        statusBadge.className = 'order-status-badge ' + order.status;
+        document.getElementById('cgOrderNumber').textContent = '#' + String(order.order_id).padStart(5, '0');
+        document.getElementById('cgOrderMeta').textContent =
+            typeLabel + (order.table_number ? ' \u00b7 Table ' + order.table_number : '') + ' \u00b7 ' + (order.formatted_time || '');
 
-        // Render items
-        const itemsContainer = document.getElementById('overlayOrderItems');
+        const badge = document.getElementById('cgStatusBadge');
+        badge.className = 'order-status-badge ' + order.status;
+        document.getElementById('cgStatusText').textContent =
+            order.status.charAt(0).toUpperCase() + order.status.slice(1);
+
+        const list = document.getElementById('cgItemsList');
         if (order.items && order.items.length > 0) {
-            const itemsHtml = order.items.map(item => `
-                <div class="order-status-item">
-                    <span class="order-status-item-name">${item.name}</span>
-                    <span class="order-status-item-qty">x${item.quantity}</span>
+            list.innerHTML = order.items.map(item => `
+                <div class="order-status-item-row">
+                    <div>
+                        <p class="order-status-item-name">${item.name}</p>
+                        <p class="order-status-item-qty">x${item.quantity}</p>
+                    </div>
                     <span class="order-status-item-price">${this.formatPrice(item.subtotal)}</span>
-                </div>
-            `).join('');
-            itemsContainer.innerHTML = itemsHtml;
+                </div>`).join('');
         }
 
-        // Update actions based on status
-        this.updateActions();
+        document.getElementById('cgTotal').textContent = order.formatted_total || '\u20b10.00';
+        document.getElementById('cgDetailId').textContent = '#' + String(order.order_id).padStart(5, '0');
+        document.getElementById('cgDetailType').textContent = typeLabel;
+        document.getElementById('cgDetailTable').textContent = order.table_number ? 'Table ' + order.table_number : '—';
+        document.getElementById('cgDetailTime').textContent = order.formatted_time || '—';
+        document.getElementById('cgDetailPayment').textContent =
+            (order.payment_method || '—') + ' \u00b7 ' + (order.formatted_total || '\u20b10.00');
+
+        this.renderActions();
     }
 
-    // Update action buttons based on order status
-    updateActions() {
-        const actionsContainer = document.getElementById('overlayActions');
+    renderActions() {
+        const container = document.getElementById('cgActions');
         const status = this.currentOrder.status;
 
         if (status === 'completed' || status === 'cancelled') {
-            actionsContainer.innerHTML = `
-                <button class="order-status-btn order-status-btn-primary" onclick="orderStatusOverlay.close()">
-                    Close
-                </button>
-            `;
-        } else if (status === 'pending' || status === 'preparing' || status === 'ready') {
-            actionsContainer.innerHTML = `
-                <button class="order-status-btn order-status-btn-success" onclick="orderStatusOverlay.confirmCompletion()">
-                    Mark as Received
-                </button>
-                <button class="order-status-btn order-status-btn-danger" onclick="orderStatusOverlay.confirmCancellation()">
-                    Cancel Order
-                </button>
-            `;
+            container.innerHTML = `
+                <button class="order-status-btn order-status-btn-ghost" onclick="orderStatusOverlay.close()">Close</button>`;
         } else {
-            actionsContainer.innerHTML = '';
+            container.innerHTML = `
+                <button class="order-status-btn order-status-btn-success" onclick="orderStatusOverlay.confirmCompletion()">Mark as received</button>
+                <button class="order-status-btn order-status-btn-danger" onclick="orderStatusOverlay.confirmCancellation()">Cancel order</button>`;
         }
     }
 
-    // Confirm completion
+    switchTab(e, id) {
+        document.querySelectorAll('.order-status-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.order-status-tab-pane').forEach(p => p.classList.remove('active'));
+        e.target.classList.add('active');
+        document.getElementById('cgTab' + id).classList.add('active');
+    }
+
     confirmCompletion() {
-        document.getElementById('orderStatusConfirmation').classList.add('active');
-        this.pendingAction = () => this.updateOrderStatus('completed', 'Thank you! Your order has been marked as received.');
+        this.updateOrderStatus('completed', 'Your order has been delivered. Salamat for dining with Casa Gunita!');
     }
 
-    // Confirm cancellation
     confirmCancellation() {
-        document.getElementById('orderStatusConfirmation').classList.add('active');
-        this.pendingAction = () => this.updateOrderStatus('cancelled', 'Your order has been cancelled. Your payment will be returned to your account.');
+        this.updateOrderStatus('cancelled', 'Your order has been cancelled. Your payment will be returned via e-transaction.');
     }
 
-    // Confirm action
-    async confirmAction() {
-        if (this.pendingAction) {
-            await this.pendingAction();
-            this.cancelConfirmation();
-        }
-    }
-
-    // Cancel confirmation
-    cancelConfirmation() {
-        document.getElementById('orderStatusConfirmation').classList.remove('active');
-        this.pendingAction = null;
-    }
-
-    // Update order status
     async updateOrderStatus(newStatus, message) {
         try {
-            const response = await fetch(`order-status-api.php?action=confirm_completion&order_id=${this.currentOrder.order_id}&new_status=${newStatus}`);
+            const response = await fetch(
+                'order-status-api.php?action=confirm_completion&order_id=' + this.currentOrder.order_id + '&new_status=' + newStatus
+            );
             const data = await response.json();
 
             if (data.success) {
                 this.currentOrder.status = newStatus;
                 this.renderOverlay();
-                
-                // Show Casa Gunita dialog with appropriate styling and message
-                const cgDialog = document.getElementById('cgDialog');
-                const cgHeaderText = document.getElementById('cgHeaderText');
-                const cgStatusIcon = document.getElementById('cgStatusIcon');
-                const cgMessage = document.getElementById('cgMessage');
-                
-                cgDialog.className = 'cg-dialog ' + newStatus;
-                
-                if (newStatus === 'completed') {
-                    cgHeaderText.textContent = 'Order Delivered';
-                    cgStatusIcon.textContent = '✓';
-                    cgMessage.textContent = message || 'Your order has been delivered. Salamat for dining with Casa Gunita!';
-                } else if (newStatus === 'cancelled') {
-                    cgHeaderText.textContent = 'Order Cancelled';
-                    cgStatusIcon.textContent = '✕';
-                    cgMessage.textContent = message || 'Admin has cancelled your order. Your payment will be returned via e-transaction.';
-                }
-                
-                document.getElementById('orderStatusConfirmation').classList.add('active');
-                
-                // Close overlay after showing message
-                setTimeout(() => this.close(), 3000);
+                this.showDialog(newStatus, message);
+                setTimeout(() => this.close(), 4000);
             } else {
                 alert('Failed to update order status. Please try again.');
             }
@@ -249,29 +223,76 @@ class OrderStatusOverlay {
         }
     }
 
-    // Close overlay
+    showDialog(status, message) {
+        const dialog  = document.getElementById('cgDialog');
+        const overlay = document.getElementById('cgDialogOverlay');
+        const title   = document.getElementById('cgDialogTitle');
+        const icon    = document.getElementById('cgDialogIcon');
+        const msg     = document.getElementById('cgDialogMessage');
+        const badge   = document.getElementById('cgDialogBadge');
+        const badgeTxt = document.getElementById('cgDialogBadgeText');
+        const orderInfo = document.getElementById('cgDialogOrderInfo');
+
+        dialog.className = 'cg-dialog ' + status;
+
+        if (status === 'completed') {
+            title.textContent  = 'Order delivered';
+            icon.textContent   = '\u2713';
+            badgeTxt.textContent = 'Completed';
+        } else {
+            title.textContent  = 'Order cancelled';
+            icon.textContent   = '\u00d7';
+            badgeTxt.textContent = 'Cancelled';
+        }
+
+        msg.textContent = message;
+
+        const orderId = '#' + String(this.currentOrder.order_id).padStart(5, '0');
+        const total   = this.currentOrder.formatted_total || '\u20b10.00';
+        const type    = this.currentOrder.order_type === 'takeout'
+            ? 'Pick-up'
+            : this.currentOrder.order_type.charAt(0).toUpperCase() + this.currentOrder.order_type.slice(1);
+
+        orderInfo.innerHTML = `
+            <div class="cg-dialog-order-row">
+                <span class="cg-dialog-order-label">Order</span>
+                <span class="cg-dialog-order-value">${orderId}</span>
+            </div>
+            <div class="cg-dialog-order-row">
+                <span class="cg-dialog-order-label">Type</span>
+                <span class="cg-dialog-order-value">${type}</span>
+            </div>
+            <div class="cg-dialog-order-row">
+                <span class="cg-dialog-order-label">Total</span>
+                <span class="cg-dialog-order-value amount">${total}</span>
+            </div>`;
+
+        overlay.classList.add('active');
+    }
+
+    closeDialog() {
+        document.getElementById('cgDialogOverlay').classList.remove('active');
+    }
+
     close() {
-        if (this.overlay) {
-            this.overlay.classList.add('closing');
+        this.closeDialog();
+        if (this.wrapper) {
+            this.wrapper.classList.add('closing');
             setTimeout(() => {
-                if (this.wrapper) {
-                    this.wrapper.style.display = 'none';
-                }
+                this.wrapper.style.display = 'none';
                 this.stopAutoRefresh();
             }, 300);
         }
     }
 
-    // Start auto-refresh
     startAutoRefresh() {
         this.autoRefreshInterval = setInterval(() => {
-            if (document.querySelector('.order-status-overlay-wrapper:not([style*="display: none"])')) {
+            if (this.wrapper && this.wrapper.style.display !== 'none') {
                 this.loadLatestOrder();
             }
-        }, 1500); // Refresh every 1.5 seconds for real-time updates
+        }, 1500);
     }
 
-    // Stop auto-refresh
     stopAutoRefresh() {
         if (this.autoRefreshInterval) {
             clearInterval(this.autoRefreshInterval);
@@ -279,111 +300,9 @@ class OrderStatusOverlay {
         }
     }
 
-    // Format price
     formatPrice(value) {
-        return '₱' + parseFloat(value).toFixed(2);
+        return '\u20b1' + parseFloat(value).toFixed(2);
     }
 }
 
-// Initialize global instance
-let orderStatusOverlay = new OrderStatusOverlay();
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) hideOverlay();
-        });
-    }
-
-    function showOrderStatus(orderId) {
-        initializeOverlay();
-
-        const overlay = document.getElementById('orderStatusOverlay');
-        const idElem = document.getElementById('orderStatusId');
-        const timeElem = document.getElementById('orderStatusTime');
-        const badgeElem = document.getElementById('orderStatusBadge');
-        const messageElem = document.getElementById('orderStatusMessage');
-        const confirmBtn = document.getElementById('orderStatusConfirm');
-
-        // Clear previous state
-        messageElem.innerHTML = '';
-        confirmBtn.style.display = 'none';
-
-        // Show overlay
-        overlay.classList.add('active');
-
-        // Fetch order status
-        pollOrderStatus(orderId, idElem, timeElem, badgeElem, messageElem, confirmBtn);
-    }
-
-    function pollOrderStatus(orderId, idElem, timeElem, badgeElem, messageElem, confirmBtn) {
-        fetch('order-status-api.php?order_id=' + encodeURIComponent(orderId))
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    messageElem.innerHTML = '<p style="color: #b03030;">Unable to load order status.</p>';
-                    confirmBtn.style.display = 'block';
-                    return;
-                }
-
-                const order = data.order;
-                idElem.textContent = 'Order #' + order.order_id;
-                timeElem.textContent = new Date(order.order_date).toLocaleString('en-PH');
-
-                const statusMap = {
-                    'pending': { text: 'Pending', class: 'status-pending' },
-                    'preparing': { text: 'Preparing', class: 'status-preparing' },
-                    'ready': { text: 'Ready for Pickup', class: 'status-ready' },
-                    'completed': { text: 'Completed', class: 'status-completed' },
-                    'cancelled': { text: 'Cancelled', class: 'status-cancelled' }
-                };
-
-                const statusInfo = statusMap[order.status] || { text: order.status, class: 'status-pending' };
-                badgeElem.textContent = statusInfo.text;
-                badgeElem.className = 'order-status-badge ' + statusInfo.class;
-
-                // Handle completion or cancellation
-                if (order.status === 'completed') {
-                    messageElem.innerHTML = '<p style="color: #4a7c4e; font-weight: 500;">✓ Your order has been completed! Thank you for your order.</p>';
-                    confirmBtn.textContent = 'OK';
-                    confirmBtn.style.display = 'block';
-                    confirmBtn.onclick = hideOverlay;
-                    return;
-                } else if (order.status === 'cancelled') {
-                    messageElem.innerHTML = '<p style="color: #b03030; font-weight: 500;">✗ Your order has been cancelled by the admin.</p><p style="color: #666; font-size: 13px; margin-top: 8px;">Your payment will be refunded to your account.</p>';
-                    confirmBtn.textContent = 'OK';
-                    confirmBtn.style.display = 'block';
-                    confirmBtn.onclick = hideOverlay;
-                    return;
-                }
-
-                // Poll again for pending/preparing/ready status
-                setTimeout(() => {
-                    if (document.getElementById('orderStatusOverlay').classList.contains('active')) {
-                        pollOrderStatus(orderId, idElem, timeElem, badgeElem, messageElem, confirmBtn);
-                    }
-                }, 5000);
-            })
-            .catch(error => {
-                console.error('Order status poll error:', error);
-                messageElem.innerHTML = '<p style="color: #b03030;">Network error. Please try again.</p>';
-                confirmBtn.textContent = 'Close';
-                confirmBtn.style.display = 'block';
-            });
-    }
-
-    function hideOverlay() {
-        const overlay = document.getElementById('orderStatusOverlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-        }
-    }
-
-    // Export to global scope
-    window.showOrderStatus = showOrderStatus;
-    window.hideOrderStatusOverlay = hideOverlay;
-
-    // Auto-initialize on page load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeOverlay);
-    } else {
-        initializeOverlay();
-    }
-})();
+const orderStatusOverlay = new OrderStatusOverlay();
