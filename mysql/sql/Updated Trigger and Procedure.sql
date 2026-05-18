@@ -21,26 +21,91 @@ SET time_zone = "+00:00";
 -- Database: `casa_gunita`
 --
 
+DROP PROCEDURE IF EXISTS sp_RegisterUser;
+DROP PROCEDURE IF EXISTS sp_PlaceOrder;
+DROP PROCEDURE IF EXISTS sp_ProcessPayment;
+DROP PROCEDURE IF EXISTS sp_update_order_status;
 DELIMITER $$
 --
 -- Procedures
 --
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_order` (IN `p_user_id` INT, IN `p_order_type` ENUM('takeout','delivery'), IN `p_payment_method` ENUM('COD','E-Payment'), IN `p_notes` TEXT, IN `p_house_number` VARCHAR(100), IN `p_street` VARCHAR(255), IN `p_barangay` VARCHAR(255), IN `p_city` VARCHAR(255), IN `p_items` JSON)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_RegisterUser` (
+  IN p_first_name VARCHAR(100),
+  IN p_last_name VARCHAR(100),
+  IN p_email VARCHAR(100),
+  IN p_password VARCHAR(255)
+)
+BEGIN
+  DECLARE v_existing INT DEFAULT 0;
+
+  SELECT COUNT(*) INTO v_existing
+  FROM users
+  WHERE email = p_email;
+
+  IF v_existing > 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Email already registered';
+  END IF;
+
+  INSERT INTO users (first_name, last_name, email, password, role)
+  VALUES (p_first_name, p_last_name, p_email, p_password, 'customer');
+
+  SET @new_user_id = LAST_INSERT_ID();
+
+  INSERT INTO user_access_logs (user_id, event_type)
+  VALUES (@new_user_id, 'login');
+
+  SELECT @new_user_id AS user_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_PlaceOrder` (
+  IN p_user_id INT,
+  IN p_order_type ENUM('takeout','delivery'),
+  IN p_payment_method ENUM('COD','E-Payment'),
+  IN p_notes TEXT,
+  IN p_house_number VARCHAR(100),
+  IN p_street VARCHAR(255),
+  IN p_barangay VARCHAR(255),
+  IN p_city VARCHAR(255),
+  IN p_items JSON
+)
+BEGIN
   DECLARE v_order_id INT;
   DECLARE v_i INT DEFAULT 0;
-  DECLARE v_count INT;
+  DECLARE v_count INT DEFAULT 0;
   DECLARE v_product_id INT;
   DECLARE v_quantity INT;
   DECLARE v_unit_price DECIMAL(10,2);
   DECLARE v_options TEXT;
   DECLARE v_subtotal DECIMAL(10,2);
   DECLARE v_total DECIMAL(10,2) DEFAULT 0.00;
+  DECLARE v_active_order_count INT DEFAULT 0;
 
-  SET v_count = JSON_LENGTH(p_items);
+  IF p_order_type NOT IN ('takeout','delivery') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid order type';
+  END IF;
+
+  IF p_payment_method NOT IN ('COD','E-Payment') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid payment method';
+  END IF;
+
+  IF p_items IS NULL OR JSON_LENGTH(p_items) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Order items are required';
+  END IF;
+
+  SELECT COUNT(*) INTO v_active_order_count
+  FROM orders
+  WHERE user_id = p_user_id
+    AND status IN ('pending','preparing','ready');
+
+  IF v_active_order_count > 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Customer already has an active order';
+  END IF;
 
   INSERT INTO orders (user_id, total_amount, status, order_type, notes, house_number, street, barangay, city)
   VALUES (p_user_id, 0.00, 'pending', p_order_type, p_notes, p_house_number, p_street, p_barangay, p_city);
+
   SET v_order_id = LAST_INSERT_ID();
+  SET v_count = JSON_LENGTH(p_items);
 
   WHILE v_i < v_count DO
     SET v_product_id = JSON_UNQUOTE(JSON_EXTRACT(p_items, CONCAT('$[', v_i, '].product_id')));
@@ -65,10 +130,43 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_order` (IN `p_user_id` IN
   SET total_amount = v_total
   WHERE order_id = v_order_id;
 
-  INSERT INTO transactions (order_id, user_id, amount_paid, payment_method)
-  VALUES (v_order_id, p_user_id, v_total, p_payment_method);
-
   SELECT v_order_id AS order_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_ProcessPayment` (
+  IN p_order_id INT,
+  IN p_user_id INT,
+  IN p_amount_paid DECIMAL(10,2),
+  IN p_payment_method ENUM('COD','E-Payment')
+)
+BEGIN
+  DECLARE v_order_exists INT DEFAULT 0;
+  DECLARE v_order_status ENUM('pending','preparing','ready','completed','cancelled');
+
+  IF p_amount_paid <= 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Amount paid must be positive';
+  END IF;
+
+  SELECT COUNT(*) INTO v_order_exists
+  FROM orders
+  WHERE order_id = p_order_id;
+
+  IF v_order_exists = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Order not found';
+  END IF;
+
+  SELECT status INTO v_order_status
+  FROM orders
+  WHERE order_id = p_order_id;
+
+  IF v_order_status IN ('completed','cancelled') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot process payment for completed or cancelled order';
+  END IF;
+
+  INSERT INTO transactions (order_id, user_id, amount_paid, payment_method)
+  VALUES (p_order_id, p_user_id, p_amount_paid, p_payment_method);
+
+  SELECT LAST_INSERT_ID() AS transaction_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_update_order_status` (IN `p_order_id` INT, IN `p_new_status` ENUM('pending','preparing','ready','completed','cancelled'))   BEGIN
@@ -101,7 +199,7 @@ DELIMITER ;
 CREATE TABLE `audit_logs` (
   `audit_id` int(11) NOT NULL,
   `admin_id` int(11) DEFAULT NULL,
-  `action` enum('login','logout','failed_login','order_status_change','menu_add','menu_edit','menu_delete','menu_hide','menu_featured','category_add','category_edit','category_delete','modifier_add','modifier_edit','modifier_delete','customer_view','other') NOT NULL,
+  `action` enum('login','logout','failed_login','order_status_change','order_created','order_completed_by_user','order_cancelled_by_user','menu_add','menu_edit','menu_delete','menu_hide','menu_featured','category_add','category_edit','category_delete','modifier_add','modifier_edit','modifier_delete','customization_add','customization_edit','customization_delete','customization_option_add','customization_option_edit','customization_option_delete','user_add','user_edit','user_delete','user_password_change','user_login','user_logout','user_failed_login','customer_view','other') NOT NULL,
   `target_type` varchar(50) DEFAULT NULL,
   `target_id` int(11) DEFAULT NULL,
   `customer_id` int(11) DEFAULT NULL,
@@ -192,23 +290,10 @@ CREATE TABLE `orders` (
 -- Triggers `orders`
 --
 DELIMITER $$
-CREATE TRIGGER `trg_orders_after_update_audit` AFTER UPDATE ON `orders` FOR EACH ROW BEGIN
-  IF NEW.status <> OLD.status THEN
-    INSERT INTO audit_logs (admin_id, action, target_type, order_id, details)
-    VALUES (
-      CASE WHEN @audit_admin_id IS NULL OR @audit_admin_id = 0 THEN NULL ELSE @audit_admin_id END,
-      'order_status_change',
-      'order',
-      NEW.order_id,
-      CONCAT('Order status changed from ', OLD.status, ' to ', NEW.status)
-    );
-    SET @audit_admin_id = NULL;
-  END IF;
-END
-$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `trg_orders_before_insert_validate_delivery` BEFORE INSERT ON `orders` FOR EACH ROW BEGIN
+CREATE TRIGGER `trg_BeforeOrderInsert`
+BEFORE INSERT ON `orders`
+FOR EACH ROW
+BEGIN
   IF NEW.order_type = 'delivery' THEN
     IF NEW.house_number IS NULL OR NEW.house_number = ''
        OR NEW.street IS NULL OR NEW.street = ''
@@ -216,6 +301,47 @@ CREATE TRIGGER `trg_orders_before_insert_validate_delivery` BEFORE INSERT ON `or
        OR NEW.city IS NULL OR NEW.city = '' THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Delivery orders require a complete address';
     END IF;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM orders
+    WHERE user_id = NEW.user_id
+      AND status IN ('pending','preparing','ready')
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Customer already has an active order';
+  END IF;
+END
+$$
+
+CREATE TRIGGER `trg_AfterOrderInsert`
+AFTER INSERT ON `orders`
+FOR EACH ROW
+BEGIN
+  INSERT INTO audit_logs (customer_id, target_type, order_id, action, details)
+  VALUES (
+    NEW.user_id,
+    'order',
+    NEW.order_id,
+    'order_created',
+    CONCAT('Order created with status ', NEW.status)
+  );
+END
+$$
+
+CREATE TRIGGER `trg_AfterOrderUpdate`
+AFTER UPDATE ON `orders`
+FOR EACH ROW
+BEGIN
+  IF NEW.status <> OLD.status THEN
+    INSERT INTO audit_logs (admin_id, target_type, order_id, action, details)
+    VALUES (
+      CASE WHEN @audit_admin_id IS NULL OR @audit_admin_id = 0 THEN NULL ELSE @audit_admin_id END,
+      'order',
+      NEW.order_id,
+      'order_status_change',
+      CONCAT('Order status changed from ', OLD.status, ' to ', NEW.status)
+    );
+    SET @audit_admin_id = NULL;
   END IF;
 END
 $$
@@ -351,6 +477,62 @@ CREATE TABLE `user_access_logs` (
   `event_type` enum('login','logout','failed_login','password_change_success','password_change_failed') NOT NULL,
   `event_time` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+DELIMITER $$
+CREATE TRIGGER `trg_AfterUserInsert`
+AFTER INSERT ON `users`
+FOR EACH ROW
+BEGIN
+  INSERT INTO audit_logs (customer_id, target_type, action, details)
+  VALUES (
+    NEW.user_id,
+    'customer',
+    'user_add',
+    CONCAT('Customer account created: ', NEW.email)
+  );
+END
+$$
+
+CREATE TRIGGER `trg_AfterUserUpdate`
+AFTER UPDATE ON `users`
+FOR EACH ROW
+BEGIN
+  IF NEW.password <> OLD.password THEN
+    INSERT INTO audit_logs (customer_id, target_type, action, details)
+    VALUES (
+      NEW.user_id,
+      'customer',
+      'user_password_change',
+      CONCAT('Password changed for ', NEW.email)
+    );
+  END IF;
+END
+$$
+
+CREATE TRIGGER `trg_AfterUserAccessLogInsert`
+AFTER INSERT ON `user_access_logs`
+FOR EACH ROW
+BEGIN
+  CASE NEW.event_type
+    WHEN 'login' THEN
+      INSERT INTO audit_logs (customer_id, target_type, action, details)
+      VALUES (NEW.user_id, 'customer', 'user_login', 'Customer logged in');
+    WHEN 'logout' THEN
+      INSERT INTO audit_logs (customer_id, target_type, action, details)
+      VALUES (NEW.user_id, 'customer', 'user_logout', 'Customer logged out');
+    WHEN 'failed_login' THEN
+      INSERT INTO audit_logs (customer_id, target_type, action, details)
+      VALUES (NEW.user_id, 'customer', 'user_failed_login', 'Customer failed login');
+    WHEN 'password_change_success' THEN
+      INSERT INTO audit_logs (customer_id, target_type, action, details)
+      VALUES (NEW.user_id, 'customer', 'user_password_change', 'Customer password changed successfully');
+    WHEN 'password_change_failed' THEN
+      INSERT INTO audit_logs (customer_id, target_type, action, details)
+      VALUES (NEW.user_id, 'customer', 'user_password_change', 'Customer password change failed');
+  END CASE;
+END
+$$
+DELIMITER ;
 
 --
 -- Indexes for dumped tables

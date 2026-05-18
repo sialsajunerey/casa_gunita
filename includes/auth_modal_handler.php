@@ -73,22 +73,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['auth_type'])) {
                 $first_name = ucwords(strtolower($first_name));
                 $last_name  = ucwords(strtolower($last_name));
                 $hashed = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = mysqli_prepare($conn, "INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, 'customer')");
+
+                $stmt = mysqli_prepare($conn, "CALL sp_RegisterUser(?, ?, ?, ?)");
                 mysqli_stmt_bind_param($stmt, 'ssss', $first_name, $last_name, $email, $hashed);
 
                 if (mysqli_stmt_execute($stmt)) {
-                    $new_id = mysqli_insert_id($conn);
-                    $_SESSION['user_id']   = $new_id;
-                    $_SESSION['first_name'] = $first_name;
-                    $_SESSION['last_name']  = $last_name;
-                    $_SESSION['full_name']  = trim($first_name . ' ' . $last_name);
-                    $_SESSION['role']       = 'customer';
-                    mysqli_query($conn, "INSERT INTO user_access_logs (user_id, event_type) VALUES ($new_id, 'login')");
-                    header("Location: " . $redirect_to);
-                    exit();
-                } else {
-                    $auth_error = "Registration failed. Try again.";
+                    $result = mysqli_stmt_get_result($stmt);
+                    $row = $result ? mysqli_fetch_assoc($result) : null;
+                    if ($row && isset($row['user_id'])) {
+                        $new_id = $row['user_id'];
+                        $_SESSION['user_id']   = $new_id;
+                        $_SESSION['first_name'] = $first_name;
+                        $_SESSION['last_name']  = $last_name;
+                        $_SESSION['full_name']  = trim($first_name . ' ' . $last_name);
+                        $_SESSION['role']       = 'customer';
+                        header("Location: " . $redirect_to);
+                        exit();
+                    }
                 }
+
+                $auth_error = "Registration failed. Try again.";
             }
         }
     }

@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $itemsJson = json_encode($items);
 
         $stmt = mysqli_prepare($conn,
-            "CALL sp_create_order(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            "CALL sp_PlaceOrder(?, ?, ?, ?, ?, ?, ?, ?, ?)");
         mysqli_stmt_bind_param($stmt, 'issssssss',
             $user_id,
             $order_type,
@@ -76,9 +76,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $row = $result ? mysqli_fetch_assoc($result) : null;
             if ($row && isset($row['order_id'])) {
                 $order_id = $row['order_id'];
-                $_SESSION['cart'] = [];
-                header('Location: receipt.php?order_id=' . $order_id);
-                exit();
+
+                $paymentStmt = mysqli_prepare($conn,
+                    "CALL sp_ProcessPayment(?, ?, ?, ?)");
+                mysqli_stmt_bind_param($paymentStmt, 'iids',
+                    $order_id,
+                    $user_id,
+                    $total,
+                    $payment_method);
+
+                if (mysqli_stmt_execute($paymentStmt)) {
+                    $_SESSION['cart'] = [];
+                    header('Location: receipt.php?order_id=' . $order_id);
+                    exit();
+                }
             }
         }
 
