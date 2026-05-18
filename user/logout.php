@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db.php';
+require_once '../includes/db_user.php';
 require_once '../includes/session.php';
 
 // Log logout before destroying session
