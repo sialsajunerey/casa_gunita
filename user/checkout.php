@@ -1,9 +1,11 @@
 <?php
+
 require_once '../includes/db.php';
 require_once '../includes/session.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
 requireCustomer();
+// TEMP DEBUG - remove after fix
 
 // Redirect if cart is empty
 if (empty($_SESSION['cart'])) {
@@ -76,6 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $row = $result ? mysqli_fetch_assoc($result) : null;
             if ($row && isset($row['order_id'])) {
                 $order_id = $row['order_id'];
+                
+                mysqli_free_result($result);
+                mysqli_stmt_close($stmt);
 
                 $paymentStmt = mysqli_prepare($conn,
                     "CALL sp_ProcessPayment(?, ?, ?, ?)");
@@ -90,6 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: receipt.php?order_id=' . $order_id);
                     exit();
                 }
+                mysqli_stmt_close($paymentStmt);
             }
         }
 
