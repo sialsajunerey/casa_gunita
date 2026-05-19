@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db_user.php';
+require_once '../includes/db.php';
 require_once '../includes/session.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
@@ -58,73 +58,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $itemsJson = json_encode($items);
 
-        // --- Server-side stock validation to prevent stored-procedure exceptions ---
-        $stockOk = true;
-        $stockStmt = mysqli_prepare($conn, "SELECT stock_quantity FROM inventory WHERE product_id = ?");
-        if ($stockStmt) {
-            foreach ($items as $it) {
-                $pid = (int)$it['product_id'];
-                $qty = (int)$it['quantity'];
-                mysqli_stmt_bind_param($stockStmt, 'i', $pid);
-                mysqli_stmt_execute($stockStmt);
-                $res = mysqli_stmt_get_result($stockStmt);
-                $row = $res ? mysqli_fetch_assoc($res) : null;
-                $stock = isset($row['stock_quantity']) ? (int)$row['stock_quantity'] : null;
-                if ($stock === null || $stock < $qty) {
-                    $productName = isset($cart[$pid]['name']) ? htmlspecialchars($cart[$pid]['name'], ENT_QUOTES, 'UTF-8') : $pid;
-                    $error = "Insufficient stock for product: {$productName}.";
-                    $stockOk = false;
-                    break;
-                }
-            }
-            mysqli_stmt_close($stockStmt);
-        }
+        $stmt = mysqli_prepare($conn,
+            "CALL sp_PlaceOrder(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issssssss',
+            $user_id,
+            $order_type,
+            $payment_method,
+            $notes,
+            $house_number,
+            $street,
+            $barangay,
+            $city,
+            $itemsJson);
 
-        if ($stockOk) {
-            $stmt = mysqli_prepare($conn,
-                "CALL sp_PlaceOrder(?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            mysqli_stmt_bind_param($stmt, 'issssssss',
-                $user_id,
-                $order_type,
-                $payment_method,
-                $notes,
-                $house_number,
-                $street,
-                $barangay,
-                $city,
-                $itemsJson);
+        if (mysqli_stmt_execute($stmt)) {
+            $result = mysqli_stmt_get_result($stmt);
+            $row = $result ? mysqli_fetch_assoc($result) : null;
+            if ($row && isset($row['order_id'])) {
+                $order_id = $row['order_id'];
 
-            if (mysqli_stmt_execute($stmt)) {
-                $result = mysqli_stmt_get_result($stmt);
-                $row = $result ? mysqli_fetch_assoc($result) : null;
-                
-                // Consume all remaining result sets from sp_PlaceOrder
-                while (mysqli_stmt_more_results($stmt)) {
-                    mysqli_stmt_next_result($stmt);
-                }
-                
-                if ($row && isset($row['order_id'])) {
-                    $order_id = $row['order_id'];
+                $paymentStmt = mysqli_prepare($conn,
+                    "CALL sp_ProcessPayment(?, ?, ?, ?)");
+                mysqli_stmt_bind_param($paymentStmt, 'iids',
+                    $order_id,
+                    $user_id,
+                    $total,
+                    $payment_method);
 
-                    $paymentStmt = mysqli_prepare($conn,
-                        "CALL sp_ProcessPayment(?, ?, ?, ?)");
-                    mysqli_stmt_bind_param($paymentStmt, 'iids',
-                        $order_id,
-                        $user_id,
-                        $total,
-                        $payment_method);
-
-                    if (mysqli_stmt_execute($paymentStmt)) {
-                        // Consume all remaining result sets from sp_ProcessPayment
-                        $result2 = mysqli_stmt_get_result($paymentStmt);
-                        while (mysqli_stmt_more_results($paymentStmt)) {
-                            mysqli_stmt_next_result($paymentStmt);
-                        }
-                        
-                        $_SESSION['cart'] = [];
-                        header('Location: receipt.php?order_id=' . $order_id);
-                        exit();
-                    }
+                if (mysqli_stmt_execute($paymentStmt)) {
+                    $_SESSION['cart'] = [];
+                    header('Location: receipt.php?order_id=' . $order_id);
+                    exit();
                 }
             }
         }

@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db_user.php';
+require_once '../includes/db.php';
 require_once '../includes/session.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
@@ -468,7 +468,6 @@ function getCartTotalAmount($cart) {
 </script>
 
 <script src="search.js"></script>
-<script src="order-status-overlay.js"></script>
 
 <?php include_once '../includes/order_status_overlay.php'; ?>
 
