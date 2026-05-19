@@ -60,7 +60,7 @@ while ($row = mysqli_fetch_assoc($result)) {
 <body>
 
 <!-- ===== NAVBAR ===== -->
-<<nav class="navbar">
+<nav class="navbar">
     <div class="nav-logo">
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
@@ -208,7 +208,7 @@ while ($row = mysqli_fetch_assoc($result)) {
             <h1 class="auth-modal-title">Sign Up</h1>
             <p class="auth-modal-subtitle">Join us for authentic Filipino favorites.</p>
 
-            <?php if ($auth_error && ($_POST['auth_type'] ?? '') === 'register'): ?>
+            <?php if ($auth_error && ($_POST['auth_type'] ?? '') === 'register': ?>
                 <div class="auth-modal-error"><?= htmlspecialchars($auth_error) ?></div>
             <?php endif; ?>
 
@@ -333,18 +333,46 @@ if (accountBtn && accountDropdown) {
     });
 }
 
-// Hide/show category bar on scroll
+// ══════════════════════════════════════
+// HIDE/SHOW CATEGORY BAR ON SCROLL
+// ══════════════════════════════════════
 const categoryBar = document.getElementById('categoryBar');
-let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-window.addEventListener('scroll', function() {
+let lastScrollTop = 0;
+let scrollThreshold = 10;
+let ticking = false;
+
+function updateCategoryBar() {
     const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-    if (!categoryBar) return;
-    if (currentScroll > lastScrollTop + 10) {
-        categoryBar.classList.add('hidden');
-    } else if (currentScroll < lastScrollTop - 10) {
+    
+    if (!categoryBar) {
+        ticking = false;
+        return;
+    }
+    
+    // Only hide/show after scrolling past the category bar's initial position
+    // or if we've scrolled at least a bit down from top
+    if (currentScroll > 80) {
+        if (currentScroll > lastScrollTop + scrollThreshold) {
+            // Scrolling DOWN - hide the bar
+            categoryBar.classList.add('hidden');
+        } else if (currentScroll < lastScrollTop - scrollThreshold) {
+            // Scrolling UP - show the bar
+            categoryBar.classList.remove('hidden');
+        }
+    } else {
+        // Near top of page - always show
         categoryBar.classList.remove('hidden');
     }
-    lastScrollTop = currentScroll;
+    
+    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+    ticking = false;
+}
+
+window.addEventListener('scroll', function() {
+    if (!ticking) {
+        window.requestAnimationFrame(updateCategoryBar);
+        ticking = true;
+    }
 });
 </script>
 
