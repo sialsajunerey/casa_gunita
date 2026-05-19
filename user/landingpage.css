@@ -316,7 +316,9 @@ a { text-decoration: none; color: inherit; }
   margin: 4px 0;
 }
 
-/* ── Hamburger Menu (mobile) ── */
+/* ════════════════════════════
+   HAMBURGER MENU (Mobile)
+════════════════════════════ */
 .nav-hamburger {
   display: none;
   background: none;
@@ -327,10 +329,54 @@ a { text-decoration: none; color: inherit; }
   border-radius: 4px;
   transition: background 0.2s;
   flex-shrink: 0;
+  z-index: 101;
 }
 .nav-hamburger:hover { background: rgba(232, 209, 145, 0.1); }
 
-/* ── Mobile Nav Drawer ── */
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 24px;
+  height: 24px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: center;
+  width: 100%;
+}
+
+.hamburger-icon span:nth-child(2) { width: 70%; }
+.nav-hamburger.open .hamburger-icon span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open .hamburger-icon span:nth-child(2) { opacity: 0; }
+.nav-hamburger.open .hamburger-icon span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ════════════════════════════
+   MOBILE NAV DRAWER
+════════════════════════════ */
+.nav-drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 98;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.nav-drawer-overlay.visible {
+  display: block;
+  opacity: 1;
+  pointer-events: all;
+}
+
 .nav-drawer {
   display: none;
   position: fixed;
@@ -345,15 +391,17 @@ a { text-decoration: none; color: inherit; }
   flex-direction: column;
   padding: 16px 24px 24px;
   gap: 4px;
-  transform: translateY(-10px);
+  transform: translateY(-100%);
   opacity: 0;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
+
 .nav-drawer.open {
   display: flex;
   transform: translateY(0);
   opacity: 1;
 }
+
 .nav-drawer a {
   color: #dce4cf;
   font-family: 'Public Sans', sans-serif;
@@ -365,8 +413,21 @@ a { text-decoration: none; color: inherit; }
   opacity: 0.85;
   transition: opacity 0.2s, color 0.2s;
 }
+
 .nav-drawer a:last-child { border-bottom: none; }
 .nav-drawer a:hover { opacity: 1; color: var(--gold); }
+
+.nav-drawer-divider {
+  border: none;
+  border-top: 1px solid rgba(232, 209, 145, 0.15);
+  margin: 8px 0;
+}
+
+.nav-drawer-auth {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+}
 
 /* ── Navbar Auth Buttons ── */
 .nav-auth-btn {
@@ -444,7 +505,7 @@ a { text-decoration: none; color: inherit; }
   border: 1px solid rgba(99, 40, 25, 0.2);
   border-radius: 6px; background: white;
   font-family: 'Public Sans', sans-serif;
-  font-size: 16px; /* prevents iOS zoom on focus */
+  font-size: 16px;
 }
 .auth-modal-field.password-field {
   /* Container for absolute positioning */
@@ -1399,7 +1460,9 @@ a { text-decoration: none; color: inherit; }
   .dish-card { width: 260px; height: 390px; }
 }
 
-/* ── 900px: transition zone ── */
+/* ════════════════════════════
+   MOBILE BREAKPOINT: 900px
+════════════════════════════ */
 @media (max-width: 900px) {
   /* Hide text nav links, show hamburger */
   .nav-links { display: none; }

@@ -34,12 +34,83 @@ $customers = mysqli_stmt_get_result($stmt);
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="customers.css?v=<?= filemtime('customers.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+/* ══════════════════════════════════════
+   HAMBURGER + COLLAPSIBLE SIDEBAR
+══════════════════════════════════════ */
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.hamburger:hover { background: rgba(33,3,3,0.08); }
+.hamburger span {
+    display: block;
+    height: 2px;
+    background: #210303;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+    width: 100%;
+}
+.hamburger span:nth-child(2) { width: 70%; }
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 49;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sidebar {
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+.sidebar.collapsed { transform: translateX(-100%); }
+.main { transition: margin-left 0.3s ease; }
+.main.expanded { margin-left: 0 !important; }
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 50;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main,
+    .main.expanded { margin-left: 0 !important; }
+    .topbar { padding: 0 16px; gap: 12px; }
+    .topbar-title { font-size: 0.95rem; }
+    .content { padding: 16px; }
+    .top-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .top-bar-right { flex-wrap: wrap; }
+}
+    </style>
 </head>
 <body>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<aside class="sidebar" id="sidebar">
+<<aside class="sidebar" id="sidebar">
     <div class="sidebar-logo"><div class="brand">Casa Gunita</div></div>
     <ul class="nav-list">
         <li><a href="index.php">Dashboard</a></li>
@@ -393,6 +464,101 @@ document.getElementById('clearAccessLogDate').addEventListener('click', function
     document.getElementById('clearAccessLogDate').classList.add('is-hidden');
     if (currentAccessLogUserId) {
         fetchAccessLog(currentAccessLogUserId, '', '', getAccessLogActionFilter());
+    }
+});
+</script>
+
+<script>
+/* ══════════════════════════════════════
+   HAMBURGER — all screen sizes
+══════════════════════════════════════ */
+const hamburgerBtn   = document.getElementById('hamburgerBtn');
+const sidebar        = document.getElementById('sidebar');
+const mainEl         = document.getElementById('main');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+const isMobile = () => window.innerWidth <= 768;
+
+function openSidebar() {
+    hamburgerBtn.classList.add('open');
+    if (isMobile()) {
+        sidebar.classList.add('open');
+        sidebar.classList.remove('collapsed');
+        sidebarOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '1');
+}
+
+function closeSidebar() {
+    hamburgerBtn.classList.remove('open');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('collapsed');
+        mainEl.classList.add('expanded');
+    }
+    localStorage.setItem('sidebarOpen', '0');
+}
+
+function toggleSidebar() {
+    const desktopOpen = !isMobile() && !sidebar.classList.contains('collapsed');
+    const mobileOpen  =  isMobile() &&  sidebar.classList.contains('open');
+    (desktopOpen || mobileOpen) ? closeSidebar() : openSidebar();
+}
+
+(function init() {
+    const saved = localStorage.getItem('sidebarOpen');
+    if (isMobile()) {
+        sidebar.classList.remove('open');
+        mainEl.classList.remove('expanded');
+    } else {
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    }
+})();
+
+hamburgerBtn.addEventListener('click', toggleSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeSidebar();
+        closeAccessLog();
+    }
+});
+
+window.addEventListener('resize', () => {
+    if (!isMobile()) {
+        sidebarOverlay.classList.remove('visible');
+        sidebar.classList.remove('open');
+        document.body.style.overflow = '';
+        const saved = localStorage.getItem('sidebarOpen');
+        if (saved === '0') {
+            sidebar.classList.add('collapsed');
+            mainEl.classList.add('expanded');
+            hamburgerBtn.classList.remove('open');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.classList.remove('expanded');
+            hamburgerBtn.classList.add('open');
+        }
+    } else {
+        sidebar.classList.remove('collapsed');
+        mainEl.classList.remove('expanded');
+        mainEl.style.marginLeft = '';
     }
 });
 </script>

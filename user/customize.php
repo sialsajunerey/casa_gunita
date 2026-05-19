@@ -92,11 +92,14 @@ function buildOptionLabel($option) {
         <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
         <div class="search-results-dropdown" id="searchResults"></div>
     </div>
+    
+    <!-- Desktop Navigation -->
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
         <a href="index.php#about">About</a>
     </div>
+    
     <div class="nav-icons">
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -126,7 +129,7 @@ function buildOptionLabel($option) {
         <?php else: ?>
             <button class="nav-auth-btn" onclick="openAuthModal('login')">Login</button>
             <button class="nav-auth-btn reg" onclick="openAuthModal('register')">Register</button>
-        <?php endif; ?>
+        <?php endif;
     </div>
 </nav>
 
