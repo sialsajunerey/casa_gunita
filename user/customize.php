@@ -443,6 +443,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updatePrice();
+
+    // ══════════════════════════════════════
+    // MOBILE NAVIGATION DRAWER
+    // ══════════════════════════════════════
+    const navHamburger = document.getElementById('navHamburger');
+    const navDrawer = document.getElementById('navDrawer');
+    const navDrawerOverlay = document.getElementById('navDrawerOverlay');
+
+    function openNavDrawer() {
+        navHamburger.classList.add('open');
+        navDrawer.classList.add('open');
+        navDrawerOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeNavDrawer() {
+        navHamburger.classList.remove('open');
+        navDrawer.classList.remove('open');
+        navDrawerOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+
+    function toggleNavDrawer() {
+        if (navDrawer.classList.contains('open')) {
+            closeNavDrawer();
+        } else {
+            openNavDrawer();
+        }
+    }
+
+    navHamburger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleNavDrawer();
+    });
+
+    navDrawerOverlay.addEventListener('click', closeNavDrawer);
+
+    // Close drawer on nav link click
+    document.querySelectorAll('.nav-drawer a').forEach(link => {
+        link.addEventListener('click', () => {
+            closeNavDrawer();
+        });
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeNavDrawer();
+            closeAuthModal();
+        }
+    });
 </script>
 
 <script src="search.js"></script>

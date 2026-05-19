@@ -119,11 +119,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
         <div class="search-results-dropdown" id="searchResults"></div>
     </div>
+
+    <!-- Desktop Navigation -->
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
         <a href="about.php">About</a>
     </div>
+
     <div class="nav-icons">
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -150,7 +153,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <!-- Mobile Hamburger Button -->
+    <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
 </nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="nav-drawer-overlay" id="navDrawerOverlay"></div>
+<div class="nav-drawer" id="navDrawer">
+    <a href="index.php">Home</a>
+    <a href="menu.php">Menu</a>
+    <a href="about.php">About</a>
+    <a href="order_status.php">My Orders</a>
+</div>
 
 <!-- ===== CONTENT ===== -->
 <div class="container">
@@ -330,6 +351,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeActiveOrderModal();
+    });
+
+    // ══════════════════════════════════════
+    // MOBILE NAVIGATION DRAWER
+    // ══════════════════════════════════════
+    const navHamburger = document.getElementById('navHamburger');
+    const navDrawer = document.getElementById('navDrawer');
+    const navDrawerOverlay = document.getElementById('navDrawerOverlay');
+
+    function openNavDrawer() {
+        navHamburger.classList.add('open');
+        navDrawer.classList.add('open');
+        navDrawerOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeNavDrawer() {
+        navHamburger.classList.remove('open');
+        navDrawer.classList.remove('open');
+        navDrawerOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+
+    function toggleNavDrawer() {
+        if (navDrawer.classList.contains('open')) {
+            closeNavDrawer();
+        } else {
+            openNavDrawer();
+        }
+    }
+
+    navHamburger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleNavDrawer();
+    });
+
+    navDrawerOverlay.addEventListener('click', closeNavDrawer);
+
+    // Close drawer on nav link click
+    document.querySelectorAll('.nav-drawer a').forEach(link => {
+        link.addEventListener('click', () => {
+            closeNavDrawer();
+        });
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeNavDrawer();
+        }
     });
 </script>
 
