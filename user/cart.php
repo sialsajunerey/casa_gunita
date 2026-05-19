@@ -161,14 +161,14 @@ function getCartTotalAmount($cart) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart — Casa Gunita</title>
-    <link rel="stylesheet" href="landingpage.css">
-    <link rel="stylesheet" href="cart.css?v=1.4">
+    <link rel="stylesheet" href="landingpage.css?v=<?= filemtime('landingpage.css') ?>">
+    <link rel="stylesheet" href="cart.css?v=<?= filemtime('cart.css') ?>">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- ===== NAVBAR ===== -->
-<nav class="navbar">
+<<nav class="navbar">
     <div class="nav-logo">
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
@@ -176,11 +176,14 @@ function getCartTotalAmount($cart) {
         <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
         <div class="search-results-dropdown" id="searchResults"></div>
     </div>
+    
+    <!-- Desktop Navigation -->
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
         <a href="index.php#about">About</a>
     </div>
+    
     <div class="nav-icons">
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -212,7 +215,34 @@ function getCartTotalAmount($cart) {
             <button class="nav-auth-btn reg" onclick="openAuthModal('register')">Register</button>
         <?php endif; ?>
     </div>
+    
+    <!-- Mobile Hamburger Button -->
+    <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
 </nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="nav-drawer-overlay" id="navDrawerOverlay"></div>
+<div class="nav-drawer" id="navDrawer">
+    <a href="index.php">Home</a>
+    <a href="menu.php">Menu</a>
+    <a href="index.php#about">About</a>
+    <a href="index.php#contact">Contact</a>
+    <a href="index.php#featured">Featured Dishes</a>
+    
+    <?php if (!isset($_SESSION['user_id'])): ?>
+        <hr class="nav-drawer-divider">
+        <div class="nav-drawer-auth">
+            <button class="nav-auth-btn" onclick="openAuthModal('login'); closeNavDrawer();">Login</button>
+            <button class="nav-auth-btn reg" onclick="openAuthModal('register'); closeNavDrawer();">Register</button>
+        </div>
+    <?php endif; ?>
+</div>
 
 <!-- ===== CONTENT ===== -->
 <div class="container">
@@ -357,114 +387,166 @@ function getCartTotalAmount($cart) {
 </div>
 
 <script>
-    function openAuthModal(view, redirectTo = '') {
-        document.getElementById('authModal').classList.add('active');
-        showAuthView(view);
-        document.querySelectorAll('.auth-redirect-input').forEach(input => {
-            input.value = redirectTo;
-        });
+// ══════════════════════════════════════
+// MOBILE NAVIGATION DRAWER
+// ══════════════════════════════════════
+const navHamburger = document.getElementById('navHamburger');
+const navDrawer = document.getElementById('navDrawer');
+const navDrawerOverlay = document.getElementById('navDrawerOverlay');
+
+function openNavDrawer() {
+    navHamburger.classList.add('open');
+    navDrawer.classList.add('open');
+    navDrawerOverlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeNavDrawer() {
+    navHamburger.classList.remove('open');
+    navDrawer.classList.remove('open');
+    navDrawerOverlay.classList.remove('visible');
+    document.body.style.overflow = '';
+}
+
+function toggleNavDrawer() {
+    if (navDrawer.classList.contains('open')) {
+        closeNavDrawer();
+    } else {
+        openNavDrawer();
     }
-    function closeAuthModal() {
-        document.getElementById('authModal').classList.remove('active');
+}
+
+navHamburger.addEventListener('click', function(e) {
+    e.stopPropagation();
+    toggleNavDrawer();
+});
+
+navDrawerOverlay.addEventListener('click', closeNavDrawer);
+
+// Close drawer on nav link click
+document.querySelectorAll('.nav-drawer a').forEach(link => {
+    link.addEventListener('click', () => {
+        closeNavDrawer();
+    });
+});
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeNavDrawer();
+        closeAuthModal();
     }
-    function showAuthView(view) {
-        document.getElementById('loginView').style.display = (view === 'login') ? 'block' : 'none';
-        document.getElementById('registerView').style.display = (view === 'register') ? 'block' : 'none';
-    }
-    function initAuthPasswordToggles() {
-        document.querySelectorAll('.auth-modal-field.password-field .password-toggle').forEach(button => {
-            const field = button.closest('.auth-modal-field.password-field');
-            const input = field ? field.querySelector('input') : null;
-            if (!input) return;
+});
+
+// Auth Modal
+function openAuthModal(view, redirectTo = '') {
+    document.getElementById('authModal').classList.add('active');
+    showAuthView(view);
+    document.querySelectorAll('.auth-redirect-input').forEach(input => {
+        input.value = redirectTo;
+    });
+}
+function closeAuthModal() {
+    document.getElementById('authModal').classList.remove('active');
+}
+function showAuthView(view) {
+    document.getElementById('loginView').style.display = (view === 'login') ? 'block' : 'none';
+    document.getElementById('registerView').style.display = (view === 'register') ? 'block' : 'none';
+}
+function initAuthPasswordToggles() {
+    document.querySelectorAll('.auth-modal-field.password-field .password-toggle').forEach(button => {
+        const field = button.closest('.auth-modal-field.password-field');
+        const input = field ? field.querySelector('input') : null;
+        if (!input) return;
 
         const eyeOpen = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
         const eyeClosed = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>';
 
         button.innerHTML = input.type === 'password' ? eyeOpen : eyeClosed;
 
-            button.addEventListener('click', () => {
-                const show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
+        button.addEventListener('click', () => {
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
             button.innerHTML = show ? eyeClosed : eyeOpen;
-                button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-            });
-        });
-    }
-    initAuthPasswordToggles();
-    window.onclick = function(event) {
-        if (event.target == document.getElementById('authModal')) closeAuthModal();
-    }
-
-    <?php if ($auth_error): ?>
-    document.addEventListener('DOMContentLoaded', () => {
-        openAuthModal('<?= htmlspecialchars($_POST['auth_type']) ?>', '<?= htmlspecialchars($_POST['redirect_to'] ?? '') ?>');
-    });
-    <?php endif; ?>
-
-    // Account dropdown
-    const accountBtn = document.getElementById('accountBtn');
-    const accountDropdown = document.getElementById('accountDropdown');
-    if (accountBtn && accountDropdown) {
-        accountBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            accountDropdown.classList.toggle('open');
-        });
-        document.addEventListener('click', function() {
-            accountDropdown.classList.remove('open');
-        });
-    }
-
-    // Cart totals
-    function formatCurrency(value) {
-        return '₱' + value.toFixed(2);
-    }
-
-    function decreaseQty(btn) {
-        const input = btn.nextElementSibling;
-        const val = Math.max(1, parseInt(input.value) - 1);
-        input.value = val;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    function increaseQty(btn) {
-        const input = btn.previousElementSibling;
-        const val = Math.min(99, parseInt(input.value) + 1);
-        input.value = val;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    function updateCartTotals() {
-        let total = 0;
-        let itemCount = 0;
-        document.querySelectorAll('.subtotal-cell').forEach(function(cell) {
-            const row = cell.dataset.row;
-            const qtyInput = document.querySelector('.quantity-input[data-row="' + row + '"]');
-            if (!qtyInput) return;
-            const price = parseFloat(qtyInput.dataset.price) || 0;
-            const qty = Math.max(1, parseInt(qtyInput.value) || 1);
-            cell.textContent = formatCurrency(price * qty);
-            total += price * qty;
-            itemCount += qty;
-        });
-        const cartTotal = document.getElementById('cart-total-value');
-        const cartCount = document.getElementById('cart-item-count');
-        if (cartTotal) cartTotal.textContent = formatCurrency(total);
-        if (cartCount) cartCount.textContent = itemCount;
-    }
-
-    document.querySelectorAll('.quantity-input').forEach(function(input) {
-        let timer;
-        input.addEventListener('input', function() {
-            if (this.value !== "" && this.value < 1) this.value = 1;
-            updateCartTotals();
-            const form = input.closest('form');
-            if (!form || input.value < 1) return;
-            clearTimeout(timer);
-            timer = setTimeout(function() { form.submit(); }, 500);
+            button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
         });
     });
+}
+initAuthPasswordToggles();
+window.onclick = function(event) {
+    if (event.target == document.getElementById('authModal')) closeAuthModal();
+}
 
-    updateCartTotals();
+<?php if ($auth_error): ?>
+document.addEventListener('DOMContentLoaded', () => {
+    openAuthModal('<?= htmlspecialchars($_POST['auth_type']) ?>', '<?= htmlspecialchars($_POST['redirect_to'] ?? '') ?>');
+});
+<?php endif; ?>
+
+// Account dropdown
+const accountBtn = document.getElementById('accountBtn');
+const accountDropdown = document.getElementById('accountDropdown');
+if (accountBtn && accountDropdown) {
+    accountBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        accountDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+        accountDropdown.classList.remove('open');
+    });
+}
+
+// Cart totals
+function formatCurrency(value) {
+    return '₱' + value.toFixed(2);
+}
+
+function decreaseQty(btn) {
+    const input = btn.nextElementSibling;
+    const val = Math.max(1, parseInt(input.value) - 1);
+    input.value = val;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function increaseQty(btn) {
+    const input = btn.previousElementSibling;
+    const val = Math.min(99, parseInt(input.value) + 1);
+    input.value = val;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function updateCartTotals() {
+    let total = 0;
+    let itemCount = 0;
+    document.querySelectorAll('.subtotal-cell').forEach(function(cell) {
+        const row = cell.dataset.row;
+        const qtyInput = document.querySelector('.quantity-input[data-row="' + row + '"]');
+        if (!qtyInput) return;
+        const price = parseFloat(qtyInput.dataset.price) || 0;
+        const qty = Math.max(1, parseInt(qtyInput.value) || 1);
+        cell.textContent = formatCurrency(price * qty);
+        total += price * qty;
+        itemCount += qty;
+    });
+    const cartTotal = document.getElementById('cart-total-value');
+    const cartCount = document.getElementById('cart-item-count');
+    if (cartTotal) cartTotal.textContent = formatCurrency(total);
+    if (cartCount) cartCount.textContent = itemCount;
+}
+
+document.querySelectorAll('.quantity-input').forEach(function(input) {
+    let timer;
+    input.addEventListener('input', function() {
+        if (this.value !== "" && this.value < 1) this.value = 1;
+        updateCartTotals();
+        const form = input.closest('form');
+        if (!form || input.value < 1) return;
+        clearTimeout(timer);
+        timer = setTimeout(function() { form.submit(); }, 500);
+    });
+});
+
+updateCartTotals();
 </script>
 
 <script src="search.js"></script>

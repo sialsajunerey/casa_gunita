@@ -53,14 +53,14 @@ while ($row = mysqli_fetch_assoc($result)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menu — Casa Gunita</title>
-    <link rel="stylesheet" href="landingpage.css">
-    <link rel="stylesheet" href="menu.css">
+    <link rel="stylesheet" href="landingpage.css?v=<?= filemtime('landingpage.css') ?>">
+    <link rel="stylesheet" href="menu.css?v=<?= filemtime('menu.css') ?>">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- ===== NAVBAR ===== -->
-<nav class="navbar">
+<<nav class="navbar">
     <div class="nav-logo">
         <img src="casalogo.png" alt="Casa Gunita Logo">
     </div>
@@ -68,11 +68,14 @@ while ($row = mysqli_fetch_assoc($result)) {
         <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
         <div class="search-results-dropdown" id="searchResults"></div>
     </div>
+    
+    <!-- Desktop Navigation -->
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
         <a href="index.php#about">About</a>
     </div>
+    
     <div class="nav-icons">
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -104,7 +107,34 @@ while ($row = mysqli_fetch_assoc($result)) {
             <button class="nav-auth-btn reg" onclick="openAuthModal('register')">Register</button>
         <?php endif; ?>
     </div>
+    
+    <!-- Mobile Hamburger Button -->
+    <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
 </nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="nav-drawer-overlay" id="navDrawerOverlay"></div>
+<div class="nav-drawer" id="navDrawer">
+    <a href="index.php">Home</a>
+    <a href="menu.php">Menu</a>
+    <a href="index.php#about">About</a>
+    <a href="index.php#contact">Contact</a>
+    <a href="index.php#featured">Featured Dishes</a>
+    
+    <?php if (!isset($_SESSION['user_id'])): ?>
+        <hr class="nav-drawer-divider">
+        <div class="nav-drawer-auth">
+            <button class="nav-auth-btn" onclick="openAuthModal('login'); closeNavDrawer();">Login</button>
+            <button class="nav-auth-btn reg" onclick="openAuthModal('register'); closeNavDrawer();">Register</button>
+        </div>
+    <?php endif; ?>
+</div>
 
 <!-- ===== CONTENT ===== -->
 <div class="content">
@@ -197,6 +227,58 @@ while ($row = mysqli_fetch_assoc($result)) {
 </div>
 
 <script>
+// ══════════════════════════════════════
+// MOBILE NAVIGATION DRAWER
+// ══════════════════════════════════════
+const navHamburger = document.getElementById('navHamburger');
+const navDrawer = document.getElementById('navDrawer');
+const navDrawerOverlay = document.getElementById('navDrawerOverlay');
+
+function openNavDrawer() {
+    navHamburger.classList.add('open');
+    navDrawer.classList.add('open');
+    navDrawerOverlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeNavDrawer() {
+    navHamburger.classList.remove('open');
+    navDrawer.classList.remove('open');
+    navDrawerOverlay.classList.remove('visible');
+    document.body.style.overflow = '';
+}
+
+function toggleNavDrawer() {
+    if (navDrawer.classList.contains('open')) {
+        closeNavDrawer();
+    } else {
+        openNavDrawer();
+    }
+}
+
+navHamburger.addEventListener('click', function(e) {
+    e.stopPropagation();
+    toggleNavDrawer();
+});
+
+navDrawerOverlay.addEventListener('click', closeNavDrawer);
+
+// Close drawer on nav link click
+document.querySelectorAll('.nav-drawer a').forEach(link => {
+    link.addEventListener('click', () => {
+        closeNavDrawer();
+    });
+});
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeNavDrawer();
+        closeAuthModal();
+    }
+});
+
+// Auth Modal
 function openAuthModal(view) {
     document.getElementById('authModal').classList.add('active');
     showAuthView(view);
@@ -237,35 +319,33 @@ document.addEventListener('DOMContentLoaded', () => {
     openAuthModal('<?= htmlspecialchars($_POST['auth_type']) ?>');
 });
 <?php endif; ?>
-</script>
 
-<script>
-    // Account dropdown
-    const accountBtn = document.getElementById('accountBtn');
-    const accountDropdown = document.getElementById('accountDropdown');
-    if (accountBtn && accountDropdown) {
-        accountBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            accountDropdown.classList.toggle('open');
-        });
-        document.addEventListener('click', function() {
-            accountDropdown.classList.remove('open');
-        });
-    }
-
-    // Hide/show category bar on scroll
-    const categoryBar = document.getElementById('categoryBar');
-    let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    window.addEventListener('scroll', function() {
-        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-        if (!categoryBar) return;
-        if (currentScroll > lastScrollTop + 10) {
-            categoryBar.classList.add('hidden');
-        } else if (currentScroll < lastScrollTop - 10) {
-            categoryBar.classList.remove('hidden');
-        }
-        lastScrollTop = currentScroll;
+// Account dropdown
+const accountBtn = document.getElementById('accountBtn');
+const accountDropdown = document.getElementById('accountDropdown');
+if (accountBtn && accountDropdown) {
+    accountBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        accountDropdown.classList.toggle('open');
     });
+    document.addEventListener('click', function() {
+        accountDropdown.classList.remove('open');
+    });
+}
+
+// Hide/show category bar on scroll
+const categoryBar = document.getElementById('categoryBar');
+let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+window.addEventListener('scroll', function() {
+    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+    if (!categoryBar) return;
+    if (currentScroll > lastScrollTop + 10) {
+        categoryBar.classList.add('hidden');
+    } else if (currentScroll < lastScrollTop - 10) {
+        categoryBar.classList.remove('hidden');
+    }
+    lastScrollTop = currentScroll;
+});
 </script>
 
 <script src="search.js"></script>

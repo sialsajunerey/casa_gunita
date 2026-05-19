@@ -92,11 +92,14 @@ function buildOptionLabel($option) {
         <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
         <div class="search-results-dropdown" id="searchResults"></div>
     </div>
+    
+    <!-- Desktop Navigation -->
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
         <a href="index.php#about">About</a>
     </div>
+    
     <div class="nav-icons">
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -126,7 +129,7 @@ function buildOptionLabel($option) {
         <?php else: ?>
             <button class="nav-auth-btn" onclick="openAuthModal('login')">Login</button>
             <button class="nav-auth-btn reg" onclick="openAuthModal('register')">Register</button>
-        <?php endif; ?>
+        <?php endif;
     </div>
 </nav>
 
@@ -440,6 +443,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updatePrice();
+
+    // ══════════════════════════════════════
+    // MOBILE NAVIGATION DRAWER
+    // ══════════════════════════════════════
+    const navHamburger = document.getElementById('navHamburger');
+    const navDrawer = document.getElementById('navDrawer');
+    const navDrawerOverlay = document.getElementById('navDrawerOverlay');
+
+    function openNavDrawer() {
+        navHamburger.classList.add('open');
+        navDrawer.classList.add('open');
+        navDrawerOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeNavDrawer() {
+        navHamburger.classList.remove('open');
+        navDrawer.classList.remove('open');
+        navDrawerOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+
+    function toggleNavDrawer() {
+        if (navDrawer.classList.contains('open')) {
+            closeNavDrawer();
+        } else {
+            openNavDrawer();
+        }
+    }
+
+    navHamburger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleNavDrawer();
+    });
+
+    navDrawerOverlay.addEventListener('click', closeNavDrawer);
+
+    // Close drawer on nav link click
+    document.querySelectorAll('.nav-drawer a').forEach(link => {
+        link.addEventListener('click', () => {
+            closeNavDrawer();
+        });
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeNavDrawer();
+            closeAuthModal();
+        }
+    });
 </script>
 
 <script src="search.js"></script>
