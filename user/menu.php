@@ -53,8 +53,8 @@ while ($row = mysqli_fetch_assoc($result)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menu — Casa Gunita</title>
-    <link rel="stylesheet" href="landingpage.css?v=<?= filemtime('landingpage.css') ?>">
-    <link rel="stylesheet" href="menu.css?v=<?= filemtime('menu.css') ?>">
+    <link rel="stylesheet" href="landingpage.css">
+    <link rel="stylesheet" href="menu.css">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:wght@400;500&family=Noto+Sans+Tagalog&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -68,14 +68,11 @@ while ($row = mysqli_fetch_assoc($result)) {
         <input type="text" class="nav-search" placeholder="Search menu..." id="navSearch">
         <div class="search-results-dropdown" id="searchResults"></div>
     </div>
-    
-    <!-- Desktop Navigation -->
     <div class="nav-links">
         <a href="index.php">Home</a>
         <a href="menu.php">Menu</a>
         <a href="index.php#about">About</a>
     </div>
-    
     <div class="nav-icons">
         <a href="cart.php" class="nav-icon-btn" aria-label="Cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -107,34 +104,7 @@ while ($row = mysqli_fetch_assoc($result)) {
             <button class="nav-auth-btn reg" onclick="openAuthModal('register')">Register</button>
         <?php endif; ?>
     </div>
-    
-    <!-- Mobile Hamburger Button -->
-    <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
-        <div class="hamburger-icon">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    </button>
 </nav>
-
-<!-- Mobile Navigation Drawer -->
-<div class="nav-drawer-overlay" id="navDrawerOverlay"></div>
-<div class="nav-drawer" id="navDrawer">
-    <a href="index.php">Home</a>
-    <a href="menu.php">Menu</a>
-    <a href="index.php#about">About</a>
-    <a href="index.php#contact">Contact</a>
-    <a href="index.php#featured">Featured Dishes</a>
-    
-    <?php if (!isset($_SESSION['user_id'])): ?>
-        <hr class="nav-drawer-divider">
-        <div class="nav-drawer-auth">
-            <button class="nav-auth-btn" onclick="openAuthModal('login'); closeNavDrawer();">Login</button>
-            <button class="nav-auth-btn reg" onclick="openAuthModal('register'); closeNavDrawer();">Register</button>
-        </div>
-    <?php endif; ?>
-</div>
 
 <!-- ===== CONTENT ===== -->
 <div class="content">
@@ -208,7 +178,7 @@ while ($row = mysqli_fetch_assoc($result)) {
             <h1 class="auth-modal-title">Sign Up</h1>
             <p class="auth-modal-subtitle">Join us for authentic Filipino favorites.</p>
 
-            <?php if ($auth_error && ($_POST['auth_type'] ?? '') === 'register': ?>
+            <?php if ($auth_error && ($_POST['auth_type'] ?? '') === 'register'): ?>
                 <div class="auth-modal-error"><?= htmlspecialchars($auth_error) ?></div>
             <?php endif; ?>
 
@@ -227,58 +197,6 @@ while ($row = mysqli_fetch_assoc($result)) {
 </div>
 
 <script>
-// ══════════════════════════════════════
-// MOBILE NAVIGATION DRAWER
-// ══════════════════════════════════════
-const navHamburger = document.getElementById('navHamburger');
-const navDrawer = document.getElementById('navDrawer');
-const navDrawerOverlay = document.getElementById('navDrawerOverlay');
-
-function openNavDrawer() {
-    navHamburger.classList.add('open');
-    navDrawer.classList.add('open');
-    navDrawerOverlay.classList.add('visible');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeNavDrawer() {
-    navHamburger.classList.remove('open');
-    navDrawer.classList.remove('open');
-    navDrawerOverlay.classList.remove('visible');
-    document.body.style.overflow = '';
-}
-
-function toggleNavDrawer() {
-    if (navDrawer.classList.contains('open')) {
-        closeNavDrawer();
-    } else {
-        openNavDrawer();
-    }
-}
-
-navHamburger.addEventListener('click', function(e) {
-    e.stopPropagation();
-    toggleNavDrawer();
-});
-
-navDrawerOverlay.addEventListener('click', closeNavDrawer);
-
-// Close drawer on nav link click
-document.querySelectorAll('.nav-drawer a').forEach(link => {
-    link.addEventListener('click', () => {
-        closeNavDrawer();
-    });
-});
-
-// Close on Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeNavDrawer();
-        closeAuthModal();
-    }
-});
-
-// Auth Modal
 function openAuthModal(view) {
     document.getElementById('authModal').classList.add('active');
     showAuthView(view);
@@ -314,66 +232,42 @@ window.onclick = function(event) {
     if (event.target == document.getElementById('authModal')) closeAuthModal();
 }
 
-<?php if ($auth_error): ?>
+<?php if ($auth_error): 
+    $auth_type_js = htmlspecialchars($_POST['auth_type'] ?? '');
+?>
 document.addEventListener('DOMContentLoaded', () => {
-    openAuthModal('<?= htmlspecialchars($_POST['auth_type']) ?>');
+    openAuthModal('<?= $auth_type_js ?>');
 });
 <?php endif; ?>
+</script>
 
-// Account dropdown
-const accountBtn = document.getElementById('accountBtn');
-const accountDropdown = document.getElementById('accountDropdown');
-if (accountBtn && accountDropdown) {
-    accountBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        accountDropdown.classList.toggle('open');
-    });
-    document.addEventListener('click', function() {
-        accountDropdown.classList.remove('open');
-    });
-}
-
-// ══════════════════════════════════════
-// HIDE/SHOW CATEGORY BAR ON SCROLL
-// ══════════════════════════════════════
-const categoryBar = document.getElementById('categoryBar');
-let lastScrollTop = 0;
-let scrollThreshold = 10;
-let ticking = false;
-
-function updateCategoryBar() {
-    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-    
-    if (!categoryBar) {
-        ticking = false;
-        return;
+<script>
+    // Account dropdown
+    const accountBtn = document.getElementById('accountBtn');
+    const accountDropdown = document.getElementById('accountDropdown');
+    if (accountBtn && accountDropdown) {
+        accountBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            accountDropdown.classList.toggle('open');
+        });
+        document.addEventListener('click', function() {
+            accountDropdown.classList.remove('open');
+        });
     }
-    
-    // Only hide/show after scrolling past the category bar's initial position
-    // or if we've scrolled at least a bit down from top
-    if (currentScroll > 80) {
-        if (currentScroll > lastScrollTop + scrollThreshold) {
-            // Scrolling DOWN - hide the bar
+
+    // Hide/show category bar on scroll
+    const categoryBar = document.getElementById('categoryBar');
+    let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    window.addEventListener('scroll', function() {
+        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        if (!categoryBar) return;
+        if (currentScroll > lastScrollTop + 10) {
             categoryBar.classList.add('hidden');
-        } else if (currentScroll < lastScrollTop - scrollThreshold) {
-            // Scrolling UP - show the bar
+        } else if (currentScroll < lastScrollTop - 10) {
             categoryBar.classList.remove('hidden');
         }
-    } else {
-        // Near top of page - always show
-        categoryBar.classList.remove('hidden');
-    }
-    
-    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-    ticking = false;
-}
-
-window.addEventListener('scroll', function() {
-    if (!ticking) {
-        window.requestAnimationFrame(updateCategoryBar);
-        ticking = true;
-    }
-});
+        lastScrollTop = currentScroll;
+    });
 </script>
 
 <script src="search.js"></script>

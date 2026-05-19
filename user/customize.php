@@ -129,7 +129,7 @@ function buildOptionLabel($option) {
         <?php else: ?>
             <button class="nav-auth-btn" onclick="openAuthModal('login')">Login</button>
             <button class="nav-auth-btn reg" onclick="openAuthModal('register')">Register</button>
-        <?php endif;
+        <?php endif; ?>
     </div>
 </nav>
 
