@@ -559,7 +559,6 @@ body::before {
     align-items: center;
 }
 
-<<<<<<< HEAD
 .acct-notice {
     padding: 14px 16px;
     border-radius: 12px;
@@ -681,21 +680,6 @@ body::before {
 /* ════════════════════════════
    RESPONSIVE
 ════════════════════════════ */
-=======
-/* ═══════════════════════════════════════════════
-   ACCOUNT PAGE — RESPONSIVE ADDITIONS
-   Add these rules at the bottom of accountpage.css
-   (some rules already exist; these extend coverage)
-════════════════════════════════════════════════ */
-
-/* ── 1024px ── */
-@media (max-width: 1024px) {
-    .acct-layout { grid-template-columns: 180px 1fr; gap: 20px; }
-    .acct-content-header h1 { font-size: 1.6rem; }
-}
-
-/* ── 768px (extends existing block) ── */
->>>>>>> daa824b0aa3fbdc57c7def83aeb5bb1a30fd3749
 @media (max-width: 768px) {
     /* acct-layout already switched to 1fr — this fills gaps */
     .acct-page { padding: calc(56px + 20px) 14px 50px; }
