@@ -215,7 +215,8 @@ foreach ($orders as $o) {
         <li><a href="feature.php">Feature</a></li>
         <li><a href="customizations.php">Customizations</a></li>
         <li><a href="customers.php">Customers</a></li>
-        <li><a href="audit.php">Audit</a></li>
+        <li><a href="audit.php">Audit Log</a></li>
+        <li><a href="analytics.php">Analytics</a></li>
     </ul>
     <div class="sidebar-footer">
         <a href="logout.php">Logout</a>
