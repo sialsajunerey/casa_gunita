@@ -467,21 +467,17 @@ a { text-decoration: none; color: inherit; }
 }
 .page-btn {
     font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--card);
     color: var(--dark);
     cursor: pointer;
     transition: all 0.15s;
     line-height: 1;
+    white-space: nowrap;
 }
 .page-btn:hover:not(:disabled) {
     background: var(--dark);
@@ -496,12 +492,13 @@ a { text-decoration: none; color: inherit; }
     opacity: 0.5;
 }
 .page-info {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--muted);
     min-width: auto;
     text-align: center;
     letter-spacing: 0.02em;
+    padding: 0 4px;
 }
 
 /* ── SORT BUTTON ── */

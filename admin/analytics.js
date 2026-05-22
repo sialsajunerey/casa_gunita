@@ -399,8 +399,8 @@ function getPagedTopSeries() {
 function updateTopPagination() {
     const total    = getAllFilteredTopSeries().length;
     const maxPages = Math.max(1, Math.ceil(total / TOP_LINE_SERIES_PER_PAGE));
-    document.getElementById('topPrev').innerHTML     = '&lt;';
-    document.getElementById('topNext').innerHTML     = '&gt;';
+    document.getElementById('topPrev').innerHTML     = '← Prev';
+    document.getElementById('topNext').innerHTML     = 'Next →';
     document.getElementById('topPrev').disabled      = topPage <= 1;
     document.getElementById('topNext').disabled      = topPage >= maxPages;
     document.getElementById('topPageInfo').textContent = `${topPage}/${maxPages}`;
@@ -603,8 +603,8 @@ function renderTopList(tab) {
         : '<div style="padding:18px 0;text-align:center;color:#8a7060;font-size:13px;">No results for this filter.</div>';
 
 /* Pagination */
-document.getElementById('rankedPrev').innerHTML = '&lt;';
-document.getElementById('rankedNext').innerHTML = '&gt;';
+document.getElementById('rankedPrev').innerHTML = '← Prev';
+document.getElementById('rankedNext').innerHTML = 'Next →';
 document.getElementById('rankedPrev').disabled     = rankedPage <= 1;
 document.getElementById('rankedNext').disabled     = rankedPage >= maxPages;
 document.getElementById('rankedPageInfo').textContent = `${rankedPage}/${maxPages}`;
