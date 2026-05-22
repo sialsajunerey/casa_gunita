@@ -52,3 +52,15 @@ if ($googleIdColumn && mysqli_num_rows($googleIdColumn) === 0) {
     mysqli_query($conn, "ALTER TABLE users ADD COLUMN google_id VARCHAR(255) NULL AFTER password, ADD UNIQUE (google_id)");
 }
 }
+
+// Initialize PDO globally for stored procedures
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false
+    ]);
+} catch (PDOException $e) {
+    error_log("PDO Connection failed: " . $e->getMessage());
+}
+

@@ -5,31 +5,11 @@ require_once '../includes/db.php';
 require_once '../includes/session.php';
 require_once '../includes/auth_check.php';
 require_once '../includes/functions.php';
+require_once '../includes/analytics.php';
 requireAdmin();
 
-/* ── TODO: fetch real KPI values ── */
-// $kpi_orders  = /* SELECT COUNT(*) FROM orders WHERE ... */;
-// $kpi_revenue = /* SELECT SUM(total) FROM orders WHERE status != 'cancelled' AND ... */;
-// $kpi_peak    = /* SELECT HOUR(created_at) ... GROUP BY HOUR ORDER BY COUNT DESC LIMIT 1 */;
-// $kpi_top     = /* SELECT menu_item_name ... GROUP BY ... ORDER BY COUNT DESC LIMIT 1 */;
-
-/* ── TODO: fetch heatmap data (7 rows × 24 cols) ── */
-// $heatmap_json = /* SELECT DAY_OF_WEEK, HOUR, COUNT(*) FROM orders GROUP BY ... */;
-
-/* ── TODO: fetch pie chart data per group ── */
-// $pie_status_json   = /* SELECT status, COUNT(*) FROM orders GROUP BY status */;
-// $pie_category_json = /* SELECT category_name, COUNT(*) FROM order_items JOIN menu_items ... GROUP BY category */;
-// $pie_time_json     = /* SELECT HOUR buckets, COUNT(*) FROM orders GROUP BY time_slot */;
-
-/* ── TODO: fetch top performing line chart (last 7 days, top 3 per tab) ── */
-// $top_items_json    = /* top 3 menu items × last 7 days */;
-// $top_category_json = /* top 3 categories × last 7 days */;
-// $top_area_json     = /* top 3 barangays × last 7 days */;
-
-/* ── TODO: fetch ranked list per tab ── */
-// $ranked_items_json    = /* all menu items with order count */;
-// $ranked_category_json = /* all categories with order count */;
-// $ranked_area_json     = /* all barangays with order count */;
+// Default period: Today to Today
+$initial_data = get_analytics_data(date('Y-m-d'), date('Y-m-d'));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -249,6 +229,9 @@ requireAdmin();
     </div><!-- .content -->
 </div><!-- .main -->
 
+<script>
+let analyticsData = <?= json_encode($initial_data) ?>;
+</script>
 <script src="analytics.js"></script>
 </body>
 </html>

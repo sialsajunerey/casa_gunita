@@ -4,6 +4,12 @@
    for backend replacement.
 ══════════════════════════════════════════════════ */
 
+let TOP_LINE_DATA = {
+    item: { labels: [], series: [] },
+    category: { labels: [], series: [] },
+    area: { labels: [], series: [] }
+};
+
 /* ── DATE PRESET LOGIC ── */
 const dateFrom = document.getElementById('dateFrom');
 const dateTo   = document.getElementById('dateTo');
@@ -51,6 +57,7 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     });
 });
 
+<<<<<<< Updated upstream
 async function refreshData() {
     /* TODO: fetch from PHP endpoint using dateFrom.value + dateTo.value */
     updateKPIs();
@@ -58,23 +65,84 @@ async function refreshData() {
     renderPieChart();
     renderTopLineChart(activeTopTab);
     renderTopList(activeRankedTab);
+=======
+function refreshData() {
+    const fromVal = dateFrom.value;
+    const toVal = dateTo.value;
+    
+    fetch(`get_analytics_data.php?date_from=${fromVal}&date_to=${toVal}`)
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
+        .then(data => {
+            analyticsData = data;
+            
+            // Recompute heatmap variables
+            heatData = analyticsData?.heatmap?.grid || Array(7).fill(null).map(() => Array(24).fill(0));
+            displayDays = analyticsData?.heatmap?.days || heatDays;
+            
+            // Recompute TOP_LINE_DATA cache
+            TOP_LINE_DATA.item = buildTopLineData('item');
+            TOP_LINE_DATA.category = buildTopLineData('category');
+            TOP_LINE_DATA.area = buildTopLineData('area');
+            
+            // Re-render components
+            updateKPIs();
+            buildHeatmap();
+            renderPieChart();
+            updateTopFilter();
+            renderTopLineChart(activeTopTab);
+            updateRankedFilter();
+            renderTopList(activeRankedTab);
+        })
+        .catch(err => {
+            console.error('Error fetching analytics data:', err);
+        });
+>>>>>>> Stashed changes
 }
 
 
 /* ── KPIs ── */
 function updateKPIs() {
-    /* TODO: replace '—' with values from PHP JSON response */
-    document.getElementById('kpiOrders').textContent  = '—';
-    document.getElementById('kpiRevenue').textContent = '—';
-    document.getElementById('kpiPeak').textContent    = '—';
-    document.getElementById('kpiTop').textContent     = '—';
+    const kpis = analyticsData?.kpis;
+    if (!kpis) return;
+    
+    document.getElementById('kpiOrders').textContent = kpis.total_orders || 0;
+    
+    const revenueFormatted = '₱' + Number(kpis.total_revenue || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    document.getElementById('kpiRevenue').textContent = revenueFormatted;
+    
+    let peakHourStr = '—';
+    if (kpis.peak_hour && kpis.peak_hour !== '—') {
+        const hour = parseInt(kpis.peak_hour.split(':')[0], 10);
+        if (!isNaN(hour)) {
+            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            peakHourStr = `${displayHour} ${ampm}`;
+        } else {
+            peakHourStr = kpis.peak_hour;
+        }
+    }
+    document.getElementById('kpiPeak').textContent = peakHourStr;
+    
+    document.getElementById('kpiTop').textContent = kpis.top_item || '—';
+    if (kpis.top_item && kpis.top_item !== '—') {
+        document.getElementById('kpiTopSub').textContent = `${kpis.top_item_count || 0} order${kpis.top_item_count === 1 ? '' : 's'}`;
+    } else {
+        document.getElementById('kpiTopSub').textContent = 'Most ordered';
+    }
 }
 updateKPIs();
 
 
 /* ── HEATMAP ── */
-const heatDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const heatDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+<<<<<<< Updated upstream
 /* TODO: replace with PHP-driven 7×24 array fetched via AJAX using dateFrom/dateTo */
 let heatData = [
     [0,0,0,0,0,1,2,3,4,6,8,9,10,8,6,5,4,5,7,6,4,3,1,0],
@@ -85,6 +153,11 @@ let heatData = [
     [0,0,0,0,1,3,5,7,9,10,10,10,10,10,9,8,8,9,10,9,7,5,3,1],
     [0,0,0,0,1,2,4,6,8,10,10,10,10,10,8,7,7,8, 9,8,6,4,2,1],
 ];
+=======
+// Use data from PHP (analyticsData.heatmap)
+let heatData = analyticsData?.heatmap?.grid || Array(7).fill(null).map(() => Array(24).fill(0));
+let displayDays = analyticsData?.heatmap?.days || heatDays;
+>>>>>>> Stashed changes
 
 function heatColor(v) {
     if (v === 0) return '#f5ede0';
@@ -121,9 +194,16 @@ async function buildHeatmap() {
     }
     html += '</div>';
 
+<<<<<<< Updated upstream
     heatDays.forEach((d, i) => {
         html += `<div class="heatmap-day-row"><div class="heatmap-day-lbl">${d}</div>`;
         data[i].forEach((v, h) => {
+=======
+    displayDays.forEach((d, i) => {
+        if (!heatData[i]) return;
+        html += `<div class="heatmap-day-row"><div class="heatmap-day-lbl">${d.substring(0, 3)}</div>`;
+        heatData[i].forEach((v, h) => {
+>>>>>>> Stashed changes
             const lbl = h === 0 ? '12a' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm';
             html += `<div class="heatmap-cell" style="background:${heatColor(v)}" title="${d} ${lbl}: ${v === 0 ? 'No orders' : v + ' orders'}"></div>`;
         });
@@ -140,38 +220,29 @@ buildHeatmap();
    Group options: status | category | time
 ══════════════════════════════════════════════════ */
 const PIE_PALETTES = {
-    status:   ['#2a7a3b', '#b03030'],
+    status:   ['#2a7a3b', '#b03030', '#8d6e37', '#5a1a1a'],
     category: ['#210303', '#b87820', '#5a1a1a', '#d4a55a', '#8d6e37', '#c9a84c'],
     time:     ['#210303', '#b87820', '#d4a55a', '#e8c99a'],
     ordertype: ['#210303', '#b87820'],
 };
 
-const PIE_DATA = {
-    status: {
-        labels: ['Completed', 'Cancelled'],
-        data:   [480, 48],
-    },
-    category: {
-        labels: ['Main Course', 'Soups', 'Pulutan', 'Desserts', 'Beverages', 'Specials'],
-        data:   [312, 198, 174, 89, 143, 55],
-    },
-    time: {
-        labels: ['Breakfast (6:00 AM–10:00 AM)', 'Lunch (10:00 AM–1:00 PM)', 'Merienda (3:00 PM–5:00 PM)', 'Dinner (5:00 PM–10:00 PM)'],
-        data:   [88, 310, 145, 228],
-    },
-    ordertype: {
-        labels: ['Delivery', 'Pickup'],
-        data:   [385, 215],
-    },
-};
+// Convert PHP pie data to chart.js format
+function getPieData(groupType) {
+    const data = analyticsData?.pie?.[groupType] || [];
+    return {
+        labels: data.map(d => d.label),
+        data: data.map(d => d.count),
+        percentages: data.map(d => d.percentage)
+    };
+}
 
 let pieChart = null;
 
 function renderPieChart(group) {
     group = group || document.getElementById('pieGroupBy').value;
-    const d   = PIE_DATA[group];
+    const pieData = getPieData(group);
     const pal = PIE_PALETTES[group];
-    const total = d.data.reduce((a, b) => a + b, 0);
+    const total = pieData.data.reduce((a, b) => a + b, 0);
 
     if (pieChart) pieChart.destroy();
 
@@ -179,10 +250,10 @@ function renderPieChart(group) {
     pieChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: d.labels,
+            labels: pieData.labels,
             datasets: [{
-                data: d.data,
-                backgroundColor: pal,
+                data: pieData.data,
+                backgroundColor: pal.slice(0, pieData.data.length),
                 borderColor: '#faf6ef',
                 borderWidth: 3,
                 hoverOffset: 8,
@@ -203,11 +274,11 @@ function renderPieChart(group) {
         },
     });
 
-    document.getElementById('pieLegend').innerHTML = d.labels.map((lbl, i) => `
+    document.getElementById('pieLegend').innerHTML = pieData.labels.map((lbl, i) => `
         <div class="pie-legend-item">
             <div class="pie-legend-dot" style="background:${pal[i % pal.length]}"></div>
             <span class="pie-legend-name">${lbl}</span>
-            <span class="pie-legend-pct">${Math.round(d.data[i] / total * 100)}%</span>
+            <span class="pie-legend-pct">${pieData.percentages[i] || 0}%</span>
         </div>`).join('');
 }
 renderPieChart('status');
@@ -223,58 +294,51 @@ document.getElementById('pieGroupBy').addEventListener('change', function () {
    over last 7 days
 ══════════════════════════════════════════════════ */
 
-/* TODO: replace with PHP-driven JSON per tab */
-const TOP_LINE_DATA = {
-    item: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        series: [
-            { name: 'Sinigang na Baboy', data: [28,34,30,38,42,58,50], color: '#210303', category: 'Soups'       },
-            { name: 'Crispy Pata',       data: [20,22,26,30,35,48,42], color: '#b87820', category: 'Main Course' },
-            { name: 'Kare-Kare',         data: [18,20,22,24,28,40,36], color: '#d4a55a', category: 'Main Course' },
-            { name: 'Lechon Kawali',     data: [14,16,18,20,24,34,30], color: '#5a1a1a', category: 'Main Course' },
-            { name: 'Bulalo',            data: [10,12,14,16,20,28,24], color: '#8d6e37', category: 'Soups'       },
-        ],
-    },
-    category: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        series: [
-            { name: 'Main Course', data: [80,90,88,100,115,148,130], color: '#210303' },
-            { name: 'Soups',       data: [50,60,55,65,72,98,88],     color: '#b87820' },
-            { name: 'Pulutan',     data: [30,35,40,38,48,70,60],     color: '#d4a55a' },
-            { name: 'Desserts',    data: [20,22,25,24,30,45,38],     color: '#5a1a1a' },
-            { name: 'Beverages',   data: [15,18,20,22,26,38,32],     color: '#8d6e37' },
-        ],
-    },
-    area: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        series: [
-            { name: 'Kapitolyo', data: [38,44,40,50,58,75,68], color: '#210303', district: 'District I'  },
-            { name: 'Oranbo',    data: [28,32,35,40,45,62,55], color: '#b87820', district: 'District I'  },
-            { name: 'Ugong',     data: [22,26,28,32,38,50,45], color: '#d4a55a', district: 'District I'  },
-            { name: 'Kalawaan',  data: [16,18,22,26,30,42,36], color: '#5a1a1a', district: 'District I'  },
-            { name: 'Santolan',  data: [10,14,16,20,24,34,28], color: '#8d6e37', district: 'District II' },
-        ],
-    },
-};
+// Convert PHP top performing data to chart format
+function buildTopLineData(tabType) {
+    const rawData = analyticsData?.topPerforming?.[tabType] || [];
+    
+    // Group by date and build series
+    const colors = ['#210303', '#b87820', '#d4a55a', '#5a1a1a', '#8d6e37'];
+    const uniqueDates = [...new Set(rawData.map(d => d.date))].sort();
+    
+    // Get unique items/categories/areas
+    const uniqueItems = [...new Set(rawData.map(d => d.id))];
+    
+    // Build series data
+    const series = uniqueItems.map((id, idx) => {
+        const itemData = rawData.filter(d => d.id === id);
+        const item = itemData[0];
+        return {
+            name: item?.label || 'Unknown',
+            data: uniqueDates.map(date => {
+                const entry = itemData.find(d => d.date === date);
+                return tabType === 'area' ? (entry?.order_count || 0) : (entry?.quantity_sold || 0);
+            }),
+            color: colors[idx % colors.length],
+            [tabType === 'item' ? 'category' : 'district']: item?.category || item?.district || '',
+        };
+    });
 
-/*
- * Filter options per tab for Top Performing.
- * Same pattern as RANKED_FILTER_CONFIG.
- * field = property on each series object to match.
- * 'category' tab has no sub-filter.
- * TODO: auto-generate options from DB when replacing placeholder data.
- */
+    // Format dates as day names
+    const labels = uniqueDates.length > 0 
+        ? uniqueDates.map(d => new Date(d).toLocaleDateString('en-US', { weekday: 'short' }))
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    return { labels, series };
+}
+
 const TOP_LINE_FILTER_CONFIG = {
     item: {
         placeholder: 'All Categories',
         field: 'category',
-        options: ['Main Course', 'Soups', 'Pulutan', 'Desserts', 'Beverages', 'Specials'],
+        options: [],
     },
     category: null,
     area: {
         placeholder: 'All Districts',
         field: 'district',
-        options: ['District I', 'District II'],
+        options: [],
     },
 };
 
@@ -290,6 +354,16 @@ function updateTopFilter() {
         sel.style.display = 'none';
         sel.value = '';
         return;
+    }
+
+    if (activeTopTab === 'item') {
+        const series = TOP_LINE_DATA.item?.series || [];
+        const cats = [...new Set(series.map(s => s.category).filter(c => c))].sort();
+        config.options = cats;
+    } else if (activeTopTab === 'area') {
+        const series = TOP_LINE_DATA.area?.series || [];
+        const dists = [...new Set(series.map(s => s.district).filter(d => d))].sort();
+        config.options = dists;
     }
 
     let html = `<option value="">${config.placeholder}</option>`;
@@ -335,8 +409,12 @@ function updateTopPagination() {
 let topLineChart = null;
 
 function renderTopLineChart(tab) {
-    const d      = TOP_LINE_DATA[tab];
+    if (!TOP_LINE_DATA[tab]) {
+        TOP_LINE_DATA[tab] = buildTopLineData(tab);
+    }
+    const lineData = TOP_LINE_DATA[tab];
     const series = getPagedTopSeries();
+    updateTopPagination();
 
     if (topLineChart) topLineChart.destroy();
 
@@ -344,7 +422,7 @@ function renderTopLineChart(tab) {
     topLineChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: d.labels,
+            labels: lineData.labels,
             datasets: series.map(s => ({
                 label: s.name,
                 data: s.data,
@@ -382,9 +460,7 @@ function renderTopLineChart(tab) {
                 <div class="legend-dot" style="background:${s.color}"></div>
                 ${s.name}
             </div>`).join('')
-        : '<div style="font-size:12px;color:#8a7060;">No results for this filter.</div>';
-
-    updateTopPagination();
+        : '<div style="font-size:12px;color:#8a7060;">No data available.</div>';
 }
 
 /* Pagination controls for Top Performing */
@@ -403,84 +479,28 @@ document.getElementById('topNext').addEventListener('click', () => {
    NOTE: completely separate from Top Performing tabs.
 ══════════════════════════════════════════════════ */
 
-/* TODO: replace with PHP-driven JSON per tab */
-const TOP_LIST_DATA = {
-    item: [
-        { name: 'Sinigang na Baboy', count: 238, category: 'Soups' },
-        { name: 'Crispy Pata',       count: 195, category: 'Main Course' },
-        { name: 'Kare-Kare',         count: 172, category: 'Main Course' },
-        { name: 'Lechon Kawali',     count: 148, category: 'Main Course' },
-        { name: 'Bulalo',            count: 134, category: 'Soups' },
-        { name: 'Sisig',             count: 120, category: 'Pulutan' },
-        { name: 'Adobo',             count: 115, category: 'Main Course' },
-        { name: 'Tinola',            count: 98,  category: 'Soups' },
-        { name: 'Pinakbet',          count: 87,  category: 'Main Course' },
-        { name: 'Nilaga',            count: 74,  category: 'Soups' },
-        { name: 'Caldereta',         count: 68,  category: 'Main Course' },
-        { name: 'Menudo',            count: 55,  category: 'Main Course' },
-        { name: 'Pancit Canton',     count: 44,  category: 'Main Course' },
-        { name: 'Lomi',              count: 38,  category: 'Soups' },
-        { name: 'Batchoy',           count: 29,  category: 'Soups' },
-        { name: 'Arroz Caldo',       count: 21,  category: 'Soups' },
-        { name: 'Champorado',        count: 18,  category: 'Desserts' },
-        { name: 'Goto',              count: 14,  category: 'Soups' },
-        { name: 'Puto Bumbong',      count: 10,  category: 'Desserts' },
-        { name: 'Bibingka',          count:  7,  category: 'Desserts' },
-    ],
-    category: [
-        { name: 'Main Course', count: 612 },
-        { name: 'Soups',       count: 398 },
-        { name: 'Pulutan',     count: 274 },
-        { name: 'Desserts',    count: 189 },
-        { name: 'Beverages',   count: 143 },
-        { name: 'Specials',    count:  55 },
-    ],
-    area: [
-        { name: 'Brgy. Kapitolyo',    count: 312, district: 'District I' },
-        { name: 'Brgy. Oranbo',       count: 248, district: 'District I' },
-        { name: 'Brgy. Ugong',        count: 203, district: 'District I' },
-        { name: 'Brgy. Kalawaan',     count: 178, district: 'District I' },
-        { name: 'Brgy. Santolan',     count: 145, district: 'District I' },
-        { name: 'Brgy. Maybunga',     count: 132, district: 'District I' },
-        { name: 'Brgy. Rosario',      count: 118, district: 'District I' },
-        { name: 'Brgy. San Antonio',  count:  99, district: 'District I' },
-        { name: 'Brgy. Manggahan',    count:  88, district: 'District II' },
-        { name: 'Brgy. Dela Paz',     count:  74, district: 'District II' },
-        { name: 'Brgy. Pinagbuhatan', count:  61, district: 'District II' },
-        { name: 'Brgy. Caniogan',     count:  53, district: 'District II' },
-        { name: 'Brgy. Bambang',      count:  45, district: 'District II' },
-        { name: 'Brgy. Buting',       count:  38, district: 'District II' },
-        { name: 'Brgy. Sagad',        count:  29, district: 'District II' },
-        { name: 'Brgy. Sumilang',     count:  22, district: 'District II' },
-        { name: 'Brgy. Palatiw',      count:  18, district: 'District II' },
-        { name: 'Brgy. Pineda',       count:  14, district: 'District II' },
-        { name: 'Brgy. Malinao',      count:  10, district: 'District II' },
-        { name: 'Brgy. San Nicolas',  count:   7, district: 'District II' },
-    ],
-};
+// Get ranked data from PHP
+function getRankedData(tabType) {
+    const data = analyticsData?.ranked?.[tabType] || [];
+    return data.map(item => ({
+        name: item.label,
+        count: item.order_count,
+        category: item.category || '',
+        district: item.district || '',
+    }));
+}
 
-/*
- * Filter options per tab.
- * Each entry: { label, field, value }
- * field = the property on each row object to match against value.
- * value = '' means "All" (no filtering).
- * For 'category' tab, no filter is shown (empty array).
- * TODO: when replacing with PHP data, generate these dynamically
- *       from the unique values in the dataset.
- */
 const RANKED_FILTER_CONFIG = {
     item: {
         placeholder: 'All Categories',
         field: 'category',
-        /* TODO: auto-generate from DB: SELECT DISTINCT category FROM menu_items */
-        options: ['Main Course', 'Soups', 'Pulutan', 'Desserts', 'Beverages', 'Specials'],
+        options: [],
     },
-    category: null, /* No sub-filter for categories */
+    category: null,
     area: {
         placeholder: 'All Districts',
         field: 'district',
-        /* TODO: auto-generate from DB: SELECT DISTINCT district FROM barangays */
-        options: ['District I', 'District II'],
+        options: [],
     },
 };
 
@@ -506,6 +526,16 @@ function updateRankedFilter() {
         return;
     }
 
+    if (activeRankedTab === 'item') {
+        const data = getRankedData('item');
+        const cats = [...new Set(data.map(r => r.category).filter(c => c))].sort();
+        config.options = cats;
+    } else if (activeRankedTab === 'area') {
+        const data = getRankedData('area');
+        const dists = [...new Set(data.map(r => r.district).filter(d => d))].sort();
+        config.options = dists;
+    }
+
     /* Rebuild options */
     let html = `<option value="">${config.placeholder}</option>`;
     config.options.forEach(opt => {
@@ -520,7 +550,7 @@ function updateRankedFilter() {
 function getFilteredRankedData() {
     const sel    = document.getElementById('rankedFilterSelect');
     const config = RANKED_FILTER_CONFIG[activeRankedTab];
-    let data     = [...TOP_LIST_DATA[activeRankedTab]];
+    let data     = [...getRankedData(activeRankedTab)];
 
     /* Apply dropdown filter if a value is selected */
     if (config && sel.value) {
@@ -639,6 +669,10 @@ document.querySelectorAll('#rankedTabBar .tab-btn').forEach(btn => {
 });
 
 /* ── INITIAL RENDERS ── */
+TOP_LINE_DATA.item = buildTopLineData('item');
+TOP_LINE_DATA.category = buildTopLineData('category');
+TOP_LINE_DATA.area = buildTopLineData('area');
+
 updateTopFilter();
 renderTopLineChart('item');
 updateRankedFilter();
