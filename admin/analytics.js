@@ -57,49 +57,38 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     });
 });
 
-<<<<<<< Updated upstream
 async function refreshData() {
-    /* TODO: fetch from PHP endpoint using dateFrom.value + dateTo.value */
-    updateKPIs();
-    await buildHeatmap();   /* now async — fetches data for selected period */
-    renderPieChart();
-    renderTopLineChart(activeTopTab);
-    renderTopList(activeRankedTab);
-=======
-function refreshData() {
     const fromVal = dateFrom.value;
     const toVal = dateTo.value;
-    
-    fetch(`get_analytics_data.php?date_from=${fromVal}&date_to=${toVal}`)
-        .then(res => {
-            if (!res.ok) throw new Error('Network response was not ok');
-            return res.json();
-        })
-        .then(data => {
-            analyticsData = data;
-            
-            // Recompute heatmap variables
-            heatData = analyticsData?.heatmap?.grid || Array(7).fill(null).map(() => Array(24).fill(0));
-            displayDays = analyticsData?.heatmap?.days || heatDays;
-            
-            // Recompute TOP_LINE_DATA cache
-            TOP_LINE_DATA.item = buildTopLineData('item');
-            TOP_LINE_DATA.category = buildTopLineData('category');
-            TOP_LINE_DATA.area = buildTopLineData('area');
-            
-            // Re-render components
-            updateKPIs();
-            buildHeatmap();
-            renderPieChart();
-            updateTopFilter();
-            renderTopLineChart(activeTopTab);
-            updateRankedFilter();
-            renderTopList(activeRankedTab);
-        })
-        .catch(err => {
-            console.error('Error fetching analytics data:', err);
-        });
->>>>>>> Stashed changes
+
+    try {
+        const res = await fetch(`get_analytics_data.php?date_from=${fromVal}&date_to=${toVal}`);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+
+        console.log("Analytics Update Data:", data); // Diagnostic Log
+        analyticsData = data;
+
+        // Recompute heatmap variables
+        heatData = analyticsData?.heatmap?.grid || Array(7).fill(null).map(() => Array(24).fill(0));
+        displayDays = analyticsData?.heatmap?.days || heatDays;
+
+        // Recompute TOP_LINE_DATA cache
+        TOP_LINE_DATA.item = buildTopLineData('item');
+        TOP_LINE_DATA.category = buildTopLineData('category');
+        TOP_LINE_DATA.area = buildTopLineData('area');
+
+        // Re-render components
+        updateKPIs();
+        await buildHeatmap();
+        renderPieChart();
+        updateTopFilter();
+        renderTopLineChart(activeTopTab);
+        updateRankedFilter();
+        renderTopList(activeRankedTab);
+    } catch (err) {
+        console.error('Error fetching analytics data:', err);
+    }
 }
 
 
@@ -142,22 +131,9 @@ updateKPIs();
 /* ── HEATMAP ── */
 const heatDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-<<<<<<< Updated upstream
-/* TODO: replace with PHP-driven 7×24 array fetched via AJAX using dateFrom/dateTo */
-let heatData = [
-    [0,0,0,0,0,1,2,3,4,6,8,9,10,8,6,5,4,5,7,6,4,3,1,0],
-    [0,0,0,0,0,1,2,4,5,7,9,10, 9,8,6,5,4,5,6,5,3,2,1,0],
-    [0,0,0,0,0,1,3,4,6,8,10,10,9,8,7,5,5,6,7,6,4,3,1,0],
-    [0,0,0,0,0,2,3,5,6,8, 9,10,10,9,7,6,5,6,8,7,5,3,2,0],
-    [0,0,0,0,0,2,4,6,7,9,10,10,10,9,8,7,6,7,9,8,6,4,2,0],
-    [0,0,0,0,1,3,5,7,9,10,10,10,10,10,9,8,8,9,10,9,7,5,3,1],
-    [0,0,0,0,1,2,4,6,8,10,10,10,10,10,8,7,7,8, 9,8,6,4,2,1],
-];
-=======
 // Use data from PHP (analyticsData.heatmap)
 let heatData = analyticsData?.heatmap?.grid || Array(7).fill(null).map(() => Array(24).fill(0));
 let displayDays = analyticsData?.heatmap?.days || heatDays;
->>>>>>> Stashed changes
 
 function heatColor(v) {
     if (v === 0) return '#f5ede0';
@@ -167,25 +143,12 @@ function heatColor(v) {
     return '#210303';
 }
 
-/* Fetch heatmap data from backend based on selected date range */
-async function fetchHeatmapData(from, to) {
-    /* TODO: Replace with actual fetch call:
-       const res = await fetch(`api/heatmap.php?from=${from}&to=${to}`);
-       const json = await res.json();
-       return json.data; // 7x24 array
-    */
-    // Return placeholder data for now (simulating filtered results)
-    // In production, this should query the DB with the date range.
-    return heatData;
-}
-
 async function buildHeatmap() {
     const wrap = document.getElementById('heatmapWrap');
-    const from = dateFrom.value;
-    const to   = dateTo.value;
+    if (!wrap) return;
 
-    /* Fetch data for the selected period */
-    const data = await fetchHeatmapData(from, to);
+    // Ensure we are using the current global heatData
+    const data = heatData;
 
     let html = '<div class="heatmap-hour-row"><div class="heatmap-hour-lbl"></div>';
     for (let h = 0; h < 24; h++) {
@@ -194,16 +157,10 @@ async function buildHeatmap() {
     }
     html += '</div>';
 
-<<<<<<< Updated upstream
-    heatDays.forEach((d, i) => {
-        html += `<div class="heatmap-day-row"><div class="heatmap-day-lbl">${d}</div>`;
-        data[i].forEach((v, h) => {
-=======
     displayDays.forEach((d, i) => {
         if (!heatData[i]) return;
         html += `<div class="heatmap-day-row"><div class="heatmap-day-lbl">${d.substring(0, 3)}</div>`;
         heatData[i].forEach((v, h) => {
->>>>>>> Stashed changes
             const lbl = h === 0 ? '12a' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm';
             html += `<div class="heatmap-cell" style="background:${heatColor(v)}" title="${d} ${lbl}: ${v === 0 ? 'No orders' : v + ' orders'}"></div>`;
         });

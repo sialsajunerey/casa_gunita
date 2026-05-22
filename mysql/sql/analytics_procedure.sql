@@ -161,13 +161,14 @@ END$$
 -- TOP PERFORMING LINE CHART (Last 7 days, Top N per category)
 -- =====================================================
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_analytics_get_top_performing` (
+  IN p_date_from DATE,
+  IN p_date_to DATE,
   IN p_type VARCHAR(50),
   IN p_limit INT
 )
 BEGIN
-  DECLARE v_days_back INT DEFAULT 7;
   DECLARE v_limit INT;
-  SET v_limit = p_limit * 7;
+  SET v_limit = p_limit * 30; -- Increased to cover potentially longer ranges
 
   IF p_type = 'item' THEN
     -- Top items over last 7 days, broken down by day
@@ -182,7 +183,7 @@ BEGIN
     JOIN products p ON oi.product_id = p.product_id
     JOIN orders o ON oi.order_id = o.order_id
     LEFT JOIN categories c ON p.category_id = c.category_id
-    WHERE DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL (v_days_back - 1) DAY)
+    WHERE DATE(o.created_at) BETWEEN p_date_from AND p_date_to
       AND o.status != 'cancelled'
     GROUP BY DATE(o.created_at), p.product_id, p.name, c.name
     ORDER BY quantity_sold DESC
@@ -200,7 +201,7 @@ BEGIN
     JOIN products p ON oi.product_id = p.product_id
     JOIN orders o ON oi.order_id = o.order_id
     LEFT JOIN categories c ON p.category_id = c.category_id
-    WHERE DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL (v_days_back - 1) DAY)
+    WHERE DATE(o.created_at) BETWEEN p_date_from AND p_date_to
       AND o.status != 'cancelled'
     GROUP BY DATE(o.created_at), c.category_id, c.name
     ORDER BY quantity_sold DESC
@@ -216,7 +217,7 @@ BEGIN
       COALESCE(SUM(o.total_amount), 0) as revenue,
       COALESCE(NULLIF(o.city, ''), 'Unknown District') as district
     FROM orders o
-    WHERE DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL (v_days_back - 1) DAY)
+    WHERE DATE(o.created_at) BETWEEN p_date_from AND p_date_to
       AND o.status != 'cancelled'
     GROUP BY DATE(o.created_at), o.barangay, o.city
     ORDER BY order_count DESC
@@ -235,6 +236,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_analytics_get_ranked_items` (
   IN p_offset INT
 )
 BEGIN
+  -- Removed ROW_NUMBER() for better compatibility with older MariaDB/MySQL versions
   IF p_type = 'item' THEN
     SELECT
       p.product_id as id,
@@ -242,7 +244,6 @@ BEGIN
       COUNT(oi.item_id) as order_count,
       SUM(oi.quantity) as quantity_sold,
       ROUND(SUM(oi.subtotal), 2) as revenue,
-      ROW_NUMBER() OVER (ORDER BY COUNT(oi.item_id) DESC) as rank,
       COALESCE(c.name, 'Uncategorized') as category
     FROM order_items oi
     JOIN products p ON oi.product_id = p.product_id
@@ -260,8 +261,7 @@ BEGIN
       COALESCE(c.name, 'Uncategorized') as label,
       COUNT(oi.item_id) as order_count,
       SUM(oi.quantity) as quantity_sold,
-      ROUND(SUM(oi.subtotal), 2) as revenue,
-      ROW_NUMBER() OVER (ORDER BY COUNT(oi.item_id) DESC) as rank
+      ROUND(SUM(oi.subtotal), 2) as revenue
     FROM order_items oi
     JOIN products p ON oi.product_id = p.product_id
     JOIN orders o ON oi.order_id = o.order_id
@@ -279,7 +279,6 @@ BEGIN
       COUNT(o.order_id) as order_count,
       COUNT(DISTINCT o.user_id) as unique_customers,
       ROUND(SUM(o.total_amount), 2) as revenue,
-      ROW_NUMBER() OVER (ORDER BY COUNT(o.order_id) DESC) as rank,
       COALESCE(NULLIF(o.city, ''), 'Unknown District') as district
     FROM orders o
     WHERE DATE(o.created_at) BETWEEN p_date_from AND p_date_to

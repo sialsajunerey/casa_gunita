@@ -8,8 +8,54 @@ require_once '../includes/functions.php';
 require_once '../includes/analytics.php';
 requireAdmin();
 
-// Default period: Today to Today
-$initial_data = get_analytics_data(date('Y-m-d'), date('Y-m-d'));
+// Default period: Today
+$preset = $_GET['preset'] ?? 'today';
+$custom_from = $_GET['from'] ?? null;
+$custom_to = $_GET['to'] ?? null;
+$period = parsePeriodPreset($preset, $custom_from, $custom_to);
+$date_from = $period['from'];
+$date_to = $period['to'];
+
+// Fetch KPI data
+$kpi = getAnalyticsKPI($pdo, $date_from, $date_to);
+$kpi_orders = (int)$kpi['total_orders'];
+$kpi_revenue = formatCurrency($kpi['total_revenue']);
+$kpi_peak = htmlspecialchars($kpi['peak_hour']);
+$kpi_top = htmlspecialchars($kpi['top_item']);
+
+// Fetch heatmap data
+$heatmap_data = getAnalyticsHeatmap($pdo, $date_from, $date_to);
+$heatmap_json = json_encode($heatmap_data);
+
+// Fetch pie chart data (default: by status)
+$pie_status_data = getAnalyticsPieData($pdo, $date_from, $date_to, 'status');
+$pie_category_data = getAnalyticsPieData($pdo, $date_from, $date_to, 'category');
+$pie_time_data = getAnalyticsPieData($pdo, $date_from, $date_to, 'time');
+$pie_ordertype_data = getAnalyticsPieData($pdo, $date_from, $date_to, 'ordertype');
+
+// Fetch top performing data (last 7 days)
+$top_items_data = getAnalyticsTopPerforming($pdo, 'item', 3, $date_from, $date_to);
+$top_category_data = getAnalyticsTopPerforming($pdo, 'category', 3, $date_from, $date_to);
+$top_area_data = getAnalyticsTopPerforming($pdo, 'area', 3, $date_from, $date_to);
+
+// Fetch ranked data (first page)
+$ranked_items = getAnalyticsRankedItems($pdo, $date_from, $date_to, 'item', 1, 10);
+$ranked_categories = getAnalyticsRankedItems($pdo, $date_from, $date_to, 'category', 1, 10);
+$ranked_areas = getAnalyticsRankedItems($pdo, $date_from, $date_to, 'area', 1, 10);
+
+// Convert data to JSON for JavaScript
+$pie_status_json = json_encode($pie_status_data);
+$pie_category_json = json_encode($pie_category_data);
+$pie_time_json = json_encode($pie_time_data);
+$pie_ordertype_json = json_encode($pie_ordertype_data);
+
+$top_items_json = json_encode($top_items_data);
+$top_category_json = json_encode($top_category_data);
+$top_area_json = json_encode($top_area_data);
+
+$ranked_items_json = json_encode($ranked_items['items']);
+$ranked_category_json = json_encode($ranked_categories['items']);
+$ranked_area_json = json_encode($ranked_areas['items']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,6 +66,16 @@ $initial_data = get_analytics_data(date('Y-m-d'), date('Y-m-d'));
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="analytics.css">
+<style>
+    /* Adjusting the 2-column layout to give Order Trends more space for better alignment */
+    @media (min-width: 1025px) {
+        .charts-2col {
+            display: grid;
+            grid-template-columns: 0.85fr 1.15fr;
+            gap: 20px;
+        }
+    }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -81,11 +137,11 @@ $initial_data = get_analytics_data(date('Y-m-d'), date('Y-m-d'));
             <div class="date-range">
                 <span class="filter-bar-label" style="margin:0">From</span>
                 <input class="date-input" type="date" id="dateFrom"
-                       value="<?= date('Y-m-d') ?>">
+                       value="<?= $date_from ?>">
                 <span class="date-range-sep">—</span>
                 <span class="filter-bar-label" style="margin:0">To</span>
                 <input class="date-input" type="date" id="dateTo"
-                       value="<?= date('Y-m-d') ?>">
+                       value="<?= $date_to ?>">
             </div>
 
             <div class="filter-bar-spacer"></div>
@@ -104,22 +160,22 @@ $initial_data = get_analytics_data(date('Y-m-d'), date('Y-m-d'));
         <div class="kpi-grid">
             <div class="kpi-card">
                 <div class="kpi-label">Total Orders</div>
-                <div class="kpi-value" id="kpiOrders">—</div>
+                <div class="kpi-value" id="kpiOrders"><?= $kpi_orders ?></div>
                 <div class="kpi-sub">This period</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Total Revenue</div>
-                <div class="kpi-value" id="kpiRevenue">—</div>
+                <div class="kpi-value" id="kpiRevenue"><?= $kpi_revenue ?></div>
                 <div class="kpi-sub">Excl. cancelled</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Peak Hour</div>
-                <div class="kpi-value" id="kpiPeak">—</div>
+                <div class="kpi-value" id="kpiPeak"><?= $kpi_peak ?></div>
                 <div class="kpi-sub">Most orders placed</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Top Item</div>
-                <div class="kpi-value" style="font-size:1rem;padding-top:4px" id="kpiTop">—</div>
+                <div class="kpi-value" id="kpiTop" style="font-size:1rem;padding-top:4px"><?= $kpi_top ?></div>
                 <div class="kpi-sub" id="kpiTopSub">Most ordered</div>
             </div>
         </div>
@@ -230,8 +286,38 @@ $initial_data = get_analytics_data(date('Y-m-d'), date('Y-m-d'));
 </div><!-- .main -->
 
 <script>
-let analyticsData = <?= json_encode($initial_data) ?>;
+  // Initialize analytics data from PHP
+  let analyticsData = {
+    heatmap: <?= $heatmap_json ?>,
+    pie: {
+      status: <?= $pie_status_json ?>,
+      category: <?= $pie_category_json ?>,
+      time: <?= $pie_time_json ?>,
+      ordertype: <?= $pie_ordertype_json ?>
+    },
+    topPerforming: {
+      item: <?= $top_items_json ?>,
+      category: <?= $top_category_json ?>,
+      area: <?= $top_area_json ?>
+    },
+    ranked: {
+      item: <?= $ranked_items_json ?>,
+      category: <?= $ranked_category_json ?>,
+      area: <?= $ranked_area_json ?>
+    },
+    pagination: {
+      items: { total: <?= $ranked_items['pagination']['total_pages'] ?> },
+      category: { total: <?= $ranked_categories['pagination']['total_pages'] ?> },
+      area: { total: <?= $ranked_areas['pagination']['total_pages'] ?> }
+    },
+    dateRange: {
+      from: '<?= $date_from ?>',
+      to: '<?= $date_to ?>',
+      preset: '<?= $preset ?>'
+    }
+  };
 </script>
+
 <script src="analytics.js"></script>
 </body>
 </html>
