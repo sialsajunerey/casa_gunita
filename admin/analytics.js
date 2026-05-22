@@ -260,7 +260,7 @@ const TOP_LINE_FILTER_CONFIG = {
     },
 };
 
-const TOP_LINE_SERIES_PER_PAGE = 3;
+const TOP_LINE_SERIES_PER_PAGE = 5;
 let topPage = 1;
 
 /* Populate / show / hide the Top Performing filter dropdown */
