@@ -524,6 +524,104 @@ a { text-decoration: none; color: inherit; }
     border-color: var(--dark);
 }
 
+/* ── CONFIRMATION MODALS ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(33, 3, 3, 0.45);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.modal-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 36px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(33, 3, 3, 0.18);
+    transform: scale(0.92) translateY(10px);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.modal-overlay.visible .modal-box {
+    transform: scale(1) translateY(0);
+}
+
+.modal-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+.modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 8px;
+}
+.modal-msg {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.modal-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 22px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-btn.cancel {
+    background: #fff;
+    color: var(--dark);
+}
+.modal-btn.cancel:hover {
+    background: var(--dark);
+    color: var(--gold-light);
+    border-color: var(--dark);
+}
+.modal-btn.confirm {
+    background: var(--dark);
+    color: var(--gold-light);
+    border-color: var(--dark);
+}
+.modal-btn.confirm:hover {
+    background: #3a0a0a;
+}
+.modal-btn.confirm.delete {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+}
+.modal-btn.confirm.delete:hover {
+    background: #8a2222;
+}
+
 /* ── MOBILE ── */
 @media (max-width: 768px) {
     .sidebar { transform: translateX(-100%); z-index: 50; }
