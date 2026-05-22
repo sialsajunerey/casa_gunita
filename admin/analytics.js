@@ -122,7 +122,7 @@ buildHeatmap();
    Group options: status | category | time
 ══════════════════════════════════════════════════ */
 const PIE_PALETTES = {
-    status:   ['#210303', '#b87820', '#2a7a3b', '#b03030', '#6d4c41'],
+    status:   ['#210303', '#b87820', '#2a7a3b', '#b03030'],
     category: ['#210303', '#b87820', '#5a1a1a', '#d4a55a', '#8d6e37', '#c9a84c'],
     time:     ['#210303', '#b87820', '#d4a55a', '#e8c99a'],
 };
@@ -130,8 +130,8 @@ const PIE_PALETTES = {
 /* TODO: replace with PHP-driven JSON per group */
 const PIE_DATA = {
     status: {
-        labels: ['Completed', 'Pending', 'Confirmed', 'Cancelled', 'Refunded'],
-        data:   [480, 95, 120, 48, 22],
+        labels: ['Completed', 'Pending', 'Confirmed', 'Cancelled'],
+        data:   [480, 95, 120, 48],
     },
     category: {
         /* Categories auto-populated from DB — replace labels+data dynamically */
