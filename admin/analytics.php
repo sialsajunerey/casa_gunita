@@ -179,7 +179,8 @@ requireAdmin();
                             <option value="status">By Status</option>
                             <option value="category">By Category</option>
                             <option value="time">By Time Slot</option>
-                        </select>
+                            <option value="ordertype">By Order Type</option>
+                    </select>
                     </div>
                 </div>
                 <div class="pie-wrap">

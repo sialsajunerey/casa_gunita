@@ -122,25 +122,28 @@ buildHeatmap();
    Group options: status | category | time
 ══════════════════════════════════════════════════ */
 const PIE_PALETTES = {
-    status:   ['#2a7a3b', '#b87820', '#210303', '#b03030'],
+    status:   ['#2a7a3b', '#b03030'],
     category: ['#210303', '#b87820', '#5a1a1a', '#d4a55a', '#8d6e37', '#c9a84c'],
     time:     ['#210303', '#b87820', '#d4a55a', '#e8c99a'],
+    ordertype: ['#210303', '#b87820'],
 };
 
-/* TODO: replace with PHP-driven JSON per group */
 const PIE_DATA = {
     status: {
-        labels: ['Completed', 'Pending', 'Confirmed', 'Cancelled'],
-        data:   [480, 95, 120, 48],
+        labels: ['Completed', 'Cancelled'],
+        data:   [480, 48],
     },
     category: {
-        /* Categories auto-populated from DB — replace labels+data dynamically */
         labels: ['Main Course', 'Soups', 'Pulutan', 'Desserts', 'Beverages', 'Specials'],
         data:   [312, 198, 174, 89, 143, 55],
     },
     time: {
-        labels: ['Breakfast (6–10)', 'Lunch (10–14)', 'Merienda (14–17)', 'Dinner (17–22)'],
+        labels: ['Breakfast (6:00 AM–10:00 AM)', 'Lunch (10:00 AM–1:00 PM)', 'Merienda (3:00 PM–5:00 PM)', 'Dinner (5:00 PM–10:00 PM)'],
         data:   [88, 310, 145, 228],
+    },
+    ordertype: {
+        labels: ['Delivery', 'Pickup'],
+        data:   [385, 215],
     },
 };
 
