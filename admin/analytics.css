@@ -394,12 +394,12 @@ a { text-decoration: none; color: inherit; }
     flex-shrink: 0; text-align: center;
 }
 .top-name {
-    flex: 1; font-size: 12.5px; font-weight: 600;
+    flex: 0 0 130px; font-size: 12.5px; font-weight: 600;
     color: var(--dark); white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis;
 }
 .top-bar-wrap {
-    flex: 1.5; height: 6px;
+    flex: 1; height: 6px;
     background: rgba(33,3,3,0.07);
     border-radius: 99px; overflow: hidden;
 }

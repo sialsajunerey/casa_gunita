@@ -51,10 +51,10 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     });
 });
 
-function refreshData() {
+async function refreshData() {
     /* TODO: fetch from PHP endpoint using dateFrom.value + dateTo.value */
     updateKPIs();
-    buildHeatmap();
+    await buildHeatmap();   /* now async — fetches data for selected period */
     renderPieChart();
     renderTopLineChart(activeTopTab);
     renderTopList(activeRankedTab);
@@ -75,8 +75,8 @@ updateKPIs();
 /* ── HEATMAP ── */
 const heatDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-/* TODO: replace with PHP-driven 7×24 array */
-const heatData = [
+/* TODO: replace with PHP-driven 7×24 array fetched via AJAX using dateFrom/dateTo */
+let heatData = [
     [0,0,0,0,0,1,2,3,4,6,8,9,10,8,6,5,4,5,7,6,4,3,1,0],
     [0,0,0,0,0,1,2,4,5,7,9,10, 9,8,6,5,4,5,6,5,3,2,1,0],
     [0,0,0,0,0,1,3,4,6,8,10,10,9,8,7,5,5,6,7,6,4,3,1,0],
@@ -94,8 +94,26 @@ function heatColor(v) {
     return '#210303';
 }
 
-function buildHeatmap() {
+/* Fetch heatmap data from backend based on selected date range */
+async function fetchHeatmapData(from, to) {
+    /* TODO: Replace with actual fetch call:
+       const res = await fetch(`api/heatmap.php?from=${from}&to=${to}`);
+       const json = await res.json();
+       return json.data; // 7x24 array
+    */
+    // Return placeholder data for now (simulating filtered results)
+    // In production, this should query the DB with the date range.
+    return heatData;
+}
+
+async function buildHeatmap() {
     const wrap = document.getElementById('heatmapWrap');
+    const from = dateFrom.value;
+    const to   = dateTo.value;
+
+    /* Fetch data for the selected period */
+    const data = await fetchHeatmapData(from, to);
+
     let html = '<div class="heatmap-hour-row"><div class="heatmap-hour-lbl"></div>';
     for (let h = 0; h < 24; h++) {
         const lbl = h === 0 ? '12a' : h < 12 ? h + 'a' : h === 12 ? '12p' : (h - 12) + 'p';
@@ -105,7 +123,7 @@ function buildHeatmap() {
 
     heatDays.forEach((d, i) => {
         html += `<div class="heatmap-day-row"><div class="heatmap-day-lbl">${d}</div>`;
-        heatData[i].forEach((v, h) => {
+        data[i].forEach((v, h) => {
             const lbl = h === 0 ? '12a' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm';
             html += `<div class="heatmap-cell" style="background:${heatColor(v)}" title="${d} ${lbl}: ${v === 0 ? 'No orders' : v + ' orders'}"></div>`;
         });
