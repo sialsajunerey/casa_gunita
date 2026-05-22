@@ -122,7 +122,7 @@ buildHeatmap();
    Group options: status | category | time
 ══════════════════════════════════════════════════ */
 const PIE_PALETTES = {
-    status:   ['#210303', '#b87820', '#2a7a3b', '#b03030'],
+    status:   ['#2a7a3b', '#b87820', '#210303', '#b03030'],
     category: ['#210303', '#b87820', '#5a1a1a', '#d4a55a', '#8d6e37', '#c9a84c'],
     time:     ['#210303', '#b87820', '#d4a55a', '#e8c99a'],
 };
